@@ -24,7 +24,10 @@ export default function ExerciseLogForm({
 
   const filtered = useMemo(() => {
     if (!query) return []
-    return employees.filter((e) => e.name.includes(query)).slice(0, 5)
+    const q = query.trim().toLowerCase()
+    return employees
+      .filter((e) => e.name.toLowerCase().includes(q) || e.employee_number?.toLowerCase().includes(q))
+      .slice(0, 5)
   }, [employees, query])
 
   async function handleSubmit() {
@@ -65,7 +68,7 @@ export default function ExerciseLogForm({
             setSelectedEmployee(null)
             setQuery(e.target.value)
           }}
-          placeholder="이름 검색"
+          placeholder="이름 또는 사번 검색"
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
         {filtered.length > 0 && !selectedEmployee && (
@@ -80,9 +83,7 @@ export default function ExerciseLogForm({
                 className="px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
               >
                 {e.name}
-                {e.employee_number && (
-                  <span className="text-xs text-gray-400 ml-1">#{e.employee_number}</span>
-                )}
+                <span className="text-xs text-gray-400 ml-1">#{e.employee_number}</span>
               </li>
             ))}
           </ul>

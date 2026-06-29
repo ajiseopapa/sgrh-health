@@ -5,6 +5,7 @@ import HomeTab from '@/components/HomeTab'
 import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
 import SettingsPanel from '@/components/SettingsPanel'
+import AdminPasswordModal from '@/components/AdminPasswordModal'
 
 type TabKey = 'home' | 'stats' | 'feed'
 
@@ -17,15 +18,25 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   // 설정에서 변경한 내용을 탭에 반영하기 위한 강제 리마운트용 키
   const [refreshKey, setRefreshKey] = useState(0)
+
+  function handleSettingsClick() {
+    // 같은 브라우저 탭에서 이미 인증했으면 다시 묻지 않음 (탭 닫으면 초기화됨)
+    if (typeof window !== 'undefined' && sessionStorage.getItem('admin_unlocked') === 'true') {
+      setShowSettings(true)
+    } else {
+      setShowPasswordModal(true)
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen pb-16">
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-bold">🏋️ 직원 운동 관리</h1>
         <button
-          onClick={() => setShowSettings(true)}
+          onClick={handleSettingsClick}
           aria-label="관리 설정"
           className="text-xl leading-none text-gray-400 active:text-gray-600"
         >
@@ -53,6 +64,16 @@ export default function Page() {
           </button>
         ))}
       </nav>
+
+      {showPasswordModal && (
+        <AdminPasswordModal
+          onSuccess={() => {
+            setShowPasswordModal(false)
+            setShowSettings(true)
+          }}
+          onCancel={() => setShowPasswordModal(false)}
+        />
+      )}
 
       {showSettings && (
         <SettingsPanel

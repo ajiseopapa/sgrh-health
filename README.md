@@ -7,18 +7,21 @@ Next.js + Supabase + Vercel로 만든 모바일 최적화 팀 운동 트래커.
 ```
 app/
   layout.tsx        루트 레이아웃 (모바일 폭 고정, 뷰포트 설정)
-  page.tsx          탭 네비게이션 (홈 / 통계 / 피드)
+  page.tsx          탭 네비게이션 (홈 / 통계 / 피드) + 설정 진입점
   globals.css
-components/
+  api/
+    verify-admin/route.ts  관리자 비밀번호 서버 검증 (비밀번호는 클라이언트에 노출되지 않음)
+components:
   HomeTab.tsx        홈 탭: 데이터 페칭 + 하위 컴포넌트 조합
   TopRankingBoard.tsx  이번 달 TOP3 랭킹
   MiniCalendar.tsx     월간 미니 캘린더 (직원별 색상 점)
-  ExerciseLogForm.tsx  이름 검색 + 운동 종목 선택 입력 폼
+  ExerciseLogForm.tsx  이름/사번 검색 + 운동 종목 선택 입력 폼
   StatsTab.tsx         통계 탭 (종목별/주간별 차트, 전체 랭킹)
   FeedTab.tsx          최근 운동 기록 피드
   SettingsPanel.tsx    ⚙️ 관리 화면 (직원 관리 / 운동 종목 관리 탭 전환)
   EmployeeManager.tsx      직원 등록/수정/삭제
   ExerciseTypeManager.tsx  운동 종목 등록/수정/삭제
+  AdminPasswordModal.tsx   설정 진입 전 비밀번호 확인 모달
 lib/
   supabase.ts        Supabase 클라이언트
   colors.ts          직원ID -> 고정 색상 매핑 (캘린더/랭킹/피드 공통)
@@ -57,12 +60,27 @@ npm run dev
 
 ## 4. 직원 / 운동 종목 관리 (설정)
 
-헤더 우측 상단의 ⚙️ 아이콘을 누르면 관리 화면이 열립니다.
+헤더 우측 상단의 ⚙️ 아이콘을 누르면 비밀번호를 먼저 물어보고, 맞으면 관리 화면이 열립니다.
 
-- **직원 관리**: 이름 + 사번(선택) 등록, 수정, 삭제
+- **직원 관리**: 이름 + 사번(필수) 등록, 수정, 삭제
 - **운동 종목 관리**: 아이콘(이모지) + 이름 등록, 수정, 삭제
 
-> ⚠️ 이미 `schema.sql`을 먼저 실행해두셨다면, `supabase/migrations/002_settings_panel.sql`을 추가로 실행해야 사번 컬럼과 수정/삭제 권한이 생깁니다. 처음 설치하는 경우라면 `schema.sql`에 이미 다 포함되어 있어서 따로 실행할 필요 없습니다.
+### 관리자 비밀번호 설정
+
+`.env.local`에 아래 값을 추가하세요 (앱 코드에 노출되지 않도록 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다):
+
+```
+ADMIN_PASSWORD=원하는비밀번호
+```
+
+Vercel에 배포할 때도 Environment Variables에 동일하게 `ADMIN_PASSWORD`를 추가해주세요. 한 번 인증하면 브라우저 탭을 닫기 전까지는(세션 동안) 다시 묻지 않습니다.
+
+### 마이그레이션
+
+이미 `schema.sql`을 먼저 실행해두셨다면, 새로 추가된 기능에 맞춰 아래 두 파일을 **순서대로** 추가 실행하세요. 처음 설치하는 경우라면 `schema.sql`에 이미 다 포함되어 있어서 따로 실행할 필요 없습니다.
+
+1. `supabase/migrations/002_settings_panel.sql` — 사번 컬럼 + 수정/삭제 권한
+2. `supabase/migrations/003_employee_number_required.sql` — 사번을 필수값으로 변경 (빈 사번이 있으면 임시값을 채운 뒤 잠그므로, 적용 후 설정 화면에서 정확한 사번으로 다시 고쳐주세요)
 
 직원을 삭제하면 그 직원의 운동 기록도 함께 삭제됩니다(연쇄 삭제). 운동 종목은 해당 종목으로 기록된 일지가 있으면 삭제가 막히고, 안내 메시지가 표시됩니다.
 

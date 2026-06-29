@@ -40,7 +40,7 @@ export default function ExerciseTypeManager() {
       .insert({ name: name.trim(), icon: icon.trim() || '🏃' })
     setSubmitting(false)
     if (error) {
-      setError('등록에 실패했어요.')
+      setError(`등록에 실패했어요: ${error.message}`)
       return
     }
     setName('')
@@ -66,7 +66,7 @@ export default function ExerciseTypeManager() {
       .update({ name: editName.trim(), icon: editIcon.trim() || '🏃' })
       .eq('id', editingId)
     if (error) {
-      setError('수정에 실패했어요.')
+      setError(`수정에 실패했어요: ${error.message}`)
       return
     }
     setEditingId(null)
@@ -98,7 +98,7 @@ export default function ExerciseTypeManager() {
             value={icon}
             onChange={(e) => setIcon(e.target.value)}
             placeholder="🏃"
-            className="w-14 border rounded-lg px-2 py-2 text-sm text-center"
+            className="w-16 border rounded-lg px-2 py-2 text-lg text-center"
           />
           <input
             value={name}
@@ -135,7 +135,7 @@ export default function ExerciseTypeManager() {
                       <input
                         value={editIcon}
                         onChange={(e) => setEditIcon(e.target.value)}
-                        className="w-14 border rounded-lg px-2 py-1.5 text-sm text-center"
+                        className="w-16 border rounded-lg px-2 py-1.5 text-lg text-center"
                       />
                       <input
                         value={editName}

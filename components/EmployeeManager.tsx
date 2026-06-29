@@ -33,11 +33,15 @@ export default function EmployeeManager() {
       setError('이름을 입력해주세요.')
       return
     }
+    if (!empNo.trim()) {
+      setError('사번을 입력해주세요.')
+      return
+    }
     setSubmitting(true)
     setError('')
     const { error } = await supabase
       .from('employees')
-      .insert({ name: name.trim(), employee_number: empNo.trim() || null })
+      .insert({ name: name.trim(), employee_number: empNo.trim() })
     setSubmitting(false)
     if (error) {
       setError(error.code === '23505' ? '이미 등록된 사번이에요.' : '등록에 실패했어요.')
@@ -61,9 +65,13 @@ export default function EmployeeManager() {
       setError('이름을 입력해주세요.')
       return
     }
+    if (!editEmpNo.trim()) {
+      setError('사번을 입력해주세요.')
+      return
+    }
     const { error } = await supabase
       .from('employees')
-      .update({ name: editName.trim(), employee_number: editEmpNo.trim() || null })
+      .update({ name: editName.trim(), employee_number: editEmpNo.trim() })
       .eq('id', editingId)
     if (error) {
       setError(error.code === '23505' ? '이미 등록된 사번이에요.' : '수정에 실패했어요.')
@@ -98,7 +106,8 @@ export default function EmployeeManager() {
         <input
           value={empNo}
           onChange={(e) => setEmpNo(e.target.value)}
-          placeholder="사번 (선택)"
+          placeholder="사번"
+          required
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
         <button
@@ -156,9 +165,7 @@ export default function EmployeeManager() {
                   <div className="flex items-center justify-between">
                     <div className="text-sm">
                       <span className="font-medium">{emp.name}</span>
-                      {emp.employee_number && (
-                        <span className="text-xs text-gray-400 ml-2">#{emp.employee_number}</span>
-                      )}
+                      <span className="text-xs text-gray-400 ml-2">#{emp.employee_number}</span>
                     </div>
                     <div className="flex gap-3 text-xs shrink-0">
                       <button onClick={() => startEdit(emp)} className="text-brand-600 font-medium">

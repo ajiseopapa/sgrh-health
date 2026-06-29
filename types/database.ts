@@ -1,7 +1,7 @@
 export interface Employee {
   id: string
   name: string
-  employee_number: string | null
+  employee_number: string
   created_at: string
 }
 
