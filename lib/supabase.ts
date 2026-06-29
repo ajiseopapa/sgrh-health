@@ -1,12 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-// '!'를 제거하고 기본값을 빈 문자열로 처리하여 빌드 시 오류를 방지합니다.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 환경변수가 없으면 개발자에게 경고만 하고 빌드는 중단시키지 않습니다.
+// 환경변수가 없을 때 빌드가 깨지지 않도록 방어 로직 추가
+let supabase: any;
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('경고: Supabase 환경변수가 설정되지 않았습니다.')
+  console.warn('경고: Supabase 환경변수가 설정되지 않았습니다.');
+  // 빈 객체로 초기화하여 에러 발생 방지
+  supabase = {
+    from: () => ({ select: () => Promise.resolve({ data: [], error: null }) })
+  };
+} else {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export { supabase };
