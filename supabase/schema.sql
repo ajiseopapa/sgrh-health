@@ -6,7 +6,8 @@
 -- 직원 테이블
 create table if not exists employees (
   id uuid primary key default gen_random_uuid(),
-  name text not null unique,
+  name text not null,
+  employee_number text unique,
   created_at timestamptz default now()
 );
 
@@ -39,9 +40,9 @@ insert into exercise_types (name, icon) values
   ('수영', '🏊')
 on conflict do nothing;
 
--- 직원 샘플 데이터 (실제 팀원 이름으로 교체하세요)
-insert into employees (name) values
-  ('김민준'), ('이서연'), ('박지호')
+-- 직원 샘플 데이터 (실제 팀원 이름/사번으로 교체하세요)
+insert into employees (name, employee_number) values
+  ('김민준', '1001'), ('이서연', '1002'), ('박지호', '1003')
 on conflict do nothing;
 
 -- ============================================
@@ -53,10 +54,25 @@ alter table employees enable row level security;
 alter table exercise_types enable row level security;
 alter table exercise_logs enable row level security;
 
+drop policy if exists "anon read employees" on employees;
 create policy "anon read employees" on employees for select using (true);
+drop policy if exists "anon insert employees" on employees;
 create policy "anon insert employees" on employees for insert with check (true);
+drop policy if exists "anon update employees" on employees;
+create policy "anon update employees" on employees for update using (true);
+drop policy if exists "anon delete employees" on employees;
+create policy "anon delete employees" on employees for delete using (true);
 
+drop policy if exists "anon read types" on exercise_types;
 create policy "anon read types" on exercise_types for select using (true);
+drop policy if exists "anon insert types" on exercise_types;
+create policy "anon insert types" on exercise_types for insert with check (true);
+drop policy if exists "anon update types" on exercise_types;
+create policy "anon update types" on exercise_types for update using (true);
+drop policy if exists "anon delete types" on exercise_types;
+create policy "anon delete types" on exercise_types for delete using (true);
 
+drop policy if exists "anon read logs" on exercise_logs;
 create policy "anon read logs" on exercise_logs for select using (true);
+drop policy if exists "anon insert logs" on exercise_logs;
 create policy "anon insert logs" on exercise_logs for insert with check (true);

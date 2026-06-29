@@ -16,6 +16,9 @@ components/
   ExerciseLogForm.tsx  이름 검색 + 운동 종목 선택 입력 폼
   StatsTab.tsx         통계 탭 (종목별/주간별 차트, 전체 랭킹)
   FeedTab.tsx          최근 운동 기록 피드
+  SettingsPanel.tsx    ⚙️ 관리 화면 (직원 관리 / 운동 종목 관리 탭 전환)
+  EmployeeManager.tsx      직원 등록/수정/삭제
+  ExerciseTypeManager.tsx  운동 종목 등록/수정/삭제
 lib/
   supabase.ts        Supabase 클라이언트
   colors.ts          직원ID -> 고정 색상 매핑 (캘린더/랭킹/피드 공통)
@@ -51,6 +54,17 @@ npm run dev
 2. Vercel에서 New Project > 해당 repo import
 3. Environment Variables에 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 추가
 4. Deploy
+
+## 4. 직원 / 운동 종목 관리 (설정)
+
+헤더 우측 상단의 ⚙️ 아이콘을 누르면 관리 화면이 열립니다.
+
+- **직원 관리**: 이름 + 사번(선택) 등록, 수정, 삭제
+- **운동 종목 관리**: 아이콘(이모지) + 이름 등록, 수정, 삭제
+
+> ⚠️ 이미 `schema.sql`을 먼저 실행해두셨다면, `supabase/migrations/002_settings_panel.sql`을 추가로 실행해야 사번 컬럼과 수정/삭제 권한이 생깁니다. 처음 설치하는 경우라면 `schema.sql`에 이미 다 포함되어 있어서 따로 실행할 필요 없습니다.
+
+직원을 삭제하면 그 직원의 운동 기록도 함께 삭제됩니다(연쇄 삭제). 운동 종목은 해당 종목으로 기록된 일지가 있으면 삭제가 막히고, 안내 메시지가 표시됩니다.
 
 ## 디자인/설계 메모
 

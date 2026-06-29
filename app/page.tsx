@@ -4,6 +4,7 @@ import { useState } from 'react'
 import HomeTab from '@/components/HomeTab'
 import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
+import SettingsPanel from '@/components/SettingsPanel'
 
 type TabKey = 'home' | 'stats' | 'feed'
 
@@ -15,17 +16,27 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 
 export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
+  const [showSettings, setShowSettings] = useState(false)
+  // 설정에서 변경한 내용을 탭에 반영하기 위한 강제 리마운트용 키
+  const [refreshKey, setRefreshKey] = useState(0)
 
   return (
     <div className="flex flex-col min-h-screen pb-16">
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3">
+      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-bold">🏋️ 직원 운동 관리</h1>
+        <button
+          onClick={() => setShowSettings(true)}
+          aria-label="관리 설정"
+          className="text-xl leading-none text-gray-400 active:text-gray-600"
+        >
+          ⚙️
+        </button>
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {tab === 'home' && <HomeTab />}
-        {tab === 'stats' && <StatsTab />}
-        {tab === 'feed' && <FeedTab />}
+        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} />}
+        {tab === 'stats' && <StatsTab key={`stats-${refreshKey}`} />}
+        {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} />}
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white border-t flex">
@@ -42,6 +53,15 @@ export default function Page() {
           </button>
         ))}
       </nav>
+
+      {showSettings && (
+        <SettingsPanel
+          onClose={() => {
+            setShowSettings(false)
+            setRefreshKey((k) => k + 1)
+          }}
+        />
+      )}
     </div>
   )
 }

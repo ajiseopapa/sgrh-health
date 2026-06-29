@@ -1,6 +1,7 @@
 export interface Employee {
   id: string
   name: string
+  employee_number: string | null
   created_at: string
 }
 

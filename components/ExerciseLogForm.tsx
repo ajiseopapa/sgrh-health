@@ -80,6 +80,9 @@ export default function ExerciseLogForm({
                 className="px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
               >
                 {e.name}
+                {e.employee_number && (
+                  <span className="text-xs text-gray-400 ml-1">#{e.employee_number}</span>
+                )}
               </li>
             ))}
           </ul>
