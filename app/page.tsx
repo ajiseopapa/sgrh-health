@@ -19,28 +19,73 @@ export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   function handleSettingsClick() {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('admin_unlocked') === 'true') {
+    if (isAdmin) {
+      // 관리자 상태면 메뉴 토글 (설정 / 로그아웃)
+      setShowAdminMenu((v) => !v)
+    } else if (typeof window !== 'undefined' && sessionStorage.getItem('admin_unlocked') === 'true') {
       setShowSettings(true)
     } else {
       setShowPasswordModal(true)
     }
   }
 
+  function handleLogout() {
+    setIsAdmin(false)
+    setShowAdminMenu(false)
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('admin_unlocked')
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen pb-16">
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">🏋️ 직원 운동 관리</h1>
-        <button
-          onClick={handleSettingsClick}
-          aria-label="관리 설정"
-          className="text-xl leading-none text-gray-400 active:text-gray-600"
-        >
-          ⚙️
-        </button>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold">🏋️ 직원 운동 관리</h1>
+          {isAdmin && (
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+              관리자
+            </span>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            onClick={handleSettingsClick}
+            aria-label="관리 설정"
+            className="text-xl leading-none text-gray-400 active:text-gray-600"
+          >
+            ⚙️
+          </button>
+
+          {/* 관리자 드롭다운 메뉴 */}
+          {showAdminMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowAdminMenu(false)} />
+              <div className="absolute right-0 top-8 z-20 bg-white border rounded-xl shadow-lg py-1 w-32">
+                <button
+                  onClick={() => {
+                    setShowAdminMenu(false)
+                    setShowSettings(true)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  ⚙️ 설정
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                >
+                  🚪 로그아웃
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       <main className="flex-1 px-4 py-4">
@@ -54,8 +99,10 @@ export default function Page() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors ${
-              tab === t.key ? 'text-brand-600 font-semibold' : 'text-gray-400'
+            className={`flex-1 flex flex-col items-center py-2 text-xs transition-all rounded-lg mx-1 my-1 ${
+              tab === t.key
+                ? 'text-brand-600 font-semibold bg-brand-50'
+                : 'text-gray-400 hover:bg-gray-100 active:bg-gray-100'
             }`}
           >
             <span className="text-lg leading-none">{t.icon}</span>
