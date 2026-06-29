@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
-import { useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Employee, ExerciseType, ExerciseLog } from '@/types/database'
 import { getMonthRange, toDateKey } from '@/lib/dateUtils'
@@ -9,7 +8,11 @@ import TopRankingBoard from './TopRankingBoard'
 import MiniCalendar from './MiniCalendar'
 import ExerciseLogForm from './ExerciseLogForm'
 
-export default function HomeTab() {
+interface HomeTabProps {
+  isAdmin?: boolean
+}
+
+export default function HomeTab({ isAdmin = false }: HomeTabProps) {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
   const [logs, setLogs] = useState<ExerciseLog[]>([])
