@@ -19,6 +19,7 @@ export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   // 설정에서 변경한 내용을 탭에 반영하기 위한 강제 리마운트용 키
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -45,7 +46,7 @@ export default function Page() {
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} />}
+        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} isAdmin={isAdmin} />}
         {tab === 'stats' && <StatsTab key={`stats-${refreshKey}`} />}
         {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} />}
       </main>
@@ -69,6 +70,7 @@ export default function Page() {
         <AdminPasswordModal
           onSuccess={() => {
             setShowPasswordModal(false)
+            setIsAdmin(true)
             setShowSettings(true)
           }}
           onCancel={() => setShowPasswordModal(false)}
