@@ -196,7 +196,7 @@ export default function FeedTab() {
                     />
 
                     <div className="flex gap-2">
-                      <button onClick={handleUpdate} className="btn-primary py-1.5 text-xs">저장</button>
+                      <button onClick={handleUpdate} className="btn-primary flex-1 py-1.5 text-xs">저장</button>
                       <button onClick={() => setEditingId(null)} className="btn-secondary py-1.5 text-xs">취소</button>
                     </div>
                   </div>

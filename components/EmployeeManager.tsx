@@ -143,7 +143,7 @@ export default function EmployeeManager() {
                       className="input-field py-1.5"
                     />
                     <div className="flex gap-2 pt-0.5">
-                      <button onClick={handleUpdate} className="btn-primary py-1.5 text-xs">
+                      <button onClick={handleUpdate} className="btn-primary flex-1 py-1.5 text-xs">
                         저장
                       </button>
                       <button

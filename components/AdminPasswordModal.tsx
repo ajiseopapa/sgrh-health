@@ -69,7 +69,7 @@ export default function AdminPasswordModal({
           <button onClick={onCancel} className="btn-secondary">
             취소
           </button>
-          <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
+          <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex-1">
             {submitting ? '확인 중...' : '확인'}
           </button>
         </div>
