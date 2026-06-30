@@ -76,3 +76,7 @@ drop policy if exists "anon read logs" on exercise_logs;
 create policy "anon read logs" on exercise_logs for select using (true);
 drop policy if exists "anon insert logs" on exercise_logs;
 create policy "anon insert logs" on exercise_logs for insert with check (true);
+drop policy if exists "anon update logs" on exercise_logs;
+create policy "anon update logs" on exercise_logs for update using (true);
+drop policy if exists "anon delete logs" on exercise_logs;
+create policy "anon delete logs" on exercise_logs for delete using (true);

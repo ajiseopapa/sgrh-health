@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ExerciseType } from '@/types/database'
+import EmojiPicker from './EmojiPicker'
 
 export default function ExerciseTypeManager() {
   const [list, setList] = useState<ExerciseType[]>([])
@@ -75,12 +76,7 @@ export default function ExerciseTypeManager() {
       <div className="card space-y-2.5">
         <p className="text-sm font-semibold text-ink-700">운동 종목 등록</p>
         <div className="flex gap-2">
-          <input
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-            placeholder="🏃"
-            className="input-field w-16 text-center text-xl"
-          />
+          <EmojiPicker value={icon} onChange={setIcon} />
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -105,7 +101,7 @@ export default function ExerciseTypeManager() {
           </div>
         </label>
 
-        <p className="text-xs text-ink-300">이모지는 키보드의 이모지 키 또는 복붙으로 입력하세요.</p>
+        <p className="text-xs text-ink-300">왼쪽 아이콘을 눌러 운동에 어울리는 이모지를 골라보세요.</p>
 
         <button onClick={handleAdd} disabled={submitting} className="btn-primary">
           {submitting ? '등록 중...' : '등록'}
@@ -128,11 +124,7 @@ export default function ExerciseTypeManager() {
                 {editingId === t.id ? (
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <input
-                        value={editIcon}
-                        onChange={(e) => setEditIcon(e.target.value)}
-                        className="input-field w-16 py-1.5 text-center text-xl"
-                      />
+                      <EmojiPicker value={editIcon} onChange={setEditIcon} />
                       <input
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
