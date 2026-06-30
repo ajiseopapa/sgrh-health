@@ -11,9 +11,38 @@ body {
 body {
   -webkit-tap-highlight-color: transparent;
   padding-bottom: env(safe-area-inset-bottom);
+  background-color: #f8f7f3;
 }
 
 /* 날짜 input의 기본 모양을 살짝 정돈 */
 input[type='date'] {
   -webkit-appearance: none;
+}
+
+@layer components {
+  /* 보더 대신 그림자로 떠 있는 느낌을 주는 기본 카드 */
+  .card {
+    @apply rounded-2xl bg-white p-4 shadow-card;
+  }
+
+  /* 섹션 위에 붙는 작은 라벨 (eyebrow) */
+  .section-title {
+    @apply mb-2 text-xs font-semibold uppercase tracking-wide text-ink-400;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 placeholder:text-ink-300 outline-none transition focus:border-transparent focus:ring-2 focus:ring-brand-400;
+  }
+
+  .btn-primary {
+    @apply w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] active:bg-brand-700 disabled:opacity-50 disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply flex-1 rounded-xl border border-ink-200 py-2.5 text-sm font-medium text-ink-500 transition active:scale-[0.98] active:bg-ink-50;
+  }
+
+  .pill-action {
+    @apply rounded-lg px-2.5 py-1 text-xs font-medium transition active:scale-95;
+  }
 }

@@ -1,5 +1,6 @@
 import { ExerciseLog } from '@/types/database'
 import { colorForId } from '@/lib/colors'
+import SectionTitle from './SectionTitle'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -25,31 +26,36 @@ export default function TopRankingBoard({
 
   return (
     <section>
-      <h2 className="text-sm font-semibold text-gray-500 mb-2">🔥 이번 달 운동왕 TOP 3</h2>
+      <SectionTitle>🔥 이번 달 운동왕 TOP 3</SectionTitle>
 
       {loading ? (
-        <div className="h-20 rounded-xl bg-gray-100 animate-pulse" />
+        <div className="h-24 animate-pulse rounded-2xl bg-ink-100" />
       ) : ranked.length === 0 ? (
-        <p className="text-sm text-gray-400 py-4 text-center border rounded-xl">
-          아직 이번 달 기록이 없어요. 첫 기록을 남겨보세요!
-        </p>
+        <div className="card text-center text-sm text-ink-400">
+          아직 이번 달 기록이 없어요.
+          <br />
+          첫 기록을 남겨보세요!
+        </div>
       ) : (
         <div className="grid grid-cols-3 gap-2">
           {ranked.map((r, i) => (
             <div
               key={r.id}
-              className="flex flex-col items-center rounded-xl border-2 py-3"
-              style={{ borderColor: colorForId(r.id) }}
+              className={`flex flex-col items-center rounded-2xl px-2 py-4 ${
+                i === 0 ? 'bg-accent-50 shadow-raised' : 'bg-white shadow-card'
+              }`}
             >
               <span className="text-2xl">{MEDALS[i]}</span>
               <span
-                className="mt-1 w-2 h-2 rounded-full"
+                className="mt-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
                 style={{ backgroundColor: colorForId(r.id) }}
-              />
-              <span className="text-sm font-medium mt-1 truncate w-full text-center px-1">
+              >
+                {r.name[0]}
+              </span>
+              <span className="mt-2 w-full truncate text-center text-sm font-semibold text-ink-800">
                 {r.name}
               </span>
-              <span className="text-xs text-gray-400">{r.count}회</span>
+              <span className="mt-0.5 text-xs font-medium text-ink-400">{r.count}회</span>
             </div>
           ))}
         </div>

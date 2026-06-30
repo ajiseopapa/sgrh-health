@@ -15,6 +15,10 @@ import {
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog } from '@/types/database'
 import { getMonthRange, toDateKey } from '@/lib/dateUtils'
+import SectionTitle from './SectionTitle'
+
+const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
+const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
 
 export default function StatsTab() {
   const [logs, setLogs] = useState<ExerciseLog[]>([])
@@ -37,7 +41,7 @@ export default function StatsTab() {
     load()
   }, [])
 
-  if (loading) return <div className="h-40 rounded-xl bg-gray-100 animate-pulse" />
+  if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />
 
   // 종목별 집계
   const byType = new Map<string, number>()
@@ -70,48 +74,66 @@ export default function StatsTab() {
 
   if (logs.length === 0) {
     return (
-      <p className="text-sm text-gray-400 text-center py-10">
-        최근 8주간 운동 기록이 없어요. 홈 탭에서 기록을 남겨보세요!
-      </p>
+      <div className="card text-center text-sm text-ink-400">
+        최근 8주간 운동 기록이 없어요.
+        <br />
+        홈 탭에서 기록을 남겨보세요!
+      </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-sm font-semibold text-gray-500 mb-2">종목별 운동 횟수</h2>
+    <div className="space-y-6">
+      <section className="card">
+        <SectionTitle>종목별 운동 횟수</SectionTitle>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={typeData}>
-            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }}
+              cursor={{ fill: '#EAF6F1' }}
+            />
+            <Bar dataKey="count" fill="#1F9B7D" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-gray-500 mb-2">최근 8주 추이</h2>
+      <section className="card">
+        <SectionTitle>최근 8주 추이</SectionTitle>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={weekData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" tick={{ fontSize: 10 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#EAE8E2" vertical={false} />
+            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }} />
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke="#0F8268"
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: '#0F8268', strokeWidth: 0 }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 mb-2">전체 랭킹 (최근 8주)</h2>
-        <ul className="divide-y border rounded-xl">
+        <SectionTitle>전체 랭킹 (최근 8주)</SectionTitle>
+        <ul className="card divide-y divide-ink-100 p-0">
           {employeeRanking.map((e, i) => (
-            <li key={e.name} className="flex justify-between px-3 py-2 text-sm">
-              <span>
-                {i + 1}. {e.name}
-              </span>
-              <span className="text-gray-400">{e.count}회</span>
+            <li key={e.name} className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                    RANK_BADGE_CLASS[i] ?? RANK_BADGE_DEFAULT
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-sm font-medium text-ink-800">{e.name}</span>
+              </div>
+              <span className="text-xs font-medium text-ink-400">{e.count}회</span>
             </li>
           ))}
         </ul>

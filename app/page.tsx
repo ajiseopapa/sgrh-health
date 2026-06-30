@@ -19,15 +19,11 @@ export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   function handleSettingsClick() {
     if (isAdmin) {
-      // 관리자 상태면 메뉴 토글 (설정 / 로그아웃)
-      setShowAdminMenu((v) => !v)
-    } else if (typeof window !== 'undefined' && sessionStorage.getItem('admin_unlocked') === 'true') {
       setShowSettings(true)
     } else {
       setShowPasswordModal(true)
@@ -36,77 +32,69 @@ export default function Page() {
 
   function handleLogout() {
     setIsAdmin(false)
-    setShowAdminMenu(false)
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('admin_unlocked')
-    }
+    sessionStorage.removeItem('admin_unlocked')
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-16">
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-surface pb-20">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-surface/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold">🏋️ 직원 운동 관리</h1>
-          {isAdmin && (
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-              관리자
-            </span>
-          )}
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-base">
+            🏋️
+          </span>
+          <h1 className="text-base font-bold tracking-tight text-ink-900">직원 운동 관리</h1>
         </div>
-        <div className="relative">
+
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <>
+              <span className="rounded-full bg-brand-100 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+                관리자
+              </span>
+              <button
+                onClick={handleLogout}
+                className="rounded-full px-2.5 py-1 text-[11px] font-medium text-ink-400 transition active:bg-ink-100"
+              >
+                로그아웃
+              </button>
+            </>
+          )}
           <button
             onClick={handleSettingsClick}
             aria-label="관리 설정"
-            className="text-xl leading-none text-gray-400 active:text-gray-600"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
           >
             ⚙️
           </button>
-
-          {/* 관리자 드롭다운 메뉴 */}
-          {showAdminMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowAdminMenu(false)} />
-              <div className="absolute right-0 top-8 z-20 bg-white border rounded-xl shadow-lg py-1 w-32">
-                <button
-                  onClick={() => {
-                    setShowAdminMenu(false)
-                    setShowSettings(true)
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  ⚙️ 설정
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-                >
-                  🚪 로그아웃
-                </button>
-              </div>
-            </>
-          )}
         </div>
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} isAdmin={isAdmin} />}
+        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} />}
         {tab === 'stats' && <StatsTab key={`stats-${refreshKey}`} />}
-        {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} isAdmin={isAdmin} />}
+        {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} />}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white border-t flex">
+      <nav
+        className="fixed bottom-0 left-0 right-0 mx-auto flex max-w-md gap-1 bg-white/95 px-3 py-2 shadow-nav backdrop-blur"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex flex-col items-center py-2 text-xs transition-all rounded-lg mx-1 my-1 ${
-              tab === t.key
-                ? 'text-brand-600 font-semibold bg-brand-50'
-                : 'text-gray-400 hover:bg-gray-100 active:bg-gray-100'
+            className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium transition-colors ${
+              tab === t.key ? 'text-brand-600' : 'text-ink-300'
             }`}
           >
-            <span className="text-lg leading-none">{t.icon}</span>
-            <span className="mt-0.5">{t.label}</span>
+            <span
+              className={`flex h-7 w-7 items-center justify-center rounded-lg text-base transition-colors ${
+                tab === t.key ? 'bg-brand-50' : ''
+              }`}
+            >
+              {t.icon}
+            </span>
+            {t.label}
           </button>
         ))}
       </nav>
@@ -114,8 +102,9 @@ export default function Page() {
       {showPasswordModal && (
         <AdminPasswordModal
           onSuccess={() => {
-            setShowPasswordModal(false)
             setIsAdmin(true)
+            sessionStorage.setItem('admin_unlocked', 'true')
+            setShowPasswordModal(false)
             setShowSettings(true)
           }}
           onCancel={() => setShowPasswordModal(false)}

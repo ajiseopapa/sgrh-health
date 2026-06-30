@@ -95,67 +95,60 @@ export default function EmployeeManager() {
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-xl p-3 space-y-2">
-        <p className="text-sm font-semibold text-gray-600">직원 등록</p>
+      <div className="card space-y-2.5">
+        <p className="text-sm font-semibold text-ink-700">직원 등록</p>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="이름"
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="input-field"
         />
         <input
           value={empNo}
           onChange={(e) => setEmpNo(e.target.value)}
           placeholder="사번"
           required
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="input-field"
         />
-        <button
-          onClick={handleAdd}
-          disabled={submitting}
-          className="w-full bg-brand-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
-        >
+        <button onClick={handleAdd} disabled={submitting} className="btn-primary">
           {submitting ? '등록 중...' : '등록'}
         </button>
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
       </div>
 
       <div>
-        <p className="text-sm font-semibold text-gray-600 mb-2">직원 목록 ({list.length}명)</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-400">
+          직원 목록 ({list.length}명)
+        </p>
         {loading ? (
-          <div className="h-20 rounded-xl bg-gray-100 animate-pulse" />
+          <div className="h-20 animate-pulse rounded-2xl bg-ink-100" />
         ) : list.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6 border rounded-xl">
-            등록된 직원이 없어요.
-          </p>
+          <div className="card text-center text-sm text-ink-400">등록된 직원이 없어요.</div>
         ) : (
-          <ul className="divide-y border rounded-xl">
+          <ul className="card divide-y divide-ink-100 p-0">
             {list.map((emp) => (
-              <li key={emp.id} className="px-3 py-2">
+              <li key={emp.id} className="px-4 py-3">
                 {editingId === emp.id ? (
                   <div className="space-y-2">
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       placeholder="이름"
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                      className="input-field py-1.5"
                     />
                     <input
                       value={editEmpNo}
                       onChange={(e) => setEditEmpNo(e.target.value)}
                       placeholder="사번"
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                      className="input-field py-1.5"
                     />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleUpdate}
-                        className="flex-1 bg-brand-600 text-white rounded-lg py-1.5 text-xs font-medium"
-                      >
+                    <div className="flex gap-2 pt-0.5">
+                      <button onClick={handleUpdate} className="btn-primary py-1.5 text-xs">
                         저장
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="flex-1 border rounded-lg py-1.5 text-xs"
+                        className="btn-secondary py-1.5 text-xs"
                       >
                         취소
                       </button>
@@ -164,14 +157,20 @@ export default function EmployeeManager() {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="text-sm">
-                      <span className="font-medium">{emp.name}</span>
-                      <span className="text-xs text-gray-400 ml-2">#{emp.employee_number}</span>
+                      <span className="font-medium text-ink-800">{emp.name}</span>
+                      <span className="ml-2 text-xs text-ink-300">#{emp.employee_number}</span>
                     </div>
-                    <div className="flex gap-3 text-xs shrink-0">
-                      <button onClick={() => startEdit(emp)} className="text-brand-600 font-medium">
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => startEdit(emp)}
+                        className="pill-action bg-brand-50 text-brand-700"
+                      >
                         수정
                       </button>
-                      <button onClick={() => handleDelete(emp.id, emp.name)} className="text-red-500 font-medium">
+                      <button
+                        onClick={() => handleDelete(emp.id, emp.name)}
+                        className="pill-action bg-red-50 text-red-500"
+                      >
                         삭제
                       </button>
                     </div>

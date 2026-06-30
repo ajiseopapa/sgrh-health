@@ -41,10 +41,18 @@ export default function AdminPasswordModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center px-6">
-      <div className="w-full max-w-xs bg-white rounded-xl p-5 space-y-3">
-        <h3 className="text-base font-bold">🔒 관리자 비밀번호</h3>
-        <p className="text-xs text-gray-400">설정에 들어가려면 비밀번호가 필요해요.</p>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-6">
+      <div className="w-full max-w-xs space-y-4 rounded-3xl bg-white p-6 shadow-raised">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-xl">
+            🔒
+          </span>
+          <div>
+            <h3 className="text-base font-bold text-ink-900">관리자 확인</h3>
+            <p className="text-xs text-ink-400">비밀번호를 입력해주세요.</p>
+          </div>
+        </div>
+
         <input
           type="password"
           autoFocus
@@ -52,21 +60,16 @@ export default function AdminPasswordModal({
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder="비밀번호"
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="input-field"
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+
         <div className="flex gap-2 pt-1">
-          <button
-            onClick={onCancel}
-            className="flex-1 border rounded-lg py-2 text-sm text-gray-500"
-          >
+          <button onClick={onCancel} className="btn-secondary">
             취소
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 bg-brand-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
-          >
+          <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
             {submitting ? '확인 중...' : '확인'}
           </button>
         </div>

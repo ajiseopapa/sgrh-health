@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ExerciseLog } from '@/types/database'
 import { colorForId } from '@/lib/colors'
 import { getCalendarCells } from '@/lib/dateUtils'
+import SectionTitle from './SectionTitle'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -26,12 +27,10 @@ export default function MiniCalendar({ logs }: { logs: ExerciseLog[] }) {
 
   return (
     <section>
-      <h2 className="text-sm font-semibold text-gray-500 mb-2">
-        📅 {today.getMonth() + 1}월 운동 캘린더
-      </h2>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <SectionTitle>📅 {today.getMonth() + 1}월 운동 캘린더</SectionTitle>
+      <div className="card grid grid-cols-7 gap-1 text-center">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="text-[11px] text-gray-400">
+          <div key={w} className="text-[11px] font-medium text-ink-300">
             {w}
           </div>
         ))}
@@ -41,19 +40,23 @@ export default function MiniCalendar({ logs }: { logs: ExerciseLog[] }) {
           return (
             <div
               key={idx}
-              className={`h-12 rounded-lg flex flex-col items-center justify-start pt-1 ${
-                day ? 'bg-gray-50' : ''
-              } ${isToday ? 'ring-1 ring-brand-500' : ''}`}
+              className={`flex h-12 flex-col items-center justify-start rounded-xl pt-1 ${
+                isToday ? 'bg-brand-50 ring-1 ring-inset ring-brand-300' : ''
+              }`}
             >
-              {day && <span className="text-[11px] text-gray-600">{day}</span>}
+              {day && (
+                <span className={`text-[11px] ${isToday ? 'font-bold text-brand-700' : 'text-ink-500'}`}>
+                  {day}
+                </span>
+              )}
               {dots && dots.size > 0 && (
-                <div className="flex flex-wrap justify-center gap-0.5 mt-0.5 max-w-[28px]">
+                <div className="mt-0.5 flex max-w-[28px] flex-wrap justify-center gap-0.5">
                   {Array.from(dots.values())
                     .slice(0, 4)
                     .map((color, i) => (
                       <span
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full"
+                        className="h-1.5 w-1.5 rounded-full"
                         style={{ backgroundColor: color }}
                       />
                     ))}

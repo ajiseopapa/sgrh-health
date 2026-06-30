@@ -8,11 +8,7 @@ import TopRankingBoard from './TopRankingBoard'
 import MiniCalendar from './MiniCalendar'
 import ExerciseLogForm from './ExerciseLogForm'
 
-interface HomeTabProps {
-  isAdmin?: boolean
-}
-
-export default function HomeTab({ isAdmin = false }: HomeTabProps) {
+export default function HomeTab() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
   const [logs, setLogs] = useState<ExerciseLog[]>([])
@@ -44,7 +40,7 @@ export default function HomeTab({ isAdmin = false }: HomeTabProps) {
   }, [fetchAll])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <TopRankingBoard logs={logs} loading={loading} />
       <MiniCalendar logs={logs} />
       <ExerciseLogForm employees={employees} exerciseTypes={exerciseTypes} onSuccess={fetchAll} />
