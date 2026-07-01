@@ -8,6 +8,7 @@ create table if not exists employees (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   employee_number text not null unique,
+  color text, -- 커스텀 색상 코드 (예: #FF6B6B). null이면 자동(해시) 색상 사용.
   created_at timestamptz default now()
 );
 

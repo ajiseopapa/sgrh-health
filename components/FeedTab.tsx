@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, ExerciseType, calcPace, formatDuration } from '@/types/database'
-import { colorForId } from '@/lib/colors'
+import { getEmployeeColor } from '@/lib/colors'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -122,7 +122,7 @@ export default function FeedTab() {
             <li key={log.id} className="card flex gap-3 py-3.5">
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                style={{ backgroundColor: colorForId(log.employee_id) }}
+                style={{ backgroundColor: getEmployeeColor(log.employee) }}
               >
                 {log.employee?.name?.[0] ?? '?'}
               </div>

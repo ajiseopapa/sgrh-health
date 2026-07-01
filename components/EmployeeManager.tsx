@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Employee } from '@/types/database'
+import { PALETTE, getEmployeeColor } from '@/lib/colors'
 
 export default function EmployeeManager() {
   const [list, setList] = useState<Employee[]>([])
@@ -16,6 +17,7 @@ export default function EmployeeManager() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmpNo, setEditEmpNo] = useState('')
+  const [editColor, setEditColor] = useState<string | null>(null)
 
   async function fetchList() {
     setLoading(true)
@@ -56,6 +58,7 @@ export default function EmployeeManager() {
     setEditingId(emp.id)
     setEditName(emp.name)
     setEditEmpNo(emp.employee_number ?? '')
+    setEditColor(emp.color ?? null)
     setError('')
   }
 
@@ -71,7 +74,11 @@ export default function EmployeeManager() {
     }
     const { error } = await supabase
       .from('employees')
-      .update({ name: editName.trim(), employee_number: editEmpNo.trim() })
+      .update({
+        name: editName.trim(),
+        employee_number: editEmpNo.trim(),
+        color: editColor,
+      })
       .eq('id', editingId)
     if (error) {
       setError(error.code === '23505' ? '이미 등록된 사번이에요.' : '수정에 실패했어요.')
@@ -142,6 +149,44 @@ export default function EmployeeManager() {
                       placeholder="사번"
                       className="input-field py-1.5"
                     />
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-ink-400">색상</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {PALETTE.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setEditColor(c)}
+                            aria-label={`색상 ${c} 선택`}
+                            className={`h-7 w-7 rounded-full transition ${
+                              editColor === c ? 'ring-2 ring-offset-2 ring-ink-800' : ''
+                            }`}
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                        <label
+                          className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-ink-300 text-xs text-ink-400"
+                          title="직접 선택"
+                        >
+                          🎨
+                          <input
+                            type="color"
+                            value={editColor ?? '#1F9B7D'}
+                            onChange={(e) => setEditColor(e.target.value)}
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setEditColor(null)}
+                          className={`pill-action ${
+                            editColor === null ? 'bg-ink-800 text-white' : 'bg-ink-100 text-ink-500'
+                          }`}
+                        >
+                          자동
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex gap-2 pt-0.5">
                       <button onClick={handleUpdate} className="btn-primary flex-1 py-1.5 text-xs">
                         저장
@@ -156,9 +201,14 @@ export default function EmployeeManager() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="text-sm">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: getEmployeeColor(emp) }}
+                        title={emp.color ? '커스텀 색상' : '자동 색상'}
+                      />
                       <span className="font-medium text-ink-800">{emp.name}</span>
-                      <span className="ml-2 text-xs text-ink-300">#{emp.employee_number}</span>
+                      <span className="text-xs text-ink-300">#{emp.employee_number}</span>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button

@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog } from '@/types/database'
-import { colorForId } from '@/lib/colors'
+import { getEmployeeColor } from '@/lib/colors'
 import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -60,7 +60,7 @@ export default function MiniCalendar() {
       const d = new Date(log.log_date)
       const day = d.getDate()
       const inner = map.get(day) ?? new Map<string, string>()
-      inner.set(log.employee_id, colorForId(log.employee_id))
+      inner.set(log.employee_id, getEmployeeColor(log.employee))
       map.set(day, inner)
     }
     return map

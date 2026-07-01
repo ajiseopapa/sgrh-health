@@ -4,15 +4,17 @@ import { useState } from 'react'
 import HomeTab from '@/components/HomeTab'
 import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
+import RecordTab from '@/components/RecordTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 
-type TabKey = 'home' | 'stats' | 'feed'
+type TabKey = 'home' | 'stats' | 'feed' | 'record'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'home', label: '홈', icon: '🏠' },
-  { key: 'stats', label: '통계', icon: '📊' },
-  { key: 'feed', label: '피드', icon: '📝' },
+  { key: 'home',   label: '홈',   icon: '🏠' },
+  { key: 'stats',  label: '통계', icon: '📊' },
+  { key: 'feed',   label: '피드', icon: '📝' },
+  { key: 'record', label: '기록', icon: '👤' },
 ]
 
 export default function Page() {
@@ -70,9 +72,10 @@ export default function Page() {
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} />}
-        {tab === 'stats' && <StatsTab key={`stats-${refreshKey}`} />}
-        {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} />}
+        {tab === 'home'   && <HomeTab   key={`home-${refreshKey}`} />}
+        {tab === 'stats'  && <StatsTab  key={`stats-${refreshKey}`} />}
+        {tab === 'feed'   && <FeedTab   key={`feed-${refreshKey}`} />}
+        {tab === 'record' && <RecordTab key={`record-${refreshKey}`} />}
       </main>
 
       <nav

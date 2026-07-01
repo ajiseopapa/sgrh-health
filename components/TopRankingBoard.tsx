@@ -1,5 +1,5 @@
 import { ExerciseLog } from '@/types/database'
-import { colorForId } from '@/lib/colors'
+import { getEmployeeColor } from '@/lib/colors'
 import SectionTitle from './SectionTitle'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -11,10 +11,14 @@ export default function TopRankingBoard({
   logs: ExerciseLog[]
   loading: boolean
 }) {
-  const countMap = new Map<string, { name: string; count: number }>()
+  const countMap = new Map<string, { name: string; count: number; color: string }>()
   for (const log of logs) {
     if (!log.employee) continue
-    const cur = countMap.get(log.employee_id) ?? { name: log.employee.name, count: 0 }
+    const cur = countMap.get(log.employee_id) ?? {
+      name: log.employee.name,
+      count: 0,
+      color: getEmployeeColor(log.employee),
+    }
     cur.count += 1
     countMap.set(log.employee_id, cur)
   }
@@ -48,7 +52,7 @@ export default function TopRankingBoard({
               <span className="text-2xl">{MEDALS[i]}</span>
               <span
                 className="mt-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: colorForId(r.id) }}
+                style={{ backgroundColor: r.color }}
               >
                 {r.name[0]}
               </span>

@@ -2,6 +2,7 @@ export interface Employee {
   id: string
   name: string
   employee_number: string
+  color: string | null // 커스텀 색상 코드 (예: '#FF6B6B'). null이면 자동(해시) 색상 사용.
   created_at: string
 }
 
