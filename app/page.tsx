@@ -7,6 +7,7 @@ import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
+import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 
 type TabKey = 'home' | 'stats' | 'feed' | 'record'
 
@@ -21,8 +22,10 @@ export default function Page() {
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showAnnouncements, setShowAnnouncements] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const hasUnreadAnnouncements = useHasUnreadAnnouncements()
 
   function handleSettingsClick() {
     if (isAdmin) {
@@ -61,6 +64,16 @@ export default function Page() {
               </button>
             </>
           )}
+          <button
+            onClick={() => setShowAnnouncements(true)}
+            aria-label="업데이트 내역"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
+          >
+            🔔
+            {hasUnreadAnnouncements && (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+            )}
+          </button>
           <button
             onClick={handleSettingsClick}
             aria-label="관리 설정"
@@ -111,6 +124,14 @@ export default function Page() {
             setShowSettings(true)
           }}
           onCancel={() => setShowPasswordModal(false)}
+        />
+      )}
+
+      {showAnnouncements && (
+        <AnnouncementsModal
+          isOpen={showAnnouncements}
+          onClose={() => setShowAnnouncements(false)}
+          isAdmin={isAdmin}
         />
       )}
 
