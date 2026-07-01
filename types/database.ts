@@ -6,6 +6,13 @@ export interface Employee {
   created_at: string
 }
 
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  created_at: string
+}
+
 export interface ExerciseType {
   id: string
   name: string
