@@ -11,14 +11,43 @@ import {
   LineChart,
   Line,
   CartesianGrid,
+  Legend,
+  TooltipProps,
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog } from '@/types/database'
+import { colorForId } from '@/lib/colors'
 import { getMonthRange, toDateKey } from '@/lib/dateUtils'
 import SectionTitle from './SectionTitle'
 
 const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
 const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
+
+// 커스텀 툴팁 — 사람별 색상 + 이름 + 횟수
+function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null
+  const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
+  return (
+    <div className="rounded-xl border border-ink-100 bg-white p-3 shadow-raised text-xs min-w-[120px]">
+      <p className="mb-1.5 font-bold text-ink-800">{label}</p>
+      {payload
+        .filter((p) => (p.value ?? 0) > 0)
+        .map((p) => (
+          <div key={p.dataKey} className="flex items-center justify-between gap-3 py-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.fill }} />
+              <span className="text-ink-600">{p.name}</span>
+            </div>
+            <span className="font-semibold text-ink-800">{p.value}회</span>
+          </div>
+        ))}
+      <div className="mt-1.5 border-t border-ink-100 pt-1.5 flex justify-between">
+        <span className="text-ink-400">합계</span>
+        <span className="font-bold text-ink-800">{total}회</span>
+      </div>
+    </div>
+  )
+}
 
 export default function StatsTab() {
   const [logs, setLogs] = useState<ExerciseLog[]>([])
@@ -43,66 +72,110 @@ export default function StatsTab() {
 
   if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />
 
-  // 종목별 집계
-  const byType = new Map<string, number>()
-  for (const l of logs) {
-    const name = l.exercise_type?.name ?? '기타'
-    byType.set(name, (byType.get(name) ?? 0) + 1)
-  }
-  const typeData = Array.from(byType.entries()).map(([name, count]) => ({ name, count }))
-
-  // 최근 8주 주간 추이
-  const byWeek = new Map<string, number>()
-  for (const l of logs) {
-    const d = new Date(l.log_date)
-    const weekStart = new Date(d)
-    weekStart.setDate(d.getDate() - d.getDay())
-    const key = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`
-    byWeek.set(key, (byWeek.get(key) ?? 0) + 1)
-  }
-  const weekData = Array.from(byWeek.entries()).map(([week, count]) => ({ week, count }))
-
-  // 전체 기간 직원 랭킹
-  const byEmployee = new Map<string, number>()
-  for (const l of logs) {
-    const name = l.employee?.name ?? '알 수 없음'
-    byEmployee.set(name, (byEmployee.get(name) ?? 0) + 1)
-  }
-  const employeeRanking = Array.from(byEmployee.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-
   if (logs.length === 0) {
     return (
       <div className="card text-center text-sm text-ink-400">
-        최근 8주간 운동 기록이 없어요.
-        <br />
-        홈 탭에서 기록을 남겨보세요!
+        최근 8주간 운동 기록이 없어요.<br />홈 탭에서 기록을 남겨보세요!
       </div>
     )
   }
 
+  // ── 1. 종목별 + 사람별 집계 ──────────────────────────────────
+  // employees: id -> { name, color }
+  const empMeta = new Map<string, { name: string; color: string }>()
+  for (const l of logs) {
+    if (l.employee && !empMeta.has(l.employee_id)) {
+      empMeta.set(l.employee_id, { name: l.employee.name, color: colorForId(l.employee_id) })
+    }
+  }
+  const employees = Array.from(empMeta.entries()).map(([id, v]) => ({ id, ...v }))
+
+  // typeData: [{ name: '러닝', [empId]: count, ... }, ...]
+  const typeMap = new Map<string, Record<string, number>>()
+  for (const l of logs) {
+    const typeName = l.exercise_type?.name ?? '기타'
+    if (!typeMap.has(typeName)) typeMap.set(typeName, {})
+    const row = typeMap.get(typeName)!
+    row[l.employee_id] = (row[l.employee_id] ?? 0) + 1
+  }
+  const typeData = Array.from(typeMap.entries())
+    .map(([name, counts]) => ({ name, ...counts }))
+    .sort((a, b) => {
+      const sumA = employees.reduce((s, e) => s + ((a as Record<string,number>)[e.id] ?? 0), 0)
+      const sumB = employees.reduce((s, e) => s + ((b as Record<string,number>)[e.id] ?? 0), 0)
+      return sumB - sumA
+    })
+
+  // ── 2. 주간 추이 ─────────────────────────────────────────────
+  const byWeek = new Map<string, number>()
+  for (const l of logs) {
+    const d = new Date(l.log_date)
+    const ws = new Date(d); ws.setDate(d.getDate() - d.getDay())
+    const key = `${ws.getMonth() + 1}/${ws.getDate()}`
+    byWeek.set(key, (byWeek.get(key) ?? 0) + 1)
+  }
+  const weekData = Array.from(byWeek.entries()).map(([week, count]) => ({ week, count }))
+
+  // ── 3. 직원 랭킹 ─────────────────────────────────────────────
+  const byEmployee = new Map<string, { name: string; count: number; color: string }>()
+  for (const l of logs) {
+    const id = l.employee_id
+    const cur = byEmployee.get(id) ?? { name: l.employee?.name ?? '?', count: 0, color: colorForId(id) }
+    cur.count += 1
+    byEmployee.set(id, cur)
+  }
+  const employeeRanking = Array.from(byEmployee.values()).sort((a, b) => b.count - a.count)
+
   return (
     <div className="space-y-6">
+
+      {/* 종목별 + 사람별 스택 바 차트 */}
       <section className="card">
-        <SectionTitle>종목별 운동 횟수</SectionTitle>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={typeData}>
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-            <Tooltip
-              contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }}
-              cursor={{ fill: '#EAF6F1' }}
+        <SectionTitle>종목별 운동 횟수 (사람별)</SectionTitle>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 11, fill: '#8F8B7D' }}
+              axisLine={{ stroke: '#EAE8E2' }}
+              tickLine={false}
             />
-            <Bar dataKey="count" fill="#1F9B7D" radius={[6, 6, 0, 0]} />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fontSize: 11, fill: '#8F8B7D' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F6F5F2' }} />
+            {employees.map((emp, i) => (
+              <Bar
+                key={emp.id}
+                dataKey={emp.id}
+                name={emp.name}
+                stackId="a"
+                fill={emp.color}
+                radius={i === employees.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
+
+        {/* 범례 */}
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
+          {employees.map((emp) => (
+            <div key={emp.id} className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: emp.color }} />
+              <span className="text-xs text-ink-600">{emp.name}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
+      {/* 주간 추이 */}
       <section className="card">
         <SectionTitle>최근 8주 추이</SectionTitle>
         <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={weekData}>
+          <LineChart data={weekData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EAE8E2" vertical={false} />
             <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
@@ -118,6 +191,7 @@ export default function StatsTab() {
         </ResponsiveContainer>
       </section>
 
+      {/* 전체 랭킹 */}
       <section>
         <SectionTitle>전체 랭킹 (최근 8주)</SectionTitle>
         <ul className="card divide-y divide-ink-100 p-0">
@@ -131,13 +205,17 @@ export default function StatsTab() {
                 >
                   {i + 1}
                 </span>
-                <span className="text-sm font-medium text-ink-800">{e.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
+                  <span className="text-sm font-medium text-ink-800">{e.name}</span>
+                </div>
               </div>
               <span className="text-xs font-medium text-ink-400">{e.count}회</span>
             </li>
           ))}
         </ul>
       </section>
+
     </div>
   )
 }
