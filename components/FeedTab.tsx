@@ -2,20 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog, ExerciseType, calcPace } from '@/types/database'
+import { ExerciseLog, ExerciseType, calcPace, formatDuration } from '@/types/database'
 import { colorForId } from '@/lib/colors'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
   if (/자전거|사이클/i.test(name)) return 'km_per_h'
   return 'min_per_km'
-}
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h > 0) return `${h}시간 ${m > 0 ? `${m}분` : ''}`
-  return `${m}분`
 }
 
 export default function FeedTab() {
@@ -28,6 +21,7 @@ export default function FeedTab() {
   const [editDate, setEditDate] = useState('')
   const [editH, setEditH] = useState('')
   const [editM, setEditM] = useState('')
+  const [editS, setEditS] = useState('')
   const [editDistance, setEditDistance] = useState('')
   const [editMemo, setEditMemo] = useState('')
   const [error, setError] = useState('')
@@ -54,8 +48,10 @@ export default function FeedTab() {
     setEditingId(log.id)
     setEditTypeId(log.exercise_type_id)
     setEditDate(log.log_date)
-    setEditH(log.duration_minutes ? String(Math.floor(log.duration_minutes / 60)) : '')
-    setEditM(log.duration_minutes ? String(log.duration_minutes % 60) : '')
+    const sec = log.duration_seconds ?? (log.duration_minutes ? log.duration_minutes * 60 : 0)
+    setEditH(sec >= 3600 ? String(Math.floor(sec / 3600)) : '')
+    setEditM(sec >= 60 ? String(Math.floor((sec % 3600) / 60)) : '')
+    setEditS(String(sec % 60) === '0' ? '' : String(sec % 60))
     setEditDistance(log.distance_km ? String(log.distance_km) : '')
     setEditMemo(log.memo ?? '')
     setError('')
@@ -65,14 +61,16 @@ export default function FeedTab() {
     if (!editingId) return
     const h = parseInt(editH || '0', 10)
     const m = parseInt(editM || '0', 10)
-    const totalMinutes = h * 60 + m || null
+    const s = parseInt(editS || '0', 10)
+    const totalSeconds = h * 3600 + m * 60 + s || null
 
     const { error } = await supabase
       .from('exercise_logs')
       .update({
         exercise_type_id: editTypeId,
         log_date: editDate,
-        duration_minutes: totalMinutes,
+        duration_seconds: totalSeconds,
+        duration_minutes: totalSeconds ? Math.round(totalSeconds / 60) : null,
         distance_km: editDistance ? parseFloat(editDistance) : null,
         memo: editMemo || null,
       })
@@ -113,8 +111,10 @@ export default function FeedTab() {
         {logs.map((log) => {
           const typeName = log.exercise_type?.name ?? ''
           const paceMode = getPaceMode(typeName)
-          const pace = (log.duration_minutes && log.distance_km)
-            ? calcPace(log.duration_minutes, log.distance_km, paceMode)
+          // duration_seconds 우선, 없으면 구버전 duration_minutes * 60 폴백
+          const durationSec = log.duration_seconds ?? (log.duration_minutes ? log.duration_minutes * 60 : null)
+          const pace = (durationSec && log.distance_km)
+            ? calcPace(durationSec, log.distance_km, paceMode)
             : ''
           const isEditing = editingId === log.id
 
@@ -151,26 +151,24 @@ export default function FeedTab() {
                       className="input-field py-1.5 text-sm"
                     />
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <div className="relative flex-1">
-                        <input
-                          type="number" min={0} max={23}
-                          value={editH}
-                          onChange={(e) => setEditH(e.target.value)}
-                          placeholder="0"
-                          className="input-field py-1.5 pr-8 text-right text-sm"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">시간</span>
+                        <input type="number" min={0} max={23} value={editH}
+                          onChange={(e) => setEditH(e.target.value)} placeholder="0"
+                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">시</span>
                       </div>
                       <div className="relative flex-1">
-                        <input
-                          type="number" min={0} max={59}
-                          value={editM}
-                          onChange={(e) => setEditM(e.target.value)}
-                          placeholder="0"
-                          className="input-field py-1.5 pr-6 text-right text-sm"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">분</span>
+                        <input type="number" min={0} max={59} value={editM}
+                          onChange={(e) => setEditM(e.target.value)} placeholder="0"
+                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">분</span>
+                      </div>
+                      <div className="relative flex-1">
+                        <input type="number" min={0} max={59} value={editS}
+                          onChange={(e) => setEditS(e.target.value)} placeholder="0"
+                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">초</span>
                       </div>
                     </div>
 
@@ -206,9 +204,9 @@ export default function FeedTab() {
                       <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
                         {log.exercise_type?.icon} {typeName}
                       </span>
-                      {log.duration_minutes ? (
+                      {durationSec ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600">
-                          ⏱ {formatDuration(log.duration_minutes)}
+                          ⏱ {formatDuration(durationSec)}
                         </span>
                       ) : null}
                       {log.distance_km ? (
