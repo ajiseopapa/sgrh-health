@@ -42,7 +42,7 @@ export default function HomeTab() {
   return (
     <div className="space-y-4">
       <TopRankingBoard logs={logs} loading={loading} />
-      <MiniCalendar logs={logs} />
+      <MiniCalendar />
       <ExerciseLogForm employees={employees} exerciseTypes={exerciseTypes} onSuccess={fetchAll} />
     </div>
   )

@@ -1,34 +1,104 @@
-import { useMemo } from 'react'
+'use client'
+
+import { useMemo, useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { ExerciseLog } from '@/types/database'
 import { colorForId } from '@/lib/colors'
-import { getCalendarCells } from '@/lib/dateUtils'
-import SectionTitle from './SectionTitle'
+import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
-export default function MiniCalendar({ logs }: { logs: ExerciseLog[] }) {
+export default function MiniCalendar() {
   const today = new Date()
-  const cells = getCalendarCells(today.getFullYear(), today.getMonth())
+
+  // 현재 보고 있는 연/월
+  const [year, setYear] = useState(today.getFullYear())
+  const [month, setMonth] = useState(today.getMonth()) // 0-indexed
+
+  const [logs, setLogs] = useState<ExerciseLog[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth()
+
+  // 월 이동
+  function prevMonth() {
+    if (month === 0) { setYear(y => y - 1); setMonth(11) }
+    else setMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (month === 11) { setYear(y => y + 1); setMonth(0) }
+    else setMonth(m => m + 1)
+  }
+  function goToday() {
+    setYear(today.getFullYear())
+    setMonth(today.getMonth())
+  }
+
+  // 달이 바뀔 때마다 해당 달 로그 fetch
+  useEffect(() => {
+    async function fetchLogs() {
+      setLoading(true)
+      const start = new Date(year, month, 1)
+      const end = new Date(year, month + 1, 0)
+      const { data } = await supabase
+        .from('exercise_logs')
+        .select('*, employee:employees(*)')
+        .gte('log_date', toDateKey(start))
+        .lte('log_date', toDateKey(end))
+      setLogs((data as ExerciseLog[]) ?? [])
+      setLoading(false)
+    }
+    fetchLogs()
+  }, [year, month])
+
+  const cells = getCalendarCells(year, month)
 
   // 날짜(day) -> 직원ID -> 색상
   const dotsByDay = useMemo(() => {
     const map = new Map<number, Map<string, string>>()
     for (const log of logs) {
       const d = new Date(log.log_date)
-      if (d.getMonth() !== today.getMonth() || d.getFullYear() !== today.getFullYear()) continue
       const day = d.getDate()
       const inner = map.get(day) ?? new Map<string, string>()
       inner.set(log.employee_id, colorForId(log.employee_id))
       map.set(day, inner)
     }
     return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logs])
 
   return (
     <section>
-      <SectionTitle>📅 {today.getMonth() + 1}월 운동 캘린더</SectionTitle>
-      <div className="card grid grid-cols-7 gap-1 text-center">
+      {/* 헤더: < 연월 > + 오늘 버튼 */}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevMonth}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+          >
+            ‹
+          </button>
+          <span className="min-w-[72px] text-center text-sm font-bold text-ink-800">
+            {year}년 {month + 1}월
+          </span>
+          <button
+            onClick={nextMonth}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+          >
+            ›
+          </button>
+        </div>
+
+        {!isCurrentMonth && (
+          <button
+            onClick={goToday}
+            className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition active:bg-brand-100"
+          >
+            이번 달
+          </button>
+        )}
+      </div>
+
+      <div className={`card grid grid-cols-7 gap-1 text-center transition-opacity ${loading ? 'opacity-40' : ''}`}>
         {WEEKDAYS.map((w) => (
           <div key={w} className="text-[11px] font-medium text-ink-300">
             {w}
@@ -36,7 +106,7 @@ export default function MiniCalendar({ logs }: { logs: ExerciseLog[] }) {
         ))}
         {cells.map((day, idx) => {
           const dots = day ? dotsByDay.get(day) : undefined
-          const isToday = day === today.getDate()
+          const isToday = isCurrentMonth && day === today.getDate()
           return (
             <div
               key={idx}
