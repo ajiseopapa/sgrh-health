@@ -48,3 +48,16 @@ export function calcPace(
   const s = Math.round((minPerKm - m) * 60)
   return `${m}'${String(s).padStart(2, '0')}"/km`
 }
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  created_at: string
+}
+
+export interface EmployeeGoal {
+  id: string
+  employee_id: string
+  year_month: string   // 'YYYY-MM'
+  goal_count: number
+}

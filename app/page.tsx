@@ -6,6 +6,9 @@ import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
+import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
+
+
 
 type TabKey = 'home' | 'stats' | 'feed'
 
@@ -20,6 +23,8 @@ export default function Page() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [showAnnouncements, setShowAnnouncements] = useState(false)
+  const hasUnread = useHasUnreadAnnouncements()
   const [refreshKey, setRefreshKey] = useState(0)
 
   function handleSettingsClick() {
@@ -59,6 +64,18 @@ export default function Page() {
               </button>
             </>
           )}
+
+          {/* 📢 업데이트 내역 버튼 */}
+          <button
+            onClick={() => setShowAnnouncements(true)}
+            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+          >
+            <span className="text-lg">📢</span>
+            {hasUnread && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </button>
+
           <button
             onClick={handleSettingsClick}
             aria-label="관리 설정"
@@ -70,7 +87,7 @@ export default function Page() {
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} />}
+        {tab === 'home' && <HomeTab key={`home-${refreshKey}`} isAdmin={isAdmin} />}
         {tab === 'stats' && <StatsTab key={`stats-${refreshKey}`} />}
         {tab === 'feed' && <FeedTab key={`feed-${refreshKey}`} />}
       </main>
@@ -119,6 +136,12 @@ export default function Page() {
           }}
         />
       )}
+
+        <AnnouncementsModal
+          isOpen={showAnnouncements}
+          onClose={() => setShowAnnouncements(false)}
+          isAdmin={isAdmin}
+        />
     </div>
   )
 }

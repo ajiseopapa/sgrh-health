@@ -17,10 +17,12 @@ export default function ExerciseLogForm({
   employees,
   exerciseTypes,
   onSuccess,
+  onEmployeeSelect,
 }: {
   employees: Employee[]
   exerciseTypes: ExerciseType[]
   onSuccess: () => void
+  onEmployeeSelect?: (emp: Employee | null) => void
 }) {
   const [query, setQuery] = useState('')
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
@@ -61,9 +63,21 @@ export default function ExerciseLogForm({
     return calcPace(totalMinutes, dist, paceMode)
   }, [totalMinutes, distanceKm, paceMode])
 
+  function selectEmployee(emp: Employee) {
+    setSelectedEmployee(emp)
+    setQuery('')
+    onEmployeeSelect?.(emp)
+  }
+
+  function clearEmployee() {
+    setSelectedEmployee(null)
+    onEmployeeSelect?.(null)
+  }
+
   function resetForm() {
     setQuery('')
     setSelectedEmployee(null)
+    onEmployeeSelect?.(null)
     setExerciseTypeId('')
     setDate(toDateKey(new Date()))
     setDurationH('')
@@ -113,7 +127,7 @@ export default function ExerciseLogForm({
         <input
           value={selectedEmployee ? selectedEmployee.name : query}
           onChange={(e) => {
-            setSelectedEmployee(null)
+            clearEmployee()
             setQuery(e.target.value)
           }}
           placeholder="이름 또는 사번 검색"
@@ -124,7 +138,7 @@ export default function ExerciseLogForm({
             {filtered.map((e) => (
               <li
                 key={e.id}
-                onClick={() => { setSelectedEmployee(e); setQuery('') }}
+                onClick={() => selectEmployee(e)}
                 className="cursor-pointer px-3 py-2 text-sm text-ink-800 transition hover:bg-brand-50"
               >
                 {e.name}
