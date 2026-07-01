@@ -146,7 +146,7 @@ export default function StatsTab() {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F6F5F2' }} />
+            <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: '#F6F5F2' }} />
             {employees.map((emp, i) => (
               <Bar
                 key={emp.id}
