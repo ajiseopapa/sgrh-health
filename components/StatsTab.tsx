@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, LineChart, Line, CartesianGrid,
+  ResponsiveContainer,
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, calcPace } from '@/types/database'
@@ -14,7 +14,7 @@ import SectionTitle from './SectionTitle'
 const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
 const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
-const HEATMAP_DAYS = 371 // 53주 x 7일
+const STATS_LOOKBACK_DAYS = 371 // 개인 신기록/마일스톤 계산을 위한 조회 범위 (53주)
 const SEOUL_BUSAN_KM = 325
 const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
 
@@ -41,7 +41,7 @@ export default function StatsTab() {
   useEffect(() => {
     async function load() {
       const since = new Date()
-      since.setDate(since.getDate() - HEATMAP_DAYS)
+      since.setDate(since.getDate() - STATS_LOOKBACK_DAYS)
 
       const [logRes, countRes] = await Promise.all([
         supabase
@@ -232,48 +232,6 @@ export default function StatsTab() {
   const busiestLabel = WEEKDAY_LABELS[busiestIdx]
 
   // ══════════════════════════════════════════
-  // 6. 연간 활동 히트맵 (잔디밭 스타일)
-  // ══════════════════════════════════════════
-  const dayCountMap = new Map<string, number>()
-  for (const l of logs) dayCountMap.set(l.log_date, (dayCountMap.get(l.log_date) ?? 0) + 1)
-
-  const heatStart = new Date(now)
-  heatStart.setDate(heatStart.getDate() - (HEATMAP_DAYS - 1))
-  const heatStartOffset = heatStart.getDay() // 첫 주 시작 요일 맞춤용 패딩
-  const heatCells: { date: string | null; count: number }[] = []
-  for (let i = 0; i < heatStartOffset; i++) heatCells.push({ date: null, count: 0 })
-  for (let i = 0; i < HEATMAP_DAYS; i++) {
-    const d = new Date(heatStart)
-    d.setDate(d.getDate() + i)
-    const key = toDateKey(d)
-    heatCells.push({ date: key, count: dayCountMap.get(key) ?? 0 })
-  }
-  while (heatCells.length % 7 !== 0) heatCells.push({ date: null, count: 0 })
-  const heatWeeks: { date: string | null; count: number }[][] = []
-  for (let i = 0; i < heatCells.length; i += 7) heatWeeks.push(heatCells.slice(i, i + 7))
-
-  function heatColor(count: number) {
-    if (count === 0) return '#EAE8E2'
-    if (count === 1) return '#9FD7C1'
-    if (count === 2) return '#42AC85'
-    if (count <= 4) return '#0F8268'
-    return '#073D32'
-  }
-
-  // 월 라벨 (해당 월 1일이 포함된 주에만 표시)
-  const monthLabels: { week: number; label: string }[] = []
-  let lastMonthSeen = -1
-  heatWeeks.forEach((week, wi) => {
-    const firstValid = week.find(c => c.date)
-    if (!firstValid?.date) return
-    const m = new Date(firstValid.date).getMonth()
-    if (m !== lastMonthSeen) {
-      monthLabels.push({ week: wi, label: `${m + 1}월` })
-      lastMonthSeen = m
-    }
-  })
-
-  // ══════════════════════════════════════════
   // 기존: 종목별 × 사람별 스택 바 (최근 8주)
   // ══════════════════════════════════════════
   const typeMap = new Map<string, Record<string, number>>()
@@ -291,16 +249,6 @@ export default function StatsTab() {
         employees.reduce((s, e) => s + ((o[e.name] as number) ?? 0), 0)
       return sum(b) - sum(a)
     })
-
-  // ── 주간 추이 ──
-  const byWeek = new Map<string, number>()
-  for (const l of last8wLogs) {
-    const d = new Date(l.log_date)
-    const ws = new Date(d); ws.setDate(d.getDate() - d.getDay())
-    const key = `${ws.getMonth() + 1}/${ws.getDate()}`
-    byWeek.set(key, (byWeek.get(key) ?? 0) + 1)
-  }
-  const weekData = Array.from(byWeek.entries()).map(([week, count]) => ({ week, count }))
 
   // ── 직원 랭킹 (스트릭 뱃지 포함) ──
   const rankMap = new Map<string, { name: string; count: number; color: string; streak: number }>()
@@ -444,47 +392,6 @@ export default function StatsTab() {
         </p>
       </section>
 
-      {/* 연간 활동 히트맵 */}
-      <section className="card">
-        <SectionTitle>연간 활동 히트맵</SectionTitle>
-        <div className="overflow-x-auto pb-1">
-          <div className="relative inline-block" style={{ minWidth: heatWeeks.length * 13 }}>
-            <div className="relative mb-1 h-3.5">
-              {monthLabels.map(({ week, label }) => (
-                <span
-                  key={`${week}-${label}`}
-                  className="absolute text-[10px] text-ink-300"
-                  style={{ left: week * 13 }}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-[3px]">
-              {heatWeeks.map((week, wi) => (
-                <div key={wi} className="flex flex-col gap-[3px]">
-                  {week.map((cell, di) => (
-                    <div
-                      key={di}
-                      title={cell.date ? `${cell.date} · ${cell.count}회` : undefined}
-                      className="h-[10px] w-[10px] rounded-[2px]"
-                      style={{ backgroundColor: cell.date ? heatColor(cell.count) : 'transparent' }}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-ink-300">
-          <span>적음</span>
-          {['#EAE8E2', '#9FD7C1', '#42AC85', '#0F8268', '#073D32'].map(c => (
-            <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
-          ))}
-          <span>많음</span>
-        </div>
-      </section>
-
       {/* 종목별 × 사람별 스택 바 */}
       <section className="card">
         <SectionTitle>종목별 운동 횟수 (사람별, 최근 8주)</SectionTitle>
@@ -513,20 +420,6 @@ export default function StatsTab() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* 주간 추이 */}
-      <section className="card">
-        <SectionTitle>최근 8주 추이</SectionTitle>
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={weekData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#EAE8E2" vertical={false} />
-            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }} />
-            <Line type="monotone" dataKey="count" name="횟수" stroke="#0F8268" strokeWidth={2.5} dot={{ r: 3, fill: '#0F8268', strokeWidth: 0 }} />
-          </LineChart>
-        </ResponsiveContainer>
       </section>
 
       {/* 전체 랭킹 */}
