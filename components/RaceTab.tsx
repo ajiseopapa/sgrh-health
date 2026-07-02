@@ -51,7 +51,9 @@ export default function RaceTab() {
               const d = daysUntil(race.race_date)
               const isSoon = d <= 14
               const distances = race.distances.split(',').map((s) => s.trim()).filter(Boolean)
-              const regStatus = registrationStatus(race.registration_deadline)
+              const regStatus = race.registration_status
+                ? (race.registration_status === '접수중' ? 'open' : race.registration_status === '접수마감' ? 'closed' : 'unknown')
+                : registrationStatus(race.registration_deadline)
               return (
                 <li key={race.id} className="card">
                   <div className="flex items-start justify-between gap-2">

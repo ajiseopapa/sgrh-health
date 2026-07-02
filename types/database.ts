@@ -79,7 +79,7 @@ export function formatDuration(seconds: number): string {
   return parts.join(' ')
 }
 
-// 대회 정보 (races 테이블) — 관리자가 설정 화면에서 직접 등록/수정/삭제
+// 대회 정보 (races 테이블) — 관리자가 설정 화면에서 직접 등록/수정/삭제하거나 크롤링으로 채움
 export interface Race {
   id: string
   name: string
@@ -88,6 +88,8 @@ export interface Race {
   distances: string  // 쉼표로 구분된 문자열. 화면에서 표시할 땐 split(',')
   source_name: string | null
   source_url: string | null
-  registration_deadline: string | null // 'YYYY-MM-DD', null이면 마감일 정보 없음
+  registration_deadline: string | null // 'YYYY-MM-DD', 수동 입력용. null이면 정보 없음
+  registration_status: string | null   // '접수중' | '접수마감' | '접수전', 크롤링으로 채워짐
+  external_id: string | null           // 크롤링 출처 사이트의 고유 id (중복 방지용)
   created_at: string
 }
