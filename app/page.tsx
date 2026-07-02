@@ -5,17 +5,19 @@ import HomeTab from '@/components/HomeTab'
 import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
+import RaceTab from '@/components/RaceTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 
-type TabKey = 'home' | 'stats' | 'feed' | 'record'
+type TabKey = 'home' | 'stats' | 'feed' | 'record' | 'race'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'home',   label: '홈',   icon: '🏠' },
   { key: 'stats',  label: '통계', icon: '📊' },
   { key: 'feed',   label: '피드', icon: '📝' },
   { key: 'record', label: '기록', icon: '👤' },
+  { key: 'race',   label: '대회', icon: '🏁' },
 ]
 
 export default function Page() {
@@ -89,6 +91,7 @@ export default function Page() {
         {tab === 'stats'  && <StatsTab  key={`stats-${refreshKey}`} />}
         {tab === 'feed'   && <FeedTab   key={`feed-${refreshKey}`} />}
         {tab === 'record' && <RecordTab key={`record-${refreshKey}`} />}
+        {tab === 'race'   && <RaceTab   key={`race-${refreshKey}`} />}
       </main>
 
       <nav
