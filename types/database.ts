@@ -88,5 +88,6 @@ export interface Race {
   distances: string  // 쉼표로 구분된 문자열. 화면에서 표시할 땐 split(',')
   source_name: string | null
   source_url: string | null
+  registration_deadline: string | null // 'YYYY-MM-DD', null이면 마감일 정보 없음
   created_at: string
 }

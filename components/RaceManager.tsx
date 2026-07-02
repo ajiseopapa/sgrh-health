@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Race } from '@/types/database'
 import { formatRaceDate } from '@/lib/races'
 
-const emptyForm = { name: '', race_date: '', location: '', distances: '', source_name: '', source_url: '' }
+const emptyForm = { name: '', race_date: '', location: '', distances: '', source_name: '', source_url: '', registration_deadline: '' }
 
 export default function RaceManager() {
   const [list, setList] = useState<Race[]>([])
@@ -39,6 +39,7 @@ export default function RaceManager() {
       distances: form.distances.trim(),
       source_name: form.source_name.trim() || null,
       source_url: form.source_url.trim() || null,
+      registration_deadline: form.registration_deadline || null,
     })
     setSubmitting(false)
     if (error) { setError(`등록에 실패했어요: ${error.message}`); return }
@@ -55,6 +56,7 @@ export default function RaceManager() {
       distances: race.distances,
       source_name: race.source_name ?? '',
       source_url: race.source_url ?? '',
+      registration_deadline: race.registration_deadline ?? '',
     })
     setError('')
   }
@@ -72,6 +74,7 @@ export default function RaceManager() {
       distances: editForm.distances.trim(),
       source_name: editForm.source_name.trim() || null,
       source_url: editForm.source_url.trim() || null,
+      registration_deadline: editForm.registration_deadline || null,
     }).eq('id', editingId)
     if (error) { setError(`수정에 실패했어요: ${error.message}`); return }
     setEditingId(null); setError(''); fetchList()
@@ -95,12 +98,15 @@ export default function RaceManager() {
           placeholder="대회명 (예: 부산바다마라톤)"
           className="input-field"
         />
-        <input
-          type="date"
-          value={form.race_date}
-          onChange={(e) => setForm({ ...form, race_date: e.target.value })}
-          className="input-field"
-        />
+        <div>
+          <label className="mb-1 block text-xs text-ink-400">대회 날짜</label>
+          <input
+            type="date"
+            value={form.race_date}
+            onChange={(e) => setForm({ ...form, race_date: e.target.value })}
+            className="input-field"
+          />
+        </div>
         <input
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -113,6 +119,15 @@ export default function RaceManager() {
           placeholder="거리, 쉼표로 구분 (예: 풀코스,하프,10km)"
           className="input-field"
         />
+        <div>
+          <label className="mb-1 block text-xs text-ink-400">접수 마감일 (선택)</label>
+          <input
+            type="date"
+            value={form.registration_deadline}
+            onChange={(e) => setForm({ ...form, registration_deadline: e.target.value })}
+            className="input-field"
+          />
+        </div>
         <div className="flex gap-2">
           <input
             value={form.source_name}
@@ -149,9 +164,16 @@ export default function RaceManager() {
                 {editingId === race.id ? (
                   <div className="space-y-2">
                     <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="대회명" className="input-field py-1.5" />
-                    <input type="date" value={editForm.race_date} onChange={(e) => setEditForm({ ...editForm, race_date: e.target.value })} className="input-field py-1.5" />
+                    <div>
+                      <label className="mb-1 block text-xs text-ink-400">대회 날짜</label>
+                      <input type="date" value={editForm.race_date} onChange={(e) => setEditForm({ ...editForm, race_date: e.target.value })} className="input-field py-1.5" />
+                    </div>
                     <input value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} placeholder="장소" className="input-field py-1.5" />
                     <input value={editForm.distances} onChange={(e) => setEditForm({ ...editForm, distances: e.target.value })} placeholder="거리 (쉼표 구분)" className="input-field py-1.5" />
+                    <div>
+                      <label className="mb-1 block text-xs text-ink-400">접수 마감일 (선택)</label>
+                      <input type="date" value={editForm.registration_deadline} onChange={(e) => setEditForm({ ...editForm, registration_deadline: e.target.value })} className="input-field py-1.5" />
+                    </div>
                     <input value={editForm.source_name} onChange={(e) => setEditForm({ ...editForm, source_name: e.target.value })} placeholder="출처명" className="input-field py-1.5" />
                     <input value={editForm.source_url} onChange={(e) => setEditForm({ ...editForm, source_url: e.target.value })} placeholder="출처 링크" className="input-field py-1.5" />
                     <div className="flex gap-2 pt-0.5">
@@ -166,6 +188,9 @@ export default function RaceManager() {
                       <p className="text-xs text-ink-400">{formatRaceDate(race.race_date)} · {race.location}</p>
                       {race.distances && (
                         <p className="mt-0.5 text-xs text-ink-300">{race.distances}</p>
+                      )}
+                      {race.registration_deadline && (
+                        <p className="mt-0.5 text-xs text-ink-300">접수마감 {formatRaceDate(race.registration_deadline)}</p>
                       )}
                     </div>
                     <div className="flex gap-2 shrink-0">

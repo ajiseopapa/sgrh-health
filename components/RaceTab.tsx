@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Race } from '@/types/database'
-import { daysUntil, formatRaceDate } from '@/lib/races'
+import { daysUntil, formatRaceDate, registrationStatus } from '@/lib/races'
 import SectionTitle from './SectionTitle'
 
 export default function RaceTab() {
@@ -51,6 +51,7 @@ export default function RaceTab() {
               const d = daysUntil(race.race_date)
               const isSoon = d <= 14
               const distances = race.distances.split(',').map((s) => s.trim()).filter(Boolean)
+              const regStatus = registrationStatus(race.registration_deadline)
               return (
                 <li key={race.id} className="card">
                   <div className="flex items-start justify-between gap-2">
@@ -58,13 +59,30 @@ export default function RaceTab() {
                       <p className="text-sm font-bold text-ink-900">{race.name}</p>
                       <p className="mt-0.5 text-xs text-ink-500">{formatRaceDate(race.race_date)}</p>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
-                        isSoon ? 'bg-accent-50 text-accent-600' : 'bg-brand-50 text-brand-700'
-                      }`}
-                    >
-                      {d === 0 ? 'D-DAY' : `D-${d}`}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                          isSoon ? 'bg-accent-50 text-accent-600' : 'bg-brand-50 text-brand-700'
+                        }`}
+                      >
+                        {d === 0 ? 'D-DAY' : `D-${d}`}
+                      </span>
+                      {regStatus === 'closed' && (
+                        <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold text-ink-500">
+                          접수 마감
+                        </span>
+                      )}
+                      {regStatus === 'closing' && (
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-500">
+                          접수 D-{daysUntil(race.registration_deadline!)}
+                        </span>
+                      )}
+                      {regStatus === 'open' && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                          접수중
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
