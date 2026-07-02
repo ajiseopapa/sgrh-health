@@ -78,3 +78,15 @@ export function formatDuration(seconds: number): string {
   if (s > 0 || parts.length === 0) parts.push(`${s}초`)
   return parts.join(' ')
 }
+
+// 대회 정보 (races 테이블) — 관리자가 설정 화면에서 직접 등록/수정/삭제
+export interface Race {
+  id: string
+  name: string
+  race_date: string // 'YYYY-MM-DD'
+  location: string
+  distances: string  // 쉼표로 구분된 문자열. 화면에서 표시할 땐 split(',')
+  source_name: string | null
+  source_url: string | null
+  created_at: string
+}

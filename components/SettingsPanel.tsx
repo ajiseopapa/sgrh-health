@@ -3,9 +3,18 @@
 import { useState } from 'react'
 import EmployeeManager from './EmployeeManager'
 import ExerciseTypeManager from './ExerciseTypeManager'
+import RaceManager from './RaceManager'
+
+type Section = 'employees' | 'exercises' | 'races'
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const [section, setSection] = useState<'employees' | 'exercises'>('employees')
+  const [section, setSection] = useState<Section>('employees')
+
+  const TABS: { key: Section; label: string }[] = [
+    { key: 'employees', label: '직원' },
+    { key: 'exercises', label: '운동 종목' },
+    { key: 'races',     label: '대회' },
+  ]
 
   return (
     <div className="fixed inset-0 z-30 flex justify-center bg-black/30">
@@ -27,26 +36,23 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         </header>
 
         <div className="flex gap-1 rounded-xl bg-ink-100 p-1 m-4">
-          <button
-            onClick={() => setSection('employees')}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              section === 'employees' ? 'bg-white text-brand-700 shadow-card' : 'text-ink-400'
-            }`}
-          >
-            직원 관리
-          </button>
-          <button
-            onClick={() => setSection('exercises')}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              section === 'exercises' ? 'bg-white text-brand-700 shadow-card' : 'text-ink-400'
-            }`}
-          >
-            운동 종목 관리
-          </button>
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setSection(t.key)}
+              className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
+                section === t.key ? 'bg-white text-brand-700 shadow-card' : 'text-ink-400'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         <div className="flex-1 overflow-auto px-4 pb-6">
-          {section === 'employees' ? <EmployeeManager /> : <ExerciseTypeManager />}
+          {section === 'employees' && <EmployeeManager />}
+          {section === 'exercises' && <ExerciseTypeManager />}
+          {section === 'races' && <RaceManager />}
         </div>
       </div>
     </div>

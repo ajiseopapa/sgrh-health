@@ -294,7 +294,11 @@ export default function StatsTab() {
     cur.count++
     rankMap.set(id, cur)
   }
-  const ranking = Array.from(rankMap.values()).sort((a, b) => b.count - a.count)
+  // 횟수가 같으면 연속 일수(스트릭)가 높은 사람을 우선 순위로
+  const ranking = Array.from(rankMap.values()).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count
+    return b.streak - a.streak
+  })
 
   // ── 커스텀 툴팁 ──
   function CustomTooltip({ active, payload, label }: {

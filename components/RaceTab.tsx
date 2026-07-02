@@ -1,16 +1,32 @@
 'use client'
 
-import { RACES, daysUntil, formatRaceDate } from '@/lib/races'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { Race } from '@/types/database'
+import { daysUntil, formatRaceDate } from '@/lib/races'
 import SectionTitle from './SectionTitle'
 
 export default function RaceTab() {
-  const upcoming = RACES
-    .filter((r) => daysUntil(r.date) >= 0)
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const [races, setRaces] = useState<Race[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const past = RACES
-    .filter((r) => daysUntil(r.date) < 0)
-    .sort((a, b) => b.date.localeCompare(a.date))
+  useEffect(() => {
+    supabase
+      .from('races')
+      .select('*')
+      .order('race_date')
+      .then(({ data }) => {
+        setRaces(data ?? [])
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />
+
+  const upcoming = races.filter((r) => daysUntil(r.race_date) >= 0)
+  const past = races
+    .filter((r) => daysUntil(r.race_date) < 0)
+    .sort((a, b) => b.race_date.localeCompare(a.race_date))
 
   return (
     <div className="space-y-6">
@@ -25,18 +41,22 @@ export default function RaceTab() {
       <section>
         <SectionTitle>다가오는 대회 ({upcoming.length})</SectionTitle>
         {upcoming.length === 0 ? (
-          <div className="card text-center text-sm text-ink-400">예정된 대회가 없어요.</div>
+          <div className="card text-center text-sm text-ink-400">
+            예정된 대회가 없어요.<br />
+            <span className="text-xs">관리자가 설정 &gt; 대회 관리에서 추가할 수 있어요.</span>
+          </div>
         ) : (
           <ul className="space-y-2.5">
             {upcoming.map((race) => {
-              const d = daysUntil(race.date)
+              const d = daysUntil(race.race_date)
               const isSoon = d <= 14
+              const distances = race.distances.split(',').map((s) => s.trim()).filter(Boolean)
               return (
                 <li key={race.id} className="card">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-ink-900">{race.name}</p>
-                      <p className="mt-0.5 text-xs text-ink-500">{formatRaceDate(race.date)}</p>
+                      <p className="mt-0.5 text-xs text-ink-500">{formatRaceDate(race.race_date)}</p>
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
@@ -52,26 +72,30 @@ export default function RaceTab() {
                     <span>{race.location}</span>
                   </div>
 
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {race.distances.map((dist) => (
-                      <span
-                        key={dist}
-                        className="rounded-full bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600"
-                      >
-                        {dist}
-                      </span>
-                    ))}
-                  </div>
+                  {distances.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {distances.map((dist) => (
+                        <span
+                          key={dist}
+                          className="rounded-full bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600"
+                        >
+                          {dist}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                  <a
-                    href={race.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-500 transition active:bg-ink-100"
-                  >
-                    <span>{race.sourceName}에서 자세히 보기</span>
-                    <span>↗</span>
-                  </a>
+                  {race.source_url && (
+                    <a
+                      href={race.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-500 transition active:bg-ink-100"
+                    >
+                      <span>{race.source_name ?? '출처'}에서 자세히 보기</span>
+                      <span>↗</span>
+                    </a>
+                  )}
                 </li>
               )
             })}
@@ -88,7 +112,7 @@ export default function RaceTab() {
               <li key={race.id} className="flex items-center justify-between px-4 py-3 opacity-60">
                 <div>
                   <p className="text-sm font-medium text-ink-700">{race.name}</p>
-                  <p className="text-xs text-ink-400">{formatRaceDate(race.date)} · {race.location}</p>
+                  <p className="text-xs text-ink-400">{formatRaceDate(race.race_date)} · {race.location}</p>
                 </div>
               </li>
             ))}
@@ -97,7 +121,7 @@ export default function RaceTab() {
       )}
 
       <p className="text-center text-[11px] text-ink-300">
-        대회 정보는 수동으로 관리돼요. 최신 정보는 각 출처 링크에서 확인해주세요.
+        대회 정보는 관리자가 설정 &gt; 대회 관리에서 직접 추가·수정해요.
       </p>
     </div>
   )
