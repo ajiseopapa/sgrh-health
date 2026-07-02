@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer, Cell,
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, calcPace } from '@/types/database'
@@ -14,6 +14,29 @@ import SectionTitle from './SectionTitle'
 const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
 const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+
+// 스택 바 차트에서 "맨 위 세그먼트"에만 둥근 상단을 그려주는 커스텀 shape.
+// recharts의 Bar radius prop은 세그먼트별로 다르게 줄 수 없어서 직접 그림.
+function StackedBarShape(props: {
+  x?: number; y?: number; width?: number; height?: number; fill?: string; isTop?: boolean
+}) {
+  const { x = 0, y = 0, width = 0, height = 0, fill, isTop } = props
+  if (height <= 0 || width <= 0) return null
+  if (!isTop) {
+    return <rect x={x} y={y} width={width} height={height} fill={fill} />
+  }
+  const r = Math.min(6, width / 2, height)
+  const d = `
+    M${x},${y + height}
+    L${x},${y + r}
+    Q${x},${y} ${x + r},${y}
+    L${x + width - r},${y}
+    Q${x + width},${y} ${x + width},${y + r}
+    L${x + width},${y + height}
+    Z
+  `
+  return <path d={d} fill={fill} />
+}
 const STATS_LOOKBACK_DAYS = 371 // 개인 신기록/마일스톤 계산을 위한 조회 범위 (53주)
 const SEOUL_BUSAN_KM = 325
 const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
@@ -250,6 +273,16 @@ export default function StatsTab() {
       return sum(b) - sum(a)
     })
 
+  // 스택 바에서 종목(행)마다 실제로 값이 있는 "맨 위" 직원을 찾는다.
+  // employees 배열 순서 = 스택 쌓이는 순서(마지막이 맨 위)이므로 뒤에서부터 탐색.
+  function topEmployeeOf(row: Record<string, unknown>): string | null {
+    for (let i = employees.length - 1; i >= 0; i--) {
+      const name = employees[i].name
+      if (((row[name] as number) ?? 0) > 0) return name
+    }
+    return null
+  }
+
   // ── 직원 랭킹 (스트릭 뱃지 포함) ──
   const rankMap = new Map<string, { name: string; count: number; color: string; streak: number }>()
   for (const l of last8wLogs) {
@@ -382,7 +415,7 @@ export default function StatsTab() {
             <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }} formatter={(v: number) => [`${v}회`, '기록']} />
             <Bar dataKey="count" radius={[6, 6, 0, 0]}>
               {weekdayData.map((d, i) => (
-                <Bar key={d.label} dataKey="count" fill={i === busiestIdx ? '#0F8268' : '#CFEBE0'} />
+                <Cell key={d.label} fill={i === busiestIdx ? '#0F8268' : '#CFEBE0'} />
               ))}
             </Bar>
           </BarChart>
@@ -400,14 +433,18 @@ export default function StatsTab() {
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
             <Tooltip content={(props) => <CustomTooltip {...props as Parameters<typeof CustomTooltip>[0]} />} cursor={{ fill: '#F6F5F2' }} />
-            {employees.map((emp, i) => (
+            {employees.map((emp) => (
               <Bar
                 key={emp.name}
                 dataKey={emp.name}
                 name={emp.name}
                 stackId="a"
                 fill={emp.color}
-                radius={i === employees.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+                shape={(shapeProps: unknown) => {
+                  const p = shapeProps as { x: number; y: number; width: number; height: number; payload: Record<string, unknown> }
+                  const isTop = topEmployeeOf(p.payload) === emp.name
+                  return <StackedBarShape {...p} fill={emp.color} isTop={isTop} />
+                }}
               />
             ))}
           </BarChart>
