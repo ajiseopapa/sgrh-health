@@ -13,6 +13,13 @@ export interface Announcement {
   created_at: string
 }
 
+export interface EmployeeGoal {
+  id: string
+  employee_id: string
+  year_month: string // 'YYYY-MM'
+  goal_count: number
+}
+
 export interface ExerciseType {
   id: string
   name: string

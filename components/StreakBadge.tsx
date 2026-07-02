@@ -2,43 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { calcStreak } from '@/lib/dateUtils'
 
 interface Props {
   employeeId: string
-}
-
-/** exercise_logs의 logged_date 배열로 연속 일수 계산 */
-function calcStreak(dates: string[]): number {
-  if (dates.length === 0) return 0
-
-  // 중복 제거 후 최신순 정렬
-  const unique = [...new Set(dates)].sort((a, b) => (a > b ? -1 : 1))
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  let streak = 0
-  let expected = new Date(today)
-
-  for (const d of unique) {
-    const date = new Date(d)
-    date.setHours(0, 0, 0, 0)
-    const diff = Math.round(
-      (expected.getTime() - date.getTime()) / 86_400_000
-    )
-    if (diff === 0) {
-      streak++
-      expected.setDate(expected.getDate() - 1)
-    } else if (diff === 1 && streak === 0) {
-      // 오늘 기록이 없어도 어제부터 연속이면 유지 (strict 원하면 이 분기 제거)
-      streak++
-      expected = new Date(date)
-      expected.setDate(expected.getDate() - 1)
-    } else {
-      break
-    }
-  }
-  return streak
 }
 
 function badgeInfo(streak: number) {

@@ -6,28 +6,52 @@ import {
   ResponsiveContainer, LineChart, Line, CartesianGrid,
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog } from '@/types/database'
+import { ExerciseLog, calcPace } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
-import { getMonthRange, toDateKey } from '@/lib/dateUtils'
+import { getMonthRange, toDateKey, calcStreak } from '@/lib/dateUtils'
 import SectionTitle from './SectionTitle'
 
 const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
 const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+const HEATMAP_DAYS = 371 // 53주 x 7일
+const SEOUL_BUSAN_KM = 325
+const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
+
+type EmpInfo = { id: string; name: string; color: string }
+
+function nextMilestone(total: number): { prev: number; next: number } {
+  for (const m of MILESTONES) {
+    if (total < m) {
+      const idx = MILESTONES.indexOf(m)
+      return { prev: idx === 0 ? 0 : MILESTONES[idx - 1], next: m }
+    }
+  }
+  // 최대치를 넘으면 5000 단위로 계속 증가
+  const last = MILESTONES[MILESTONES.length - 1]
+  const over = Math.floor((total - last) / 5000)
+  return { prev: last + over * 5000, next: last + (over + 1) * 5000 }
+}
 
 export default function StatsTab() {
   const [logs, setLogs] = useState<ExerciseLog[]>([])
+  const [allTimeTotal, setAllTimeTotal] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const { start } = getMonthRange()
-      const ago = new Date(start)
-      ago.setDate(ago.getDate() - 56)
-      const { data } = await supabase
-        .from('exercise_logs')
-        .select('*, employee:employees(*), exercise_type:exercise_types(*)')
-        .gte('log_date', toDateKey(ago))
-      setLogs((data as ExerciseLog[]) ?? [])
+      const since = new Date()
+      since.setDate(since.getDate() - HEATMAP_DAYS)
+
+      const [logRes, countRes] = await Promise.all([
+        supabase
+          .from('exercise_logs')
+          .select('*, employee:employees(*), exercise_type:exercise_types(*)')
+          .gte('log_date', toDateKey(since)),
+        supabase.from('exercise_logs').select('*', { count: 'exact', head: true }),
+      ])
+      setLogs((logRes.data as ExerciseLog[]) ?? [])
+      setAllTimeTotal(countRes.count ?? 0)
       setLoading(false)
     }
     load()
@@ -37,25 +61,225 @@ export default function StatsTab() {
   if (logs.length === 0) {
     return (
       <div className="card text-center text-sm text-ink-400">
-        최근 8주간 운동 기록이 없어요.<br />홈 탭에서 기록을 남겨보세요!
+        최근 운동 기록이 없어요.<br />홈 탭에서 기록을 남겨보세요!
       </div>
     )
   }
 
-  // ── 직원 목록 (이름을 dataKey로 사용 — UUID는 recharts에서 불안정) ──
-  const empMap = new Map<string, { name: string; color: string }>()
+  const now = new Date()
+  const { start: thisMonthStart } = getMonthRange(now)
+  const lastMonthBase = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const { start: lastMonthStart } = getMonthRange(lastMonthBase)
+  const thisMonthKey = toDateKey(thisMonthStart).slice(0, 7)
+  const lastMonthKey = toDateKey(lastMonthStart).slice(0, 7)
+
+  const thisMonthLogs = logs.filter(l => l.log_date.slice(0, 7) === thisMonthKey)
+  const lastMonthLogs = logs.filter(l => l.log_date.slice(0, 7) === lastMonthKey)
+  const last8wLogs = logs.filter(l => {
+    const d = new Date(l.log_date)
+    const diffDays = (now.getTime() - d.getTime()) / 86_400_000
+    return diffDays <= 56
+  })
+
+  // ── 직원별 로그 그룹 (스트릭·PR은 전체 기간 기준) ──
+  const empMap = new Map<string, EmpInfo>()
+  const empLogs = new Map<string, ExerciseLog[]>()
   for (const l of logs) {
-    if (l.employee && !empMap.has(l.employee_id)) {
-      empMap.set(l.employee_id, { name: l.employee.name, color: getEmployeeColor(l.employee) })
+    if (!l.employee) continue
+    if (!empMap.has(l.employee_id)) {
+      empMap.set(l.employee_id, { id: l.employee_id, name: l.employee.name, color: getEmployeeColor(l.employee) })
     }
+    const arr = empLogs.get(l.employee_id) ?? []
+    arr.push(l)
+    empLogs.set(l.employee_id, arr)
   }
   const employees = Array.from(empMap.values())
 
-  // ── 종목별 × 직원별 집계 — key = 직원 이름 ──
+  // ══════════════════════════════════════════
+  // 1. 이번 달 vs 지난달 요약
+  // ══════════════════════════════════════════
+  const thisCount = thisMonthLogs.length
+  const lastCount = lastMonthLogs.length
+  const changePct = lastCount === 0 ? null : Math.round(((thisCount - lastCount) / lastCount) * 100)
+  const totalDistanceYear = logs.reduce((s, l) => s + (l.distance_km ?? 0), 0)
+  const busanPct = totalDistanceYear > 0 ? (totalDistanceYear / SEOUL_BUSAN_KM) * 100 : 0
+
+  // ══════════════════════════════════════════
+  // 2. 팀 마일스톤 게이지
+  // ══════════════════════════════════════════
+  const total = allTimeTotal ?? logs.length
+  const { prev: msPrev, next: msNext } = nextMilestone(total)
+  const msPct = Math.min(((total - msPrev) / (msNext - msPrev)) * 100, 100)
+
+  // ══════════════════════════════════════════
+  // 3. 이번 달 하이라이트: MVP / 스트릭왕 / 거리왕 / 페이스왕
+  // ══════════════════════════════════════════
+  const mvpRank = new Map<string, number>()
+  for (const l of thisMonthLogs) mvpRank.set(l.employee_id, (mvpRank.get(l.employee_id) ?? 0) + 1)
+  const mvpId = [...mvpRank.entries()].sort((a, b) => b[1] - a[1])[0]
+
+  let streakKingId: string | null = null
+  let streakKingVal = 0
+  for (const emp of employees) {
+    const dates = (empLogs.get(emp.id) ?? []).map(l => l.log_date)
+    const s = calcStreak(dates)
+    if (s > streakKingVal) { streakKingVal = s; streakKingId = emp.id }
+  }
+
+  const distanceRank = new Map<string, number>()
+  for (const l of thisMonthLogs) {
+    if (l.distance_km) distanceRank.set(l.employee_id, (distanceRank.get(l.employee_id) ?? 0) + l.distance_km)
+  }
+  const distanceKingId = [...distanceRank.entries()].sort((a, b) => b[1] - a[1])[0]
+
+  let paceKingId: string | null = null
+  let paceKingVal = Infinity
+  let paceKingLabel = ''
+  for (const l of thisMonthLogs) {
+    if (l.exercise_type?.track_distance && l.distance_km && l.duration_seconds) {
+      const secPerKm = l.duration_seconds / l.distance_km
+      if (secPerKm < paceKingVal) {
+        paceKingVal = secPerKm
+        paceKingId = l.employee_id
+        paceKingLabel = calcPace(l.duration_seconds, l.distance_km, 'min_per_km')
+      }
+    }
+  }
+
+  const highlights = [
+    mvpId && { icon: '🏆', label: 'MVP', name: empMap.get(mvpId[0])?.name, sub: `${mvpId[1]}회 기록`, color: empMap.get(mvpId[0])?.color },
+    streakKingId && streakKingVal >= 2 && { icon: '🔥', label: '스트릭왕', name: empMap.get(streakKingId)?.name, sub: `${streakKingVal}일 연속`, color: empMap.get(streakKingId)?.color },
+    distanceKingId && { icon: '📍', label: '거리왕', name: empMap.get(distanceKingId[0])?.name, sub: `${distanceKingId[1].toFixed(1)}km`, color: empMap.get(distanceKingId[0])?.color },
+    paceKingId && { icon: '⚡', label: '페이스왕', name: empMap.get(paceKingId)?.name, sub: paceKingLabel, color: empMap.get(paceKingId)?.color },
+  ].filter(Boolean) as { icon: string; label: string; name?: string; sub: string; color?: string }[]
+
+  // ══════════════════════════════════════════
+  // 4. 개인 신기록(PR) 알림 — 최근 7일 내 기록이 해당 종목 역대 최고치인 경우
+  // ══════════════════════════════════════════
+  type PR = { key: string; empName: string; empColor: string; typeName: string; typeIcon: string; text: string; date: string }
+  const prs: PR[] = []
+  const recentCutoff = new Date(now)
+  recentCutoff.setDate(recentCutoff.getDate() - 7)
+
+  for (const emp of employees) {
+    const all = empLogs.get(emp.id) ?? []
+    const byType = new Map<string, ExerciseLog[]>()
+    for (const l of all) {
+      const key = l.exercise_type_id
+      const arr = byType.get(key) ?? []
+      arr.push(l)
+      byType.set(key, arr)
+    }
+    for (const [, typeLogs] of byType) {
+      if (typeLogs.length < 2) continue // 기록이 1개뿐이면 "갱신"이 아님
+      const typeName = typeLogs[0].exercise_type?.name ?? '운동'
+      const typeIcon = typeLogs[0].exercise_type?.icon ?? '💪'
+      const trackDistance = typeLogs[0].exercise_type?.track_distance
+
+      if (trackDistance) {
+        const best = typeLogs.reduce((m, l) => Math.max(m, l.distance_km ?? 0), 0)
+        const bestLog = typeLogs.find(l => (l.distance_km ?? 0) === best && new Date(l.log_date) >= recentCutoff)
+        if (bestLog && best > 0) {
+          prs.push({
+            key: `${emp.id}-${bestLog.exercise_type_id}-dist`,
+            empName: emp.name, empColor: emp.color, typeName, typeIcon,
+            text: `${typeName} 최장 거리 신기록! ${best.toFixed(1)}km`,
+            date: bestLog.log_date,
+          })
+        }
+        const paced = typeLogs.filter(l => l.distance_km && l.duration_seconds)
+        if (paced.length >= 2) {
+          const bestPace = Math.min(...paced.map(l => l.duration_seconds! / l.distance_km!))
+          const bestPaceLog = paced.find(
+            l => l.duration_seconds! / l.distance_km! === bestPace && new Date(l.log_date) >= recentCutoff
+          )
+          if (bestPaceLog) {
+            prs.push({
+              key: `${emp.id}-${bestPaceLog.exercise_type_id}-pace`,
+              empName: emp.name, empColor: emp.color, typeName, typeIcon,
+              text: `${typeName} 최고 페이스 신기록! ${calcPace(bestPaceLog.duration_seconds!, bestPaceLog.distance_km!, 'min_per_km')}`,
+              date: bestPaceLog.log_date,
+            })
+          }
+        }
+      } else {
+        const durLogs = typeLogs.filter(l => l.duration_seconds)
+        if (durLogs.length >= 2) {
+          const best = Math.max(...durLogs.map(l => l.duration_seconds!))
+          const bestLog = durLogs.find(l => l.duration_seconds === best && new Date(l.log_date) >= recentCutoff)
+          if (bestLog) {
+            const m = Math.floor(best / 60)
+            prs.push({
+              key: `${emp.id}-${bestLog.exercise_type_id}-dur`,
+              empName: emp.name, empColor: emp.color, typeName, typeIcon,
+              text: `${typeName} 최장 시간 신기록! ${m}분`,
+              date: bestLog.log_date,
+            })
+          }
+        }
+      }
+    }
+  }
+  prs.sort((a, b) => (a.date < b.date ? 1 : -1))
+
+  // ══════════════════════════════════════════
+  // 5. 요일별 운동 패턴 (최근 8주)
+  // ══════════════════════════════════════════
+  const weekdayCount = Array(7).fill(0)
+  for (const l of last8wLogs) weekdayCount[new Date(l.log_date).getDay()]++
+  const weekdayData = WEEKDAY_LABELS.map((label, i) => ({ label, count: weekdayCount[i] }))
+  const busiestIdx = weekdayCount.indexOf(Math.max(...weekdayCount))
+  const busiestLabel = WEEKDAY_LABELS[busiestIdx]
+
+  // ══════════════════════════════════════════
+  // 6. 연간 활동 히트맵 (잔디밭 스타일)
+  // ══════════════════════════════════════════
+  const dayCountMap = new Map<string, number>()
+  for (const l of logs) dayCountMap.set(l.log_date, (dayCountMap.get(l.log_date) ?? 0) + 1)
+
+  const heatStart = new Date(now)
+  heatStart.setDate(heatStart.getDate() - (HEATMAP_DAYS - 1))
+  const heatStartOffset = heatStart.getDay() // 첫 주 시작 요일 맞춤용 패딩
+  const heatCells: { date: string | null; count: number }[] = []
+  for (let i = 0; i < heatStartOffset; i++) heatCells.push({ date: null, count: 0 })
+  for (let i = 0; i < HEATMAP_DAYS; i++) {
+    const d = new Date(heatStart)
+    d.setDate(d.getDate() + i)
+    const key = toDateKey(d)
+    heatCells.push({ date: key, count: dayCountMap.get(key) ?? 0 })
+  }
+  while (heatCells.length % 7 !== 0) heatCells.push({ date: null, count: 0 })
+  const heatWeeks: { date: string | null; count: number }[][] = []
+  for (let i = 0; i < heatCells.length; i += 7) heatWeeks.push(heatCells.slice(i, i + 7))
+
+  function heatColor(count: number) {
+    if (count === 0) return '#EAE8E2'
+    if (count === 1) return '#9FD7C1'
+    if (count === 2) return '#42AC85'
+    if (count <= 4) return '#0F8268'
+    return '#073D32'
+  }
+
+  // 월 라벨 (해당 월 1일이 포함된 주에만 표시)
+  const monthLabels: { week: number; label: string }[] = []
+  let lastMonthSeen = -1
+  heatWeeks.forEach((week, wi) => {
+    const firstValid = week.find(c => c.date)
+    if (!firstValid?.date) return
+    const m = new Date(firstValid.date).getMonth()
+    if (m !== lastMonthSeen) {
+      monthLabels.push({ week: wi, label: `${m + 1}월` })
+      lastMonthSeen = m
+    }
+  })
+
+  // ══════════════════════════════════════════
+  // 기존: 종목별 × 사람별 스택 바 (최근 8주)
+  // ══════════════════════════════════════════
   const typeMap = new Map<string, Record<string, number>>()
-  for (const l of logs) {
+  for (const l of last8wLogs) {
     const typeName = l.exercise_type?.name ?? '기타'
-    const empName  = l.employee?.name ?? '?'
+    const empName = l.employee?.name ?? '?'
     if (!typeMap.has(typeName)) typeMap.set(typeName, {})
     const row = typeMap.get(typeName)!
     row[empName] = (row[empName] ?? 0) + 1
@@ -70,7 +294,7 @@ export default function StatsTab() {
 
   // ── 주간 추이 ──
   const byWeek = new Map<string, number>()
-  for (const l of logs) {
+  for (const l of last8wLogs) {
     const d = new Date(l.log_date)
     const ws = new Date(d); ws.setDate(d.getDate() - d.getDay())
     const key = `${ws.getMonth() + 1}/${ws.getDate()}`
@@ -78,11 +302,14 @@ export default function StatsTab() {
   }
   const weekData = Array.from(byWeek.entries()).map(([week, count]) => ({ week, count }))
 
-  // ── 직원 랭킹 ──
-  const rankMap = new Map<string, { name: string; count: number; color: string }>()
-  for (const l of logs) {
+  // ── 직원 랭킹 (스트릭 뱃지 포함) ──
+  const rankMap = new Map<string, { name: string; count: number; color: string; streak: number }>()
+  for (const l of last8wLogs) {
     const id = l.employee_id
-    const cur = rankMap.get(id) ?? { name: l.employee?.name ?? '?', count: 0, color: getEmployeeColor(l.employee) }
+    const cur = rankMap.get(id) ?? {
+      name: l.employee?.name ?? '?', count: 0, color: getEmployeeColor(l.employee),
+      streak: calcStreak((empLogs.get(id) ?? []).map(x => x.log_date)),
+    }
     cur.count++
     rankMap.set(id, cur)
   }
@@ -93,7 +320,7 @@ export default function StatsTab() {
     active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string
   }) {
     if (!active || !payload?.length) return null
-    const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
+    const totalV = payload.reduce((s, p) => s + (p.value ?? 0), 0)
     return (
       <div className="rounded-xl border border-ink-100 bg-white p-3 shadow-raised text-xs min-w-[130px]">
         <p className="mb-1.5 font-bold text-ink-800">{label}</p>
@@ -108,7 +335,7 @@ export default function StatsTab() {
         ))}
         <div className="mt-1.5 border-t border-ink-100 pt-1.5 flex justify-between">
           <span className="text-ink-400">합계</span>
-          <span className="font-bold text-ink-800">{total}회</span>
+          <span className="font-bold text-ink-800">{totalV}회</span>
         </div>
       </div>
     )
@@ -116,9 +343,151 @@ export default function StatsTab() {
 
   return (
     <div className="space-y-6">
+      {/* 이번 달 요약 */}
+      <section className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
+        <p className="text-xs font-medium text-brand-100">이번 달 팀 기록</p>
+        <div className="mt-1 flex items-end gap-2">
+          <span className="text-3xl font-bold">{thisCount}회</span>
+          {changePct !== null && (
+            <span className={`mb-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              changePct >= 0 ? 'bg-white/20' : 'bg-black/15'
+            }`}>
+              {changePct >= 0 ? '▲' : '▼'} 지난달 대비 {Math.abs(changePct)}%
+            </span>
+          )}
+        </div>
+        {totalDistanceYear > 0 && (
+          <p className="mt-2 text-[12px] text-brand-100">
+            최근 1년간 총 {totalDistanceYear.toFixed(1)}km 이동 — 서울↔부산(약 {SEOUL_BUSAN_KM}km)의{' '}
+            <span className="font-bold text-white">{busanPct.toFixed(0)}%</span>
+            {busanPct >= 100 && ' 🎉'}
+          </p>
+        )}
+      </section>
+
+      {/* 팀 마일스톤 게이지 */}
+      <section className="card">
+        <div className="flex items-center justify-between">
+          <SectionTitle>🚩 팀 마일스톤</SectionTitle>
+          <span className="text-xs font-semibold text-ink-400">{total}회 / {msNext}회</span>
+        </div>
+        <div className="h-3 w-full overflow-hidden rounded-full bg-ink-100">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all duration-700"
+            style={{ width: `${msPct}%` }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-ink-400">
+          다음 마일스톤까지 <span className="font-bold text-brand-600">{msNext - total}회</span> 남았어요!
+        </p>
+      </section>
+
+      {/* 이번 달 하이라이트 */}
+      {highlights.length > 0 && (
+        <section>
+          <SectionTitle>이번 달 하이라이트</SectionTitle>
+          <div className="grid grid-cols-2 gap-3">
+            {highlights.map((h) => (
+              <div key={h.label} className="card flex items-center gap-3 p-3.5">
+                <span className="text-2xl">{h.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-ink-400">{h.label}</p>
+                  <p className="truncate text-sm font-bold text-ink-800">{h.name}</p>
+                  <p className="text-[11px] text-ink-400">{h.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 개인 신기록 알림 */}
+      {prs.length > 0 && (
+        <section>
+          <SectionTitle>🎉 최근 신기록</SectionTitle>
+          <div className="space-y-2">
+            {prs.slice(0, 5).map(pr => (
+              <div key={pr.key} className="card flex items-center gap-3 p-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base"
+                  style={{ backgroundColor: `${pr.empColor}22` }}
+                >
+                  {pr.typeIcon}
+                </span>
+                <p className="text-sm text-ink-700">
+                  <span className="font-bold" style={{ color: pr.empColor }}>{pr.empName}</span>
+                  {'님 '}{pr.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 요일별 운동 패턴 */}
+      <section className="card">
+        <SectionTitle>요일별 운동 패턴 (최근 8주)</SectionTitle>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={weekdayData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }} formatter={(v: number) => [`${v}회`, '기록']} />
+            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              {weekdayData.map((d, i) => (
+                <Bar key={d.label} dataKey="count" fill={i === busiestIdx ? '#0F8268' : '#CFEBE0'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <p className="mt-2 text-xs text-ink-400">
+          우리 팀은 <span className="font-bold text-brand-600">{busiestLabel}요일</span>에 가장 활발하게 움직여요 💪
+        </p>
+      </section>
+
+      {/* 연간 활동 히트맵 */}
+      <section className="card">
+        <SectionTitle>연간 활동 히트맵</SectionTitle>
+        <div className="overflow-x-auto pb-1">
+          <div className="relative inline-block" style={{ minWidth: heatWeeks.length * 13 }}>
+            <div className="relative mb-1 h-3.5">
+              {monthLabels.map(({ week, label }) => (
+                <span
+                  key={`${week}-${label}`}
+                  className="absolute text-[10px] text-ink-300"
+                  style={{ left: week * 13 }}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-[3px]">
+              {heatWeeks.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-[3px]">
+                  {week.map((cell, di) => (
+                    <div
+                      key={di}
+                      title={cell.date ? `${cell.date} · ${cell.count}회` : undefined}
+                      className="h-[10px] w-[10px] rounded-[2px]"
+                      style={{ backgroundColor: cell.date ? heatColor(cell.count) : 'transparent' }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-ink-300">
+          <span>적음</span>
+          {['#EAE8E2', '#9FD7C1', '#42AC85', '#0F8268', '#073D32'].map(c => (
+            <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
+          ))}
+          <span>많음</span>
+        </div>
+      </section>
+
       {/* 종목별 × 사람별 스택 바 */}
       <section className="card">
-        <SectionTitle>종목별 운동 횟수 (사람별)</SectionTitle>
+        <SectionTitle>종목별 운동 횟수 (사람별, 최근 8주)</SectionTitle>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
@@ -136,7 +505,6 @@ export default function StatsTab() {
             ))}
           </BarChart>
         </ResponsiveContainer>
-        {/* 범례 */}
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
           {employees.map(emp => (
             <div key={emp.name} className="flex items-center gap-1.5">
@@ -174,6 +542,11 @@ export default function StatsTab() {
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
                   <span className="text-sm font-medium text-ink-800">{e.name}</span>
+                  {e.streak >= 2 && (
+                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
+                      🔥{e.streak}
+                    </span>
+                  )}
                 </div>
               </div>
               <span className="text-xs font-medium text-ink-400">{e.count}회</span>
