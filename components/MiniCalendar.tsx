@@ -106,7 +106,7 @@ export default function MiniCalendar() {
         ))}
         {cells.map((day, idx) => {
           const dots = day ? dotsByDay.get(day) : undefined
-          const isToday = isCurrentMonth && day === today.getDate()
+          const isToday = isCurrentMonth && day !== null && day === today.getDate()
           return (
             <div
               key={idx}
