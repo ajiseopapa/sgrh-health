@@ -9,7 +9,7 @@ import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 export default function MiniCalendar() {
-  const today = new Date()
+  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
 
   // 현재 보고 있는 연/월
   const [year, setYear] = useState(today.getFullYear())
