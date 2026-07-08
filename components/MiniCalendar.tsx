@@ -8,17 +8,51 @@ import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
+// 'YYYY-MM-DD' (Asia/Seoul 기준). toLocaleString → new Date() 왕복 파싱은 브라우저/웹뷰마다
+// 결과가 달라질 수 있어(특히 카카오톡 인앱 브라우저 등), Intl.DateTimeFormat으로 직접 파츠를 뽑는다.
+function getSeoulYMD() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+
+  const y = Number(parts.find((p) => p.type === 'year')?.value)
+  const m = Number(parts.find((p) => p.type === 'month')?.value) // 1-indexed
+  const d = Number(parts.find((p) => p.type === 'day')?.value)
+  return { year: y, month: m - 1, day: d } // month는 컴포넌트 내부 규칙(0-indexed)에 맞춤
+}
+
 export default function MiniCalendar() {
-  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  // 오늘 날짜는 state로 관리해서, 웹뷰를 오래 띄워두거나(백그라운드 후 복귀 등)
+  // 자정을 넘긴 채로 탭을 계속 보고 있어도 항상 실제 "오늘"로 다시 계산되게 한다.
+  const [today, setToday] = useState(getSeoulYMD)
+
+  useEffect(() => {
+    function refreshToday() {
+      setToday(getSeoulYMD())
+    }
+    // 탭이 다시 보이거나(백그라운드 복귀) 창이 포커스를 받을 때 즉시 재계산
+    document.addEventListener('visibilitychange', refreshToday)
+    window.addEventListener('focus', refreshToday)
+    // 오래 켜둔 경우를 대비해 1분마다도 재계산
+    const interval = setInterval(refreshToday, 60_000)
+    return () => {
+      document.removeEventListener('visibilitychange', refreshToday)
+      window.removeEventListener('focus', refreshToday)
+      clearInterval(interval)
+    }
+  }, [])
 
   // 현재 보고 있는 연/월
-  const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth()) // 0-indexed
+  const [year, setYear] = useState(today.year)
+  const [month, setMonth] = useState(today.month) // 0-indexed
 
   const [logs, setLogs] = useState<ExerciseLog[]>([])
   const [loading, setLoading] = useState(true)
 
-  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth()
+  const isCurrentMonth = year === today.year && month === today.month
 
   // 월 이동
   function prevMonth() {
@@ -30,8 +64,8 @@ export default function MiniCalendar() {
     else setMonth(m => m + 1)
   }
   function goToday() {
-    setYear(today.getFullYear())
-    setMonth(today.getMonth())
+    setYear(today.year)
+    setMonth(today.month)
   }
 
   // 달이 바뀔 때마다 해당 달 로그 fetch
@@ -106,7 +140,7 @@ export default function MiniCalendar() {
         ))}
         {cells.map((day, idx) => {
           const dots = day ? dotsByDay.get(day) : undefined
-          const isToday = isCurrentMonth && day !== null && day === today.getDate()
+          const isToday = isCurrentMonth && day !== null && day === today.day
           return (
             <div
               key={idx}
