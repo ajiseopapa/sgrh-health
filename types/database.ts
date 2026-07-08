@@ -54,6 +54,18 @@ export interface ExerciseLog {
   exercise_type?: ExerciseType
 }
 
+// 종목 이름으로 페이스 표시 방식 결정 (수영은 100m당, 자전거는 시속, 나머지는 km당)
+export function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
+  if (/수영/i.test(name)) return 'min_per_100m'
+  if (/자전거|사이클/i.test(name)) return 'km_per_h'
+  return 'min_per_km'
+}
+
+// '페이스왕' 하이라이트는 달리기 계열 종목에만 적용 (걷기/등산/자전거 등과 페이스를 직접 비교하는 게 애매해서 제외)
+export function isRunningType(name: string): boolean {
+  return /달리기|러닝|런닝|마라톤|조깅|트랙런|트레일런/.test(name)
+}
+
 // duration_seconds 기반 페이스 계산
 export function calcPace(
   durationSeconds: number,
