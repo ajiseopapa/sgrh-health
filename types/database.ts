@@ -13,6 +13,19 @@ export interface Announcement {
   created_at: string
 }
 
+// 직원 건의함 — 직원이 관리자에게 남기는 요청/건의
+export interface Suggestion {
+  id: string
+  employee_id: string | null      // 익명이면 null
+  employee_name: string | null    // 표시용 이름 (익명이면 null)
+  title: string
+  content: string
+  status: 'new' | 'read' | 'answered'
+  admin_reply: string | null
+  created_at: string
+  replied_at: string | null
+}
+
 export interface EmployeeGoal {
   id: string
   employee_id: string
@@ -39,20 +52,6 @@ export interface ExerciseLog {
   created_at: string
   employee?: Employee
   exercise_type?: ExerciseType
-}
-
-// 종목명에 따라 어떤 페이스 단위를 쓸지 결정
-// (수영=분/100m, 자전거/사이클=km/h, 그 외 거리추적 종목=분/km → 사실상 '러닝류')
-export function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
-  if (/수영/i.test(name)) return 'min_per_100m'
-  if (/자전거|사이클/i.test(name)) return 'km_per_h'
-  return 'min_per_km'
-}
-
-// '페이스왕' 등 러닝 전용 랭킹에 포함시킬 종목인지 판단
-// (거리추적 종목 중 분/km 페이스가 의미 있는 러닝류만 true)
-export function isRunningType(name: string): boolean {
-  return getPaceMode(name) === 'min_per_km'
 }
 
 // duration_seconds 기반 페이스 계산

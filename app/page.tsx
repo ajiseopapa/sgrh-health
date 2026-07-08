@@ -9,6 +9,7 @@ import RaceTab from '@/components/RaceTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
+import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
 
 type TabKey = 'home' | 'stats' | 'feed' | 'record' | 'race'
 
@@ -25,9 +26,11 @@ export default function Page() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showAnnouncements, setShowAnnouncements] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const hasUnreadAnnouncements = useHasUnreadAnnouncements()
+  const hasNewSuggestions = useHasNewSuggestions(isAdmin)
 
   function handleSettingsClick() {
     if (isAdmin) {
@@ -66,6 +69,16 @@ export default function Page() {
               </button>
             </>
           )}
+          <button
+            onClick={() => setShowSuggestions(true)}
+            aria-label="건의함"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
+          >
+            💬
+            {hasNewSuggestions && (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+            )}
+          </button>
           <button
             onClick={() => setShowAnnouncements(true)}
             aria-label="업데이트 내역"
@@ -134,6 +147,14 @@ export default function Page() {
         <AnnouncementsModal
           isOpen={showAnnouncements}
           onClose={() => setShowAnnouncements(false)}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {showSuggestions && (
+        <SuggestionModal
+          isOpen={showSuggestions}
+          onClose={() => setShowSuggestions(false)}
           isAdmin={isAdmin}
         />
       )}
