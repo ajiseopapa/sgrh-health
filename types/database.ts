@@ -41,6 +41,20 @@ export interface ExerciseLog {
   exercise_type?: ExerciseType
 }
 
+// 종목명에 따라 어떤 페이스 단위를 쓸지 결정
+// (수영=분/100m, 자전거/사이클=km/h, 그 외 거리추적 종목=분/km → 사실상 '러닝류')
+export function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
+  if (/수영/i.test(name)) return 'min_per_100m'
+  if (/자전거|사이클/i.test(name)) return 'km_per_h'
+  return 'min_per_km'
+}
+
+// '페이스왕' 등 러닝 전용 랭킹에 포함시킬 종목인지 판단
+// (거리추적 종목 중 분/km 페이스가 의미 있는 러닝류만 true)
+export function isRunningType(name: string): boolean {
+  return getPaceMode(name) === 'min_per_km'
+}
+
 // duration_seconds 기반 페이스 계산
 export function calcPace(
   durationSeconds: number,

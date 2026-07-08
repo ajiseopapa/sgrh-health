@@ -2,17 +2,11 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Employee, ExerciseLog, calcPace, formatDuration } from '@/types/database'
+import { Employee, ExerciseLog, calcPace, formatDuration, getPaceMode } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-
-function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
-  if (/수영/i.test(name)) return 'min_per_100m'
-  if (/자전거|사이클/i.test(name)) return 'km_per_h'
-  return 'min_per_km'
-}
 
 export default function RecordTab() {
   const [employees, setEmployees] = useState<Employee[]>([])

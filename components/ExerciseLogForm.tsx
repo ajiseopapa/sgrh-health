@@ -2,15 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Employee, ExerciseType, calcPace } from '@/types/database'
+import { Employee, ExerciseType, calcPace, getPaceMode } from '@/types/database'
 import { toDateKey } from '@/lib/dateUtils'
 import SectionTitle from './SectionTitle'
-
-function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
-  if (/수영/i.test(name)) return 'min_per_100m'
-  if (/자전거|사이클/i.test(name)) return 'km_per_h'
-  return 'min_per_km'
-}
 
 export default function ExerciseLogForm({
   employees,

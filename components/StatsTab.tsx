@@ -6,7 +6,7 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog, calcPace } from '@/types/database'
+import { ExerciseLog, calcPace, isRunningType, getPaceMode } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
 import { getMonthRange, toDateKey, calcStreak } from '@/lib/dateUtils'
 import SectionTitle from './SectionTitle'
@@ -159,7 +159,7 @@ export default function StatsTab() {
   let paceKingVal = Infinity
   let paceKingLabel = ''
   for (const l of thisMonthLogs) {
-    if (l.exercise_type?.track_distance && l.distance_km && l.duration_seconds) {
+    if (l.exercise_type?.track_distance && isRunningType(l.exercise_type.name) && l.distance_km && l.duration_seconds) {
       const secPerKm = l.duration_seconds / l.distance_km
       if (secPerKm < paceKingVal) {
         paceKingVal = secPerKm
@@ -220,7 +220,7 @@ export default function StatsTab() {
             prs.push({
               key: `${emp.id}-${bestPaceLog.exercise_type_id}-pace`,
               empName: emp.name, empColor: emp.color, typeName, typeIcon,
-              text: `${typeName} 최고 페이스 신기록! ${calcPace(bestPaceLog.duration_seconds!, bestPaceLog.distance_km!, 'min_per_km')}`,
+              text: `${typeName} 최고 페이스 신기록! ${calcPace(bestPaceLog.duration_seconds!, bestPaceLog.distance_km!, getPaceMode(typeName))}`,
               date: bestPaceLog.log_date,
             })
           }
