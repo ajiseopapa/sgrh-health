@@ -10,6 +10,7 @@ import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
+import SplashScreen from '@/components/SplashScreen'
 
 type TabKey = 'home' | 'stats' | 'feed' | 'record' | 'race'
 
@@ -22,6 +23,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 ]
 
 export default function Page() {
+  const [showSplash, setShowSplash] = useState(true)
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -46,7 +48,9 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface pb-20">
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <div className="flex min-h-screen flex-col bg-surface pb-20">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-surface/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-base">
@@ -168,5 +172,6 @@ export default function Page() {
         />
       )}
     </div>
+    </>
   )
 }
