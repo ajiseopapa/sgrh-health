@@ -15,6 +15,7 @@ type CrawledRace = {
   distances: string
   registration_status: string
   source_url: string
+  source_name: string
 }
 
 export default function RaceManager() {
@@ -146,7 +147,7 @@ export default function RaceManager() {
       <div className="card space-y-2.5">
         <p className="text-sm font-semibold text-ink-700">대회 자동 불러오기</p>
         <p className="text-xs text-ink-400">
-          마라톤모아(marathon.me.kr)에서 부산 대회 목록을 가져와요. 먼저 미리보기로 확인한 뒤 저장할 수 있어요.
+          마라톤모아·마라톤메이트·러너온·KorMarathon 4곳에서 부산·경남(양산·김해 위주) 대회 목록을 가져와요. 먼저 미리보기로 확인한 뒤 저장할 수 있어요.
         </p>
         <button onClick={handleCrawl} disabled={crawling} className="btn-primary">
           {crawling ? '불러오는 중...' : '지금 크롤링'}
@@ -166,6 +167,17 @@ export default function RaceManager() {
                     {formatRaceDate(r.race_date)} · {r.location} · {r.registration_status}
                   </p>
                   {r.distances && <p className="text-ink-300">{r.distances}</p>}
+                  {r.source_url && (
+                    <a
+                      href={r.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 inline-block text-brand-600 underline underline-offset-2"
+                    >
+                      {r.source_name ?? '출처'} 링크 ↗
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
