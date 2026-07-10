@@ -4,11 +4,17 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
-// 여러 소스에서 '부산' 지역 대회만 모아서 저장합니다.
+// 여러 소스에서 '부산 · 경남(양산/김해 위주)' 지역 대회만 모아서 저장합니다.
 // 소스 하나가 실패해도 나머지는 계속 진행하도록 소스별로 try/catch 처리합니다.
 // (calRUNdar는 지도 기반 SPA라 정적 HTML에 데이터가 없어 제외했습니다 - 별도 API 조사가 필요합니다.)
+//
+// 대상 지역 마커. 사이트의 region 쿼리 필터가 깨지거나 바뀌어도(예: 필터 없이 전국이 그대로
+// 넘어오는 경우) 아래 키워드로 카드/행 텍스트를 한 번 더 걸러서 전국구가 섞이지 않게 합니다.
+const REGION_KEYWORDS = ['부산', '경남', '양산', '김해']
 
-const LOCATION_KEYWORD = '부산'
+function isTargetRegion(text: string): boolean {
+  return REGION_KEYWORDS.some((kw) => text.includes(kw))
+}
 
 interface ParsedRace {
   external_id: string
@@ -118,7 +124,7 @@ async function crawlMarathonMoa(): Promise<ParsedRace[]> {
   $('a[href^="/events/"]').each((_, el) => {
     const href = $(el).attr('href') ?? ''
     const cardText = $(el).text().replace(/\s+/g, ' ').trim()
-    if (!cardText.includes(LOCATION_KEYWORD)) return
+    if (!isTargetRegion(cardText)) return
     const parsed = parseMarathonMoaCard(cardText, href)
     if (parsed) results.push(parsed)
   })
@@ -126,159 +132,195 @@ async function crawlMarathonMoa(): Promise<ParsedRace[]> {
 }
 
 // ────────────────────────────────────────────────────────────
-// 2. 마라톤메이트 (marathonmate.store) - region=부산 필터 + 실제 <table> 파싱
+// 2. 마라톤메이트 (marathonmate.store) - region=부산/경남 필터 + 실제 <table> 파싱
 // ────────────────────────────────────────────────────────────
 async function crawlMarathonMate(): Promise<ParsedRace[]> {
-  const res = await fetch('https://marathonmate.store/domestic?region=%EB%B6%80%EC%82%B0', {
-    cache: 'no-store',
-    headers: FETCH_HEADERS,
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
-
+  // 부산, 경남
+  const REGION_QUERIES = ['%EB%B6%80%EC%82%B0', '%EA%B2%BD%EB%82%A8']
   const results: ParsedRace[] = []
-  $('table tr').each((_, row) => {
-    const cells = $(row).find('td')
-    if (cells.length < 5) return // 헤더 행(th)이거나 구조가 다른 행은 스킵
 
-    const race_date = $(cells[0]).text().trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(race_date)) return
+  for (const q of REGION_QUERIES) {
+    try {
+      const res = await fetch(`https://marathonmate.store/domestic?region=${q}`, {
+        cache: 'no-store',
+        headers: FETCH_HEADERS,
+      })
+      const html = await res.text()
+      const $ = cheerio.load(html)
 
-    const link = $(cells[1]).find('a').first()
-    const name = link.text().trim()
-    const href = link.attr('href') ?? ''
-    const idMatch = href.match(/\/race\/([a-f0-9-]+)/)
-    if (!idMatch || !name) return
+      $('table tr').each((_, row) => {
+        const cells = $(row).find('td')
+        if (cells.length < 5) return // 헤더 행(th)이거나 구조가 다른 행은 스킵
 
-    const locationRaw = $(cells[2]).text().trim() // "부산 · 장소" 형태
-    const location = locationRaw.includes('·')
-      ? locationRaw.split('·').slice(1).join('·').trim()
-      : locationRaw
+        const race_date = $(cells[0]).text().trim()
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(race_date)) return
 
-    const distances = $(cells[3]).text().trim().replace(/\s*·\s*/g, ',')
-    const registration_status = $(cells[4]).text().trim() || '알수없음'
+        const link = $(cells[1]).find('a').first()
+        const name = link.text().trim()
+        const href = link.attr('href') ?? ''
+        const idMatch = href.match(/\/race\/([a-f0-9-]+)/)
+        if (!idMatch || !name) return
 
-    results.push({
-      external_id: `mate:${idMatch[1]}`,
-      name,
-      race_date,
-      location,
-      distances,
-      registration_status,
-      source_url: href.startsWith('http') ? href : `https://marathonmate.store${href}`,
-      source_name: '마라톤메이트',
-    })
-  })
+        const locationRaw = $(cells[2]).text().trim() // "부산 · 장소" 형태
+        if (!isTargetRegion(locationRaw)) return // 사이트 필터가 깨졌을 때를 대비한 이중 체크
+
+        const location = locationRaw.includes('·')
+          ? locationRaw.split('·').slice(1).join('·').trim()
+          : locationRaw
+
+        const distances = $(cells[3]).text().trim().replace(/\s*·\s*/g, ',')
+        const registration_status = $(cells[4]).text().trim() || '알수없음'
+
+        results.push({
+          external_id: `mate:${idMatch[1]}`,
+          name,
+          race_date,
+          location,
+          distances,
+          registration_status,
+          source_url: href.startsWith('http') ? href : `https://marathonmate.store${href}`,
+          source_name: '마라톤메이트',
+        })
+      })
+    } catch {
+      // 이 지역 쿼리만 스킵하고 다음 지역 계속 진행
+    }
+  }
+
   return dedupeById(results)
 }
 
 // ────────────────────────────────────────────────────────────
-// 3. 러너온 (runneron.com) - region=부산 필터 + 카드 텍스트 파싱
+// 3. 러너온 (runneron.com) - region=부산/경남 필터 + 카드 텍스트 파싱
 //    카드 접수 상태 표기가 없어 registration_status는 '정보없음' 고정
 // ────────────────────────────────────────────────────────────
 async function crawlRunnerOn(): Promise<ParsedRace[]> {
-  const res = await fetch('https://www.runneron.com/marathon?region=%EB%B6%80%EC%82%B0&distance=%EC%A0%84%EC%B2%B4', {
-    cache: 'no-store',
-    headers: FETCH_HEADERS,
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
-
+  // 부산, 경남
+  const REGION_QUERIES = ['%EB%B6%80%EC%82%B0', '%EA%B2%BD%EB%82%A8']
   const results: ParsedRace[] = []
-  $('a[href*="/marathon/"]').each((_, el) => {
-    const href = $(el).attr('href') ?? ''
-    if (href.includes('/marathon/calendar') || href.includes('/marathon/favorites')) return
-    const slugMatch = href.match(/\/marathon\/([^/?#]+)/)
-    if (!slugMatch) return
-    const slug = slugMatch[1]
 
-    const cardText = $(el).text().replace(/\s+/g, ' ').trim()
-    const dDayMatch = cardText.match(/D-(\d+)/)
-    const nameMatch = cardText.match(/^\d{2}\.\d{2}\s*[월화수목금토일]?\s*(.+?)\s*대회 포스터/)
-    if (!dDayMatch || !nameMatch) return
+  for (const q of REGION_QUERIES) {
+    try {
+      const res = await fetch(
+        `https://www.runneron.com/marathon?region=${q}&distance=%EC%A0%84%EC%B2%B4`,
+        { cache: 'no-store', headers: FETCH_HEADERS }
+      )
+      const html = await res.text()
+      const $ = cheerio.load(html)
 
-    const name = nameMatch[1].trim()
-    if (!name) return
+      $('a[href*="/marathon/"]').each((_, el) => {
+        const href = $(el).attr('href') ?? ''
+        if (href.includes('/marathon/calendar') || href.includes('/marathon/favorites')) return
+        const slugMatch = href.match(/\/marathon\/([^/?#]+)/)
+        if (!slugMatch) return
+        const slug = slugMatch[1]
 
-    const race_date = addDaysToSeoulToday(Number(dDayMatch[1]))
+        const cardText = $(el).text().replace(/\s+/g, ' ').trim()
+        const dDayMatch = cardText.match(/D-(\d+)/)
+        const nameMatch = cardText.match(/^\d{2}\.\d{2}\s*[월화수목금토일]?\s*(.+?)\s*대회 포스터/)
+        if (!dDayMatch || !nameMatch) return
 
-    // 카드 텍스트 안에 이름이 두 번(이미지 alt / 제목) 나오므로, 두 번째 등장 이후부터가 장소·거리 정보
-    const firstIdx = cardText.indexOf(name)
-    const secondIdx = cardText.indexOf(name, firstIdx + name.length)
-    const rest = secondIdx >= 0 ? cardText.slice(secondIdx + name.length) : ''
-    const restTrimmed = rest.replace(/대회\s*정보[·ㆍ]입상자[·ㆍ]후기\s*→?\s*$/, '').trim()
+        const name = nameMatch[1].trim()
+        if (!name) return
 
-    const { location, distances } = splitLocationAndDistances(restTrimmed)
-    if (!location) return
+        const race_date = addDaysToSeoulToday(Number(dDayMatch[1]))
 
-    results.push({
-      external_id: `runneron:${slug}`,
-      name,
-      race_date,
-      location,
-      distances,
-      registration_status: '정보없음',
-      source_url: href.startsWith('http') ? href : `https://www.runneron.com${href}`,
-      source_name: '러너온',
-    })
-  })
+        // 카드 텍스트 안에 이름이 두 번(이미지 alt / 제목) 나오므로, 두 번째 등장 이후부터가 장소·거리 정보
+        const firstIdx = cardText.indexOf(name)
+        const secondIdx = cardText.indexOf(name, firstIdx + name.length)
+        const rest = secondIdx >= 0 ? cardText.slice(secondIdx + name.length) : ''
+        const restTrimmed = rest.replace(/대회\s*정보[·ㆍ]입상자[·ㆍ]후기\s*→?\s*$/, '').trim()
+
+        const { location, distances } = splitLocationAndDistances(restTrimmed)
+        if (!location) return
+        if (!isTargetRegion(location)) return // 사이트 필터가 깨졌을 때를 대비한 이중 체크
+
+        results.push({
+          external_id: `runneron:${slug}`,
+          name,
+          race_date,
+          location,
+          distances,
+          registration_status: '정보없음',
+          source_url: href.startsWith('http') ? href : `https://www.runneron.com${href}`,
+          source_name: '러너온',
+        })
+      })
+    } catch {
+      // 이 지역 쿼리만 스킵하고 다음 지역 계속 진행
+    }
+  }
+
   return dedupeById(results)
 }
 
 // ────────────────────────────────────────────────────────────
-// 4. KorMarathon (kormarathon.com) - 부산 지역 전용 페이지
+// 4. KorMarathon (kormarathon.com) - 부산/경남 지역 전용 페이지
 // ────────────────────────────────────────────────────────────
 async function crawlKorMarathon(): Promise<ParsedRace[]> {
-  const res = await fetch('https://www.kormarathon.com/ko/marathons/regions/busan', {
-    cache: 'no-store',
-    headers: FETCH_HEADERS,
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
-
+  // 참고: 경남 슬러그는 사이트 구조상 'gyeongnam'으로 추정해 두었습니다.
+  // 실제 배포 후 결과가 비어 있다면 kormarathon.com에서 정확한 슬러그를 확인해 주세요.
+  const REGION_SLUGS = ['busan', 'gyeongnam']
   const results: ParsedRace[] = []
-  $('a[href*="/ko/races/"]').each((_, el) => {
-    const href = $(el).attr('href') ?? ''
-    const slugMatch = href.match(/\/ko\/races\/([^/?#]+)/)
-    if (!slugMatch) return
-    const slug = slugMatch[1]
 
-    const cardText = $(el).text().replace(/\s+/g, ' ').trim()
-    const dateMatch = cardText.match(/(\d{4})\.(\d{2})\.(\d{2})/)
-    if (!dateMatch) return
-    const race_date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
+  for (const slug of REGION_SLUGS) {
+    try {
+      const res = await fetch(`https://www.kormarathon.com/ko/marathons/regions/${slug}`, {
+        cache: 'no-store',
+        headers: FETCH_HEADERS,
+      })
+      const html = await res.text()
+      const $ = cheerio.load(html)
 
-    const afterDate = cardText
-      .slice(cardText.indexOf(dateMatch[0]) + dateMatch[0].length)
-      .replace(/^[월화수목금토일]/, '')
-      .replace(/^(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*/, '')
-      .trim()
+      $('a[href*="/ko/races/"]').each((_, el) => {
+        const href = $(el).attr('href') ?? ''
+        const slugMatch = href.match(/\/ko\/races\/([^/?#]+)/)
+        if (!slugMatch) return
+        const raceSlug = slugMatch[1]
 
-    // '지역·' 마커(예: '부산·') 기준으로 이름 / 장소·거리를 나눈다
-    const marker = `${LOCATION_KEYWORD}·`
-    const markerIdx = afterDate.indexOf(marker)
-    if (markerIdx === -1) return
-    const name = afterDate.slice(0, markerIdx).trim()
-    if (!name) return
-    const rest = afterDate.slice(markerIdx + marker.length) // 예: "부산 태종대공원 7km, 14km, Half 마감"
+        const cardText = $(el).text().replace(/\s+/g, ' ').trim()
+        const dateMatch = cardText.match(/(\d{4})\.(\d{2})\.(\d{2})/)
+        if (!dateMatch) return
+        const race_date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
 
-    const { location, distances: rawDistances } = splitLocationAndDistances(rest)
-    const distances = rawDistances.replace(/,?\s*(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*$/, '')
+        const afterDate = cardText
+          .slice(cardText.indexOf(dateMatch[0]) + dateMatch[0].length)
+          .replace(/^[월화수목금토일]/, '')
+          .replace(/^(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*/, '')
+          .trim()
 
-    const statusMatch = cardText.match(/(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*$/)
-    const registration_status = statusMatch ? statusMatch[1] : '알수없음'
+        // '지역·' 마커(예: '부산·', '경남·', '양산·', '김해·') 중 가장 먼저 나오는 걸 기준으로
+        // 이름 / 장소·거리를 나눈다
+        const marker = REGION_KEYWORDS.map((kw) => ({ kw, idx: afterDate.indexOf(`${kw}·`) }))
+          .filter((m) => m.idx !== -1)
+          .sort((a, b) => a.idx - b.idx)[0]
+        if (!marker) return
+        const name = afterDate.slice(0, marker.idx).trim()
+        if (!name) return
+        const rest = afterDate.slice(marker.idx + marker.kw.length + 1) // 예: "부산 태종대공원 7km, 14km, Half 마감"
 
-    results.push({
-      external_id: `kormarathon:${slug}`,
-      name,
-      race_date,
-      location: location || '부산',
-      distances,
-      registration_status,
-      source_url: href.startsWith('http') ? href : `https://www.kormarathon.com${href}`,
-      source_name: 'KorMarathon',
-    })
-  })
+        const { location, distances: rawDistances } = splitLocationAndDistances(rest)
+        const distances = rawDistances.replace(/,?\s*(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*$/, '')
+
+        const statusMatch = cardText.match(/(접수중|접수마감|마감|접수예정|접수일 미정|신청 가능)\s*$/)
+        const registration_status = statusMatch ? statusMatch[1] : '알수없음'
+
+        results.push({
+          external_id: `kormarathon:${raceSlug}`,
+          name,
+          race_date,
+          location: location || marker.kw,
+          distances,
+          registration_status,
+          source_url: href.startsWith('http') ? href : `https://www.kormarathon.com${href}`,
+          source_name: 'KorMarathon',
+        })
+      })
+    } catch {
+      // 이 지역 페이지만 스킵하고 다음 지역 계속 진행
+    }
+  }
+
   return dedupeById(results)
 }
 
