@@ -298,6 +298,17 @@ export default function RaceManager() {
                       {race.registration_deadline && (
                         <p className="mt-0.5 text-xs text-ink-300">접수마감 {formatRaceDate(race.registration_deadline)}</p>
                       )}
+                      {race.source_url && (
+                        <a
+                          href={race.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 inline-block text-xs text-brand-600 underline underline-offset-2"
+                        >
+                          {race.source_name ?? '출처'} 링크 ↗
+                        </a>
+                      )}
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => startEdit(race)} className="pill-action bg-brand-50 text-brand-700">수정</button>
