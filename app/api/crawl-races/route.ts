@@ -333,6 +333,79 @@ function dedupeById(races: ParsedRace[]): ParsedRace[] {
   })
 }
 
+// ────────────────────────────────────────────────────────────
+// 소스마다 external_id가 달라서 dedupeById로는 못 거르는, "같은 대회를 소스별로 다르게
+// 표기한" 케이스를 한 번 더 걸러냅니다. (예: 마라톤모아는 "2026 월드비전 글로벌 6K 마라톤(부산)",
+// 러너온은 "2026 글로벌 6K 포 워터 부산" 처럼 이름 표기가 완전히 달라도 날짜·장소가 같으면 같은 대회)
+//
+// 판정 기준: 날짜가 같고, (이름 유사도 OR 장소 유사도) 중 하나라도 임계값을 넘으면 같은 대회로 봄.
+// 유사도는 2글자 단위 bigram Jaccard 방식이라 띄어쓰기·조사·순서가 달라도 어느 정도 잡힙니다.
+// ────────────────────────────────────────────────────────────
+const NAME_SIMILARITY_THRESHOLD = 0.6
+const LOCATION_SIMILARITY_THRESHOLD = 0.55
+
+function normalizeForCompare(s: string): string {
+  return s
+    .replace(/^(부산|경남|양산|김해)\s*/, '') // 지역 접두어 제거
+    .replace(/[\s·,()]/g, '')
+    .toLowerCase()
+}
+
+function bigrams(s: string): Set<string> {
+  const set = new Set<string>()
+  for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2))
+  if (set.size === 0 && s.length > 0) set.add(s) // 1글자짜리 등 예외 케이스
+  return set
+}
+
+function similarity(a: string, b: string): number {
+  if (!a || !b) return 0
+  if (a === b) return 1
+  const A = bigrams(a)
+  const B = bigrams(b)
+  if (A.size === 0 || B.size === 0) return 0
+  let inter = 0
+  for (const g of A) if (B.has(g)) inter++
+  return inter / (A.size + B.size - inter)
+}
+
+// 정보가 더 채워진 쪽(거리/접수상태/출처링크 등)을 대표로 남깁니다.
+function completeness(r: ParsedRace): number {
+  let score = 0
+  if (r.distances) score += 1
+  if (r.registration_status && !['알수없음', '정보없음'].includes(r.registration_status)) score += 1
+  if (r.location && r.location.length > 2) score += 1
+  if (r.source_url) score += 1
+  return score
+}
+
+function dedupeSimilar(races: ParsedRace[]): ParsedRace[] {
+  const groups: ParsedRace[][] = []
+
+  for (const race of races) {
+    const normName = normalizeForCompare(race.name)
+    const normLoc = normalizeForCompare(race.location)
+
+    const target = groups.find((group) => {
+      const rep = group[0]
+      if (rep.race_date !== race.race_date) return false
+      const nameSim = similarity(normName, normalizeForCompare(rep.name))
+      const locSim = similarity(normLoc, normalizeForCompare(rep.location))
+      return nameSim >= NAME_SIMILARITY_THRESHOLD || locSim >= LOCATION_SIMILARITY_THRESHOLD
+    })
+
+    if (target) {
+      target.push(race)
+    } else {
+      groups.push([race])
+    }
+  }
+
+  return groups.map((group) =>
+    group.reduce((best, cur) => (completeness(cur) > completeness(best) ? cur : best))
+  )
+}
+
 const SOURCES: { name: string; run: () => Promise<ParsedRace[]> }[] = [
   { name: '마라톤모아', run: crawlMarathonMoa },
   { name: '마라톤메이트', run: crawlMarathonMate },
@@ -361,8 +434,9 @@ async function crawlAll(): Promise<{ races: ParsedRace[]; sources: SourceResult[
     }
   })
 
-  return { races: dedupeById(races), sources }
+  return { races: dedupeSimilar(dedupeById(races)), sources }
 }
+
 
 // GET: 미리보기만 (DB 저장 안 함). sources 필드로 소스별 성공/실패·건수를 확인할 수 있습니다.
 export async function GET() {
