@@ -24,15 +24,20 @@ function getSeoulYMD() {
   return { year: y, month: m - 1, day: d } // month는 컴포넌트 내부 규칙(0-indexed)에 맞춤
 }
 
+type SeoulYMD = ReturnType<typeof getSeoulYMD>
+
 export default function MiniCalendar() {
-  // 오늘 날짜는 state로 관리해서, 웹뷰를 오래 띄워두거나(백그라운드 후 복귀 등)
-  // 자정을 넘긴 채로 탭을 계속 보고 있어도 항상 실제 "오늘"로 다시 계산되게 한다.
-  const [today, setToday] = useState(getSeoulYMD)
+  // 오늘 날짜는 반드시 "사용자 기기에서, 마운트된 뒤에" 계산한다.
+  // 렌더 중에 초기값으로 계산하면 빌드(프리렌더) 시점의 날짜가 HTML에 박혀서,
+  // 배포 후 며칠 지난 뒤 앱을 열면 시작할 때 네모가 빌드한 날짜에 표시될 수 있다.
+  // 오늘이 계산되기 전에는 달력을 그리지 않으므로 항상 실제 오늘이 기준이 된다.
+  const [today, setToday] = useState<SeoulYMD | null>(null)
 
   useEffect(() => {
     function refreshToday() {
       setToday(getSeoulYMD())
     }
+    refreshToday()
     // 탭이 다시 보이거나(백그라운드 복귀) 창이 포커스를 받을 때 즉시 재계산
     document.addEventListener('visibilitychange', refreshToday)
     window.addEventListener('focus', refreshToday)
@@ -45,7 +50,19 @@ export default function MiniCalendar() {
     }
   }, [])
 
-  // 현재 보고 있는 연/월
+  if (!today) {
+    return (
+      <section>
+        <div className="mb-2 h-7" />
+        <div className="card h-[300px] animate-pulse" />
+      </section>
+    )
+  }
+  return <CalendarBody today={today} />
+}
+
+function CalendarBody({ today }: { today: SeoulYMD }) {
+  // 현재 보고 있는 연/월 — 마운트 시점의 오늘 기준으로 시작
   const [year, setYear] = useState(today.year)
   const [month, setMonth] = useState(today.month) // 0-indexed
 
