@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Employee, ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
+import { ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
-import { Me, getMe, setMe as saveMe } from '@/lib/me'
+import { getMe } from '@/lib/me'
+import { getDeviceId } from '@/lib/device'
 import CheerBar from './CheerBar'
-import MePickerModal from './MePickerModal'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -31,15 +31,12 @@ export default function FeedTab() {
 
   // ── 서로 칭찬하기 ──
   const [reactions, setReactions] = useState<LogReaction[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [me, setMeState] = useState<Me | null>(null)
-  const [showMePicker, setShowMePicker] = useState(false)
-  // 이름을 아직 안 골랐을 때 누른 응원을 기억해뒀다가, 이름을 고르면 바로 반영합니다.
-  const [pendingCheer, setPendingCheer] = useState<{ logId: string; emoji: string } | null>(null)
+  // 응원 취소 판단 기준. 이름을 묻지 않으려고 사람 대신 기기를 기억합니다.
+  const [deviceId, setDeviceId] = useState('')
 
   async function load() {
     setLoading(true)
-    const [logRes, typeRes, empRes] = await Promise.all([
+    const [logRes, typeRes] = await Promise.all([
       supabase
         .from('exercise_logs')
         .select('*, employee:employees(*), exercise_type:exercise_types(*)')
@@ -47,12 +44,10 @@ export default function FeedTab() {
         .order('created_at', { ascending: false })
         .limit(50),
       supabase.from('exercise_types').select('*').order('name'),
-      supabase.from('employees').select('*').order('name'),
     ])
     const logList = (logRes.data as ExerciseLog[]) ?? []
     setLogs(logList)
     setExerciseTypes(typeRes.data ?? [])
-    setEmployees(empRes.data ?? [])
 
     if (logList.length > 0) {
       const { data } = await supabase
@@ -67,24 +62,19 @@ export default function FeedTab() {
   }
 
   useEffect(() => {
-    setMeState(getMe())
+    setDeviceId(getDeviceId())
     load()
   }, [])
 
-  // 응원 누르기 — 이름을 아직 안 골랐으면 먼저 물어봅니다.
-  function handleToggleCheer(logId: string, emoji: string) {
-    if (!me) {
-      setPendingCheer({ logId, emoji })
-      setShowMePicker(true)
-      return
-    }
-    applyCheer(logId, emoji, me)
-  }
-
-  async function applyCheer(logId: string, emoji: string, who: Me) {
+  // 응원 누르기 — 아무것도 묻지 않고 바로 반영합니다.
+  // 이름은 홈에서 운동을 기록할 때 이미 알게 된 경우에만 같이 저장하고, 모르면 익명으로 둡니다.
+  async function handleToggleCheer(logId: string, emoji: string) {
     setError('')
+    const device = deviceId || getDeviceId()
+    const me = getMe()
+
     const existing = reactions.find(
-      (r) => r.log_id === logId && r.employee_id === who.id && r.emoji === emoji
+      (r) => r.log_id === logId && r.device_id === device && r.emoji === emoji
     )
 
     // 이미 누른 응원이면 취소
@@ -103,16 +93,17 @@ export default function FeedTab() {
     const temp: LogReaction = {
       id: tempId,
       log_id: logId,
-      employee_id: who.id,
+      employee_id: me?.id ?? null,
+      device_id: device,
       emoji,
       created_at: new Date().toISOString(),
-      employee: employees.find((e) => e.id === who.id),
+      employee: me ? { id: me.id, name: me.name, employee_number: '', color: null, created_at: '' } : undefined,
     }
     setReactions((prev) => [...prev, temp])
 
     const { data, error } = await supabase
       .from('log_reactions')
-      .insert({ log_id: logId, employee_id: who.id, emoji })
+      .insert({ log_id: logId, employee_id: me?.id ?? null, device_id: device, emoji })
       .select('*, employee:employees(*)')
       .single()
 
@@ -122,17 +113,6 @@ export default function FeedTab() {
       return
     }
     setReactions((prev) => prev.map((r) => (r.id === tempId ? (data as LogReaction) : r)))
-  }
-
-  function handlePickMe(employee: Employee) {
-    const next: Me = { id: employee.id, name: employee.name }
-    saveMe(next)
-    setMeState(next)
-    setShowMePicker(false)
-    if (pendingCheer) {
-      applyCheer(pendingCheer.logId, pendingCheer.emoji, next)
-      setPendingCheer(null)
-    }
   }
 
   function startEdit(log: ExerciseLog) {
@@ -198,30 +178,6 @@ export default function FeedTab() {
   return (
     <div className="space-y-2.5">
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}
-
-      {/* 응원할 때 쓰는 내 이름 — 한 번 고르면 이 기기에 기억됩니다 */}
-      <div className="flex items-center justify-end gap-1.5 px-1 text-[11px]">
-        {me ? (
-          <>
-            <span className="text-ink-400">
-              응원하는 사람: <span className="font-semibold text-ink-600">{me.name}</span>
-            </span>
-            <button
-              onClick={() => setShowMePicker(true)}
-              className="rounded-full px-2 py-0.5 font-medium text-brand-600 transition active:bg-brand-50"
-            >
-              변경
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setShowMePicker(true)}
-            className="rounded-full px-2 py-0.5 font-medium text-brand-600 transition active:bg-brand-50"
-          >
-            내 이름 정하기
-          </button>
-        )}
-      </div>
 
       <ul className="space-y-2.5">
         {logs.map((log) => {
@@ -341,7 +297,7 @@ export default function FeedTab() {
 
                     <CheerBar
                       reactions={reactions.filter((r) => r.log_id === log.id)}
-                      myId={me?.id}
+                      myDeviceId={deviceId}
                       onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
                     />
 
@@ -366,18 +322,6 @@ export default function FeedTab() {
           )
         })}
       </ul>
-
-      {showMePicker && (
-        <MePickerModal
-          employees={employees}
-          current={me}
-          onSelect={handlePickMe}
-          onClose={() => {
-            setShowMePicker(false)
-            setPendingCheer(null)
-          }}
-        />
-      )}
     </div>
   )
 }

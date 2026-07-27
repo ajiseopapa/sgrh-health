@@ -5,56 +5,57 @@ import { CHEER_EMOJIS, CHEER_LABEL, LogReaction } from '@/types/database'
 interface Props {
   /** 이 기록에 달린 응원만 걸러서 넘겨주세요 */
   reactions: LogReaction[]
-  /** 나(브라우저에 기억된 직원)의 id. 아직 이름을 안 골랐으면 undefined */
-  myId?: string
+  /** 내 기기 id. 내가 누른 이모지를 색으로 표시하는 데만 씁니다 */
+  myDeviceId?: string
   onToggle: (emoji: string) => void
 }
 
-// "박OO님 외 2명이 응원했어요" 문구 만들기
-function buildCheerText(reactions: LogReaction[]): string {
+// 마우스를 올렸을 때 뜨는 문구: "김민수, 박지영, 익명 1명"
+function buildTooltip(reactions: LogReaction[], label: string): string {
+  if (reactions.length === 0) return label
   const names: string[] = []
+  let anonymous = 0
   for (const r of reactions) {
     const name = r.employee?.name
-    if (name && !names.includes(name)) names.push(name)
+    if (!name) anonymous++
+    else if (!names.includes(name)) names.push(name)
   }
-  if (names.length === 0) return ''
-  if (names.length <= 2) return `${names.map((n) => `${n}님`).join(', ')}이 응원했어요`
-  return `${names[0]}님 외 ${names.length - 1}명이 응원했어요`
+  if (anonymous > 0) names.push(`익명 ${anonymous}명`)
+  return `${label}: ${names.join(', ')}`
 }
 
-export default function CheerBar({ reactions, myId, onToggle }: Props) {
-  const cheerText = buildCheerText(reactions)
-
+export default function CheerBar({ reactions, myDeviceId, onToggle }: Props) {
   return (
-    <div className="mt-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {CHEER_EMOJIS.map((emoji) => {
-          const count = reactions.filter((r) => r.emoji === emoji).length
-          const mine = myId ? reactions.some((r) => r.emoji === emoji && r.employee_id === myId) : false
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {CHEER_EMOJIS.map((emoji) => {
+        const mine = reactions.filter((r) => r.emoji === emoji)
+        const count = mine.length
+        const isMine = myDeviceId
+          ? mine.some((r) => r.device_id === myDeviceId)
+          : false
+        const label = CHEER_LABEL[emoji] ?? '응원'
 
-          return (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => onToggle(emoji)}
-              aria-label={`${CHEER_LABEL[emoji] ?? '응원'}${count > 0 ? ` ${count}명` : ''}`}
-              aria-pressed={mine}
-              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
-                mine
-                  ? 'bg-brand-100 text-brand-700'
-                  : count > 0
-                    ? 'bg-ink-50 text-ink-600'
-                    : 'bg-ink-50 text-ink-300'
-              }`}
-            >
-              <span className="text-sm leading-none">{emoji}</span>
-              {count > 0 && <span className="tabular-nums">{count}</span>}
-            </button>
-          )
-        })}
-      </div>
-
-      {cheerText && <p className="mt-1.5 text-[11px] text-ink-400">{cheerText}</p>}
+        return (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => onToggle(emoji)}
+            title={buildTooltip(mine, label)}
+            aria-label={buildTooltip(mine, label)}
+            aria-pressed={isMine}
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
+              isMine
+                ? 'bg-brand-100 text-brand-700'
+                : count > 0
+                  ? 'bg-ink-50 text-ink-600'
+                  : 'bg-ink-50 text-ink-300'
+            }`}
+          >
+            <span className="text-sm leading-none">{emoji}</span>
+            {count > 0 && <span className="tabular-nums">{count}</span>}
+          </button>
+        )
+      })}
     </div>
   )
 }

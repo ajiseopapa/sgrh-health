@@ -67,7 +67,10 @@ export const CHEER_LABEL: Record<string, string> = {
 export interface LogReaction {
   id: string
   log_id: string
-  employee_id: string
+  // 이 기기가 누구인지 알 때만 채워집니다 (홈에서 운동을 기록하면 알게 됨). 모르면 익명.
+  employee_id: string | null
+  // 응원 취소는 "누른 기기"를 기준으로 판단합니다.
+  device_id: string | null
   emoji: string
   created_at: string
   employee?: Employee

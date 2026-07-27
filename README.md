@@ -18,8 +18,7 @@ components:
   ExerciseLogForm.tsx  이름/사번 검색 + 운동 종목 선택 입력 폼
   StatsTab.tsx         통계 탭 (종목별/주간별 차트, 전체 랭킹)
   FeedTab.tsx          최근 운동 기록 피드 (+ 서로 칭찬하기)
-  CheerBar.tsx         피드 카드의 응원 리액션 버튼 (👏 💪 🔥)
-  MePickerModal.tsx    첫 응원 시 "나는 누구인가"를 한 번만 고르는 모달
+  CheerBar.tsx         피드 카드의 응원 리액션 버튼 (👏 💪 🔥, 마우스 올리면 누가 눌렀는지 표시)
   SettingsPanel.tsx    ⚙️ 관리 화면 (직원 관리 / 운동 종목 관리 탭 전환)
   EmployeeManager.tsx      직원 등록/수정/삭제
   ExerciseTypeManager.tsx  운동 종목 등록/수정/삭제
@@ -27,7 +26,8 @@ components:
 lib/
   supabase.ts        Supabase 클라이언트
   colors.ts          직원ID -> 고정 색상 매핑 (캘린더/랭킹/피드 공통)
-  me.ts              응원할 때 쓰는 내 이름을 localStorage에 기억 (로그인 대체)
+  me.ts              운동 기록 시 고른 이름을 localStorage에 기억 (응원에 이름 붙이는 용도)
+  device.ts          기기 식별자. 응원 취소 판단 기준 (이름을 묻지 않기 위해)
   dateUtils.ts        날짜/캘린더 그리드 유틸
 types/
   database.ts        DB 타입 정의
