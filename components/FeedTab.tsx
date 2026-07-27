@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
-import { getMe } from '@/lib/me'
 import { getDeviceId } from '@/lib/device'
 import CheerBar from './CheerBar'
 
@@ -52,7 +51,7 @@ export default function FeedTab() {
     if (logList.length > 0) {
       const { data } = await supabase
         .from('log_reactions')
-        .select('*, employee:employees(*)')
+        .select('*')
         .in('log_id', logList.map((l) => l.id))
       setReactions((data as LogReaction[]) ?? [])
     } else {
@@ -67,11 +66,9 @@ export default function FeedTab() {
   }, [])
 
   // 응원 누르기 — 아무것도 묻지 않고 바로 반영합니다.
-  // 이름은 홈에서 운동을 기록할 때 이미 알게 된 경우에만 같이 저장하고, 모르면 익명으로 둡니다.
   async function handleToggleCheer(logId: string, emoji: string) {
     setError('')
     const device = deviceId || getDeviceId()
-    const me = getMe()
 
     const existing = reactions.find(
       (r) => r.log_id === logId && r.device_id === device && r.emoji === emoji
@@ -93,18 +90,16 @@ export default function FeedTab() {
     const temp: LogReaction = {
       id: tempId,
       log_id: logId,
-      employee_id: me?.id ?? null,
       device_id: device,
       emoji,
       created_at: new Date().toISOString(),
-      employee: me ? { id: me.id, name: me.name, employee_number: '', color: null, created_at: '' } : undefined,
     }
     setReactions((prev) => [...prev, temp])
 
     const { data, error } = await supabase
       .from('log_reactions')
-      .insert({ log_id: logId, employee_id: me?.id ?? null, device_id: device, emoji })
-      .select('*, employee:employees(*)')
+      .insert({ log_id: logId, device_id: device, emoji })
+      .select('*')
       .single()
 
     if (error) {

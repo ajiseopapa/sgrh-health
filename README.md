@@ -26,8 +26,7 @@ components:
 lib/
   supabase.ts        Supabase 클라이언트
   colors.ts          직원ID -> 고정 색상 매핑 (캘린더/랭킹/피드 공통)
-  me.ts              운동 기록 시 고른 이름을 localStorage에 기억 (응원에 이름 붙이는 용도)
-  device.ts          기기 식별자. 응원 취소 판단 기준 (이름을 묻지 않기 위해)
+  device.ts          기기 식별자. 응원 취소 판단 기준 (누가 눌렀는지는 저장하지 않음)
   dateUtils.ts        날짜/캘린더 그리드 유틸
 types/
   database.ts        DB 타입 정의

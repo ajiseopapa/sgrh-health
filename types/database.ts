@@ -64,16 +64,14 @@ export const CHEER_LABEL: Record<string, string> = {
   '🔥': '대단해요',
 }
 
+// 누가 눌렀는지는 남기지 않습니다. 로그인이 없어 신뢰할 수 없는 정보라서,
+// 화면에 못 쓸 데이터를 모아두지 않기로 했습니다. 취소 판단만 기기 기준으로 합니다.
 export interface LogReaction {
   id: string
   log_id: string
-  // 이 기기가 누구인지 알 때만 채워집니다 (홈에서 운동을 기록하면 알게 됨). 모르면 익명.
-  employee_id: string | null
-  // 응원 취소는 "누른 기기"를 기준으로 판단합니다.
   device_id: string | null
   emoji: string
   created_at: string
-  employee?: Employee
 }
 
 // 종목 이름으로 페이스 표시 방식 결정 (수영은 100m당, 자전거는 시속, 나머지는 km당)

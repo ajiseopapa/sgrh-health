@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Employee, ExerciseType, calcPace, getPaceMode } from '@/types/database'
 import { toDateKey } from '@/lib/dateUtils'
-import { setMe as saveMe } from '@/lib/me'
 import SectionTitle from './SectionTitle'
 
 export default function ExerciseLogForm({
@@ -81,8 +80,6 @@ export default function ExerciseLogForm({
     })
     setSubmitting(false)
     if (error) { setMessage('기록 저장에 실패했어요. 다시 시도해주세요.'); return }
-    // 피드에서 응원을 누를 때 이름을 따로 묻지 않으려고, 방금 고른 이름을 기억해둡니다.
-    saveMe({ id: selectedEmployee.id, name: selectedEmployee.name })
     const name = selectedEmployee.name
     resetForm()
     setMessage(`${name}님의 운동이 기록되었어요! 💪`)
