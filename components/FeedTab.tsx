@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog, ExerciseType, calcPace, formatDuration } from '@/types/database'
+import { Employee, ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
+import { Me, getMe, setMe as saveMe } from '@/lib/me'
+import CheerBar from './CheerBar'
+import MePickerModal from './MePickerModal'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -26,9 +29,17 @@ export default function FeedTab() {
   const [editMemo, setEditMemo] = useState('')
   const [error, setError] = useState('')
 
+  // ── 서로 칭찬하기 ──
+  const [reactions, setReactions] = useState<LogReaction[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [me, setMeState] = useState<Me | null>(null)
+  const [showMePicker, setShowMePicker] = useState(false)
+  // 이름을 아직 안 골랐을 때 누른 응원을 기억해뒀다가, 이름을 고르면 바로 반영합니다.
+  const [pendingCheer, setPendingCheer] = useState<{ logId: string; emoji: string } | null>(null)
+
   async function load() {
     setLoading(true)
-    const [logRes, typeRes] = await Promise.all([
+    const [logRes, typeRes, empRes] = await Promise.all([
       supabase
         .from('exercise_logs')
         .select('*, employee:employees(*), exercise_type:exercise_types(*)')
@@ -36,13 +47,93 @@ export default function FeedTab() {
         .order('created_at', { ascending: false })
         .limit(50),
       supabase.from('exercise_types').select('*').order('name'),
+      supabase.from('employees').select('*').order('name'),
     ])
-    setLogs((logRes.data as ExerciseLog[]) ?? [])
+    const logList = (logRes.data as ExerciseLog[]) ?? []
+    setLogs(logList)
     setExerciseTypes(typeRes.data ?? [])
+    setEmployees(empRes.data ?? [])
+
+    if (logList.length > 0) {
+      const { data } = await supabase
+        .from('log_reactions')
+        .select('*, employee:employees(*)')
+        .in('log_id', logList.map((l) => l.id))
+      setReactions((data as LogReaction[]) ?? [])
+    } else {
+      setReactions([])
+    }
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    setMeState(getMe())
+    load()
+  }, [])
+
+  // 응원 누르기 — 이름을 아직 안 골랐으면 먼저 물어봅니다.
+  function handleToggleCheer(logId: string, emoji: string) {
+    if (!me) {
+      setPendingCheer({ logId, emoji })
+      setShowMePicker(true)
+      return
+    }
+    applyCheer(logId, emoji, me)
+  }
+
+  async function applyCheer(logId: string, emoji: string, who: Me) {
+    setError('')
+    const existing = reactions.find(
+      (r) => r.log_id === logId && r.employee_id === who.id && r.emoji === emoji
+    )
+
+    // 이미 누른 응원이면 취소
+    if (existing) {
+      setReactions((prev) => prev.filter((r) => r.id !== existing.id))
+      const { error } = await supabase.from('log_reactions').delete().eq('id', existing.id)
+      if (error) {
+        setError('응원 취소에 실패했어요.')
+        load()
+      }
+      return
+    }
+
+    // 낙관적 반영 후 저장 (탭 반응이 즉시 보이도록)
+    const tempId = `temp-${logId}-${emoji}`
+    const temp: LogReaction = {
+      id: tempId,
+      log_id: logId,
+      employee_id: who.id,
+      emoji,
+      created_at: new Date().toISOString(),
+      employee: employees.find((e) => e.id === who.id),
+    }
+    setReactions((prev) => [...prev, temp])
+
+    const { data, error } = await supabase
+      .from('log_reactions')
+      .insert({ log_id: logId, employee_id: who.id, emoji })
+      .select('*, employee:employees(*)')
+      .single()
+
+    if (error) {
+      setReactions((prev) => prev.filter((r) => r.id !== tempId))
+      setError('응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.')
+      return
+    }
+    setReactions((prev) => prev.map((r) => (r.id === tempId ? (data as LogReaction) : r)))
+  }
+
+  function handlePickMe(employee: Employee) {
+    const next: Me = { id: employee.id, name: employee.name }
+    saveMe(next)
+    setMeState(next)
+    setShowMePicker(false)
+    if (pendingCheer) {
+      applyCheer(pendingCheer.logId, pendingCheer.emoji, next)
+      setPendingCheer(null)
+    }
+  }
 
   function startEdit(log: ExerciseLog) {
     setEditingId(log.id)
@@ -107,6 +198,31 @@ export default function FeedTab() {
   return (
     <div className="space-y-2.5">
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+
+      {/* 응원할 때 쓰는 내 이름 — 한 번 고르면 이 기기에 기억됩니다 */}
+      <div className="flex items-center justify-end gap-1.5 px-1 text-[11px]">
+        {me ? (
+          <>
+            <span className="text-ink-400">
+              응원하는 사람: <span className="font-semibold text-ink-600">{me.name}</span>
+            </span>
+            <button
+              onClick={() => setShowMePicker(true)}
+              className="rounded-full px-2 py-0.5 font-medium text-brand-600 transition active:bg-brand-50"
+            >
+              변경
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setShowMePicker(true)}
+            className="rounded-full px-2 py-0.5 font-medium text-brand-600 transition active:bg-brand-50"
+          >
+            내 이름 정하기
+          </button>
+        )}
+      </div>
+
       <ul className="space-y-2.5">
         {logs.map((log) => {
           const typeName = log.exercise_type?.name ?? ''
@@ -223,6 +339,13 @@ export default function FeedTab() {
 
                     {log.memo && <p className="mt-1.5 text-xs italic text-ink-400">"{log.memo}"</p>}
 
+                    <CheerBar
+                      reactions={reactions.filter((r) => r.log_id === log.id)}
+                      myId={me?.id}
+                      isOwn={me?.id === log.employee_id}
+                      onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
+                    />
+
                     <div className="mt-2 flex gap-2">
                       <button
                         onClick={() => startEdit(log)}
@@ -244,6 +367,18 @@ export default function FeedTab() {
           )
         })}
       </ul>
+
+      {showMePicker && (
+        <MePickerModal
+          employees={employees}
+          current={me}
+          onSelect={handlePickMe}
+          onClose={() => {
+            setShowMePicker(false)
+            setPendingCheer(null)
+          }}
+        />
+      )}
     </div>
   )
 }

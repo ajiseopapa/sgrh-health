@@ -250,44 +250,6 @@ export default function RecordTab() {
                 </section>
               )}
 
-              {/* 최근 기록 리스트 */}
-              <section>
-                <p className="section-title mb-2">운동 기록</p>
-                <ul className="space-y-2">
-                  {logs.map(log => {
-                    const sec = log.duration_seconds ?? (log.duration_minutes ? log.duration_minutes * 60 : null)
-                    return (
-                      <li key={log.id} className="card flex items-start gap-3 py-3">
-                        <span className="text-xl shrink-0">{log.exercise_type?.icon ?? '🏃'}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-ink-800">{log.exercise_type?.name}</span>
-                            <span className="text-xs text-ink-300 shrink-0">{log.log_date}</span>
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-1.5">
-                            {sec ? (
-                              <span className="rounded-full bg-ink-50 px-2 py-0.5 text-xs text-ink-600">
-                                ⏱ {formatDuration(sec)}
-                              </span>
-                            ) : null}
-                            {log.distance_km ? (
-                              <span className="rounded-full bg-ink-50 px-2 py-0.5 text-xs text-ink-600">
-                                📍 {Number(log.distance_km).toFixed(2)} km
-                              </span>
-                            ) : null}
-                            {(sec && log.distance_km) ? (
-                              <span className="rounded-full bg-accent-50 px-2 py-0.5 text-xs font-medium text-accent-600">
-                                ⚡ {calcPace(sec, log.distance_km, getPaceMode(log.exercise_type?.name ?? ''))}
-                              </span>
-                            ) : null}
-                          </div>
-                          {log.memo && <p className="mt-1 text-xs italic text-ink-400">"{log.memo}"</p>}
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </section>
             </>
           )}
         </>

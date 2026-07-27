@@ -54,6 +54,25 @@ export interface ExerciseLog {
   exercise_type?: ExerciseType
 }
 
+// 서로 칭찬하기 — 피드의 운동 기록에 남기는 응원 리액션
+export const CHEER_EMOJIS = ['👏', '💪', '🔥'] as const
+export type CheerEmoji = (typeof CHEER_EMOJIS)[number]
+
+export const CHEER_LABEL: Record<string, string> = {
+  '👏': '잘했어요',
+  '💪': '멋져요',
+  '🔥': '대단해요',
+}
+
+export interface LogReaction {
+  id: string
+  log_id: string
+  employee_id: string
+  emoji: string
+  created_at: string
+  employee?: Employee
+}
+
 // 종목 이름으로 페이스 표시 방식 결정 (수영은 100m당, 자전거는 시속, 나머지는 km당)
 export function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
