@@ -18,7 +18,7 @@ components:
   ExerciseLogForm.tsx  이름/사번 검색 + 운동 종목 선택 입력 폼
   StatsTab.tsx         통계 탭 (종목별/주간별 차트, 전체 랭킹)
   FeedTab.tsx          최근 운동 기록 피드 (+ 서로 칭찬하기)
-  CheerBar.tsx         피드 카드의 응원 리액션 버튼 (👏 💪 🔥, 마우스 올리면 누가 눌렀는지 표시)
+  CheerBar.tsx         피드 카드의 응원 리액션 버튼 (👏 💪 🔥)
   SettingsPanel.tsx    ⚙️ 관리 화면 (직원 관리 / 운동 종목 관리 탭 전환)
   EmployeeManager.tsx      직원 등록/수정/삭제
   ExerciseTypeManager.tsx  운동 종목 등록/수정/삭제
