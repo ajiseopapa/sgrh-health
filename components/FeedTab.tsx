@@ -342,7 +342,6 @@ export default function FeedTab() {
                     <CheerBar
                       reactions={reactions.filter((r) => r.log_id === log.id)}
                       myId={me?.id}
-                      isOwn={me?.id === log.employee_id}
                       onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
                     />
 
