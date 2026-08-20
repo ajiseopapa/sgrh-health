@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import EmployeeManager from './EmployeeManager'
 import ExerciseTypeManager from './ExerciseTypeManager'
-import RaceManager from './RaceManager'
 
-type Section = 'employees' | 'exercises' | 'races'
+type Section = 'employees' | 'exercises'
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [section, setSection] = useState<Section>('employees')
@@ -13,7 +12,6 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const TABS: { key: Section; label: string }[] = [
     { key: 'employees', label: '직원' },
     { key: 'exercises', label: '운동 종목' },
-    { key: 'races',     label: '대회' },
   ]
 
   return (
@@ -52,7 +50,6 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-auto px-4 pb-6">
           {section === 'employees' && <EmployeeManager />}
           {section === 'exercises' && <ExerciseTypeManager />}
-          {section === 'races' && <RaceManager />}
         </div>
       </div>
     </div>
