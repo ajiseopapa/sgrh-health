@@ -9,7 +9,6 @@ import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
-import SplashScreen from '@/components/SplashScreen'
 import IdentityModal from '@/components/IdentityModal'
 import { MeProvider, useMe } from '@/lib/me'
 
@@ -32,7 +31,6 @@ export default function Page() {
 
 function AppShell() {
   const { isAdmin, refresh, adminLogout } = useMe()
-  const [showSplash, setShowSplash] = useState(true)
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -58,7 +56,6 @@ function AppShell() {
 
   return (
     <>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <div className="flex min-h-screen flex-col bg-surface pb-20">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-surface/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
