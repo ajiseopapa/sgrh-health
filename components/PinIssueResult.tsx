@@ -3,6 +3,7 @@
 // 발급한 임시 PIN을 "이번 한 번만" 보여주는 화면.
 // 저장소(localStorage 등)나 서버 로그에 남기지 않고, 닫으면 메모리에서도 사라집니다.
 import { useState } from 'react'
+import { useDialog } from '@/lib/dialog'
 
 export interface IssuedPin {
   employeeId: string
@@ -17,10 +18,14 @@ function escapeHtml(s: string) {
 
 export default function PinIssueResult({ issued, onClose }: { issued: IssuedPin[]; onClose: () => void }) {
   const [confirmClose, setConfirmClose] = useState(false)
+  const dialog = useDialog()
 
   function print() {
     const w = window.open('', '_blank', 'width=720,height=900')
-    if (!w) { alert('팝업이 막혀 있어요. 팝업을 허용한 뒤 다시 눌러주세요.'); return }
+    if (!w) {
+      dialog.alert({ icon: '🚫', title: '팝업이 막혀 있어요', message: '주소창 오른쪽에서 팝업을 허용한 뒤\n다시 눌러주세요.' })
+      return
+    }
     const rows = issued
       .map((p) => `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.employeeNumber)}</td><td class="pin">${p.pin}</td><td class="cut">✂ ${escapeHtml(p.name)}님 임시 PIN: <b>${p.pin}</b> · 첫 로그인 후 내 PIN으로 바꿔주세요</td></tr>`)
       .join('')

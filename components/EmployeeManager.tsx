@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { useDialog } from '@/lib/dialog'
 import { Employee } from '@/types/database'
 import PinIssueResult, { IssuedPin } from './PinIssueResult'
 
@@ -17,6 +18,7 @@ const PIN_BADGE: Record<PinStatus, { label: string; cls: string }> = {
 import { PALETTE, getEmployeeColor } from '@/lib/colors'
 
 export default function EmployeeManager() {
+  const dialog = useDialog()
   const [list, setList] = useState<AdminEmployee[]>([])
   const [issued, setIssued] = useState<IssuedPin[] | null>(null)
   const [issuing, setIssuing] = useState(false)
@@ -95,7 +97,11 @@ export default function EmployeeManager() {
   }
 
   async function handleDelete(id: string, empName: string) {
-    const ok = window.confirm(`'${empName}'님을 삭제하면 관련 운동 기록도 함께 삭제돼요.\n계속할까요?`)
+    const ok = await dialog.confirm({
+      title: `${empName}님을 삭제할까요?`,
+      message: '이 직원의 운동 기록도 모두 함께 삭제돼요.\n되돌릴 수 없어요.',
+      tone: 'danger',
+    })
     if (!ok) return
     const r = await api(`/api/admin/employees/${id}`, { method: 'DELETE' })
     if (!r.ok) { setError(r.message); return }
@@ -103,10 +109,22 @@ export default function EmployeeManager() {
   }
 
   async function issuePins(mode: 'missing' | 'reset', employeeId?: string, empName?: string) {
-    const msg = mode === 'missing'
-      ? 'PIN이 없는 직원 전원에게 임시 PIN을 발급할까요?\n발급된 번호는 이번 한 번만 화면에 보여요.'
-      : `'${empName}'님의 PIN을 초기화할까요?\n그 직원의 모든 기기에서 로그인이 풀리고, 새 임시 PIN이 발급돼요.`
-    if (!window.confirm(msg)) return
+    const ok = await dialog.confirm(
+      mode === 'missing'
+        ? {
+            icon: '🔑',
+            title: '임시 PIN을 발급할까요?',
+            message: 'PIN이 없는 직원 전원에게 발급해요.\n번호는 이번 한 번만 화면에 보여요.',
+            confirmText: '발급',
+          }
+        : {
+            icon: '🔑',
+            title: `${empName}님 PIN을 초기화할까요?`,
+            message: '모든 기기에서 로그인이 풀리고\n새 임시 PIN이 발급돼요.',
+            confirmText: '초기화',
+          }
+    )
+    if (!ok) return
     setIssuing(true); setError('')
     const r = await api<{ issued: IssuedPin[] }>('/api/admin/pins', { method: 'POST', body: { mode, employeeId } })
     setIssuing(false)

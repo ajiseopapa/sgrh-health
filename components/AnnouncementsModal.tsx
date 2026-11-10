@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/api'
+import { useDialog } from '@/lib/dialog'
 import type { Announcement } from '@/types/database'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 const LS_KEY = 'announcements_read_at'
 
 export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) {
+  const dialog = useDialog()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [isWriting, setIsWriting] = useState(false)
@@ -46,7 +48,7 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
       : await api('/api/admin/announcements', { method: 'POST', body: form })
     if (!r.ok) {
       setSaving(false)
-      alert(r.message || '저장에 실패했어요.')
+      await dialog.alert({ icon: '⚠️', title: '저장하지 못했어요', message: r.message })
       return
     }
     setForm({ title: '', content: '' })
@@ -57,9 +59,9 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('이 공지를 삭제하시겠습니까?')) return
+    if (!(await dialog.confirm({ title: '이 공지를 삭제할까요?', tone: 'danger' }))) return
     const r = await api(`/api/admin/announcements/${id}`, { method: 'DELETE' })
-    if (!r.ok) alert(r.message || '삭제에 실패했어요.')
+    if (!r.ok) await dialog.alert({ icon: '⚠️', title: '삭제하지 못했어요', message: r.message })
     fetchAnnouncements()
   }
 

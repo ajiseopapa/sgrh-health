@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/api'
+import { useDialog } from '@/lib/dialog'
 import { ExerciseType } from '@/types/database'
 import EmojiPicker from './EmojiPicker'
 
 export default function ExerciseTypeManager() {
+  const dialog = useDialog()
   const [list, setList] = useState<ExerciseType[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -61,7 +63,12 @@ export default function ExerciseTypeManager() {
   }
 
   async function handleDelete(id: string, typeName: string) {
-    if (!window.confirm(`'${typeName}' 종목을 삭제할까요?`)) return
+    const ok = await dialog.confirm({
+      title: `'${typeName}' 종목을 삭제할까요?`,
+      message: '이 종목으로 남긴 기록이 있으면 삭제되지 않아요.',
+      tone: 'danger',
+    })
+    if (!ok) return
     const r = await api(`/api/admin/exercise-types/${id}`, { method: 'DELETE' })
     if (!r.ok) { setError(r.message || `'${typeName}' 삭제에 실패했어요.`); return }
     fetchList()

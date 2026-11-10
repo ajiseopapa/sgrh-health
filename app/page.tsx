@@ -11,6 +11,7 @@ import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/Anno
 import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
 import IdentityModal from '@/components/IdentityModal'
 import { MeProvider, useMe } from '@/lib/me'
+import { DialogProvider } from '@/lib/dialog'
 
 type TabKey = 'home' | 'stats' | 'feed' | 'record'
 
@@ -24,7 +25,9 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 export default function Page() {
   return (
     <MeProvider>
-      <AppShell />
+      <DialogProvider>
+        <AppShell />
+      </DialogProvider>
     </MeProvider>
   )
 }

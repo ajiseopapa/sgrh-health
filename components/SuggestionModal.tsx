@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/api'
+import { useDialog } from '@/lib/dialog'
 import type { Suggestion, Employee } from '@/types/database'
 
 interface Props {
@@ -24,6 +25,7 @@ const STATUS_STYLE: Record<Suggestion['status'], string> = {
 }
 
 export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
+  const dialog = useDialog()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [isWriting, setIsWriting] = useState(false)
@@ -114,14 +116,14 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
     setReplySaving(true)
     const r = await api(`/api/admin/suggestions/${id}`, { method: 'PATCH', body: { reply: replyDraft } })
     setReplySaving(false)
-    if (!r.ok) alert(r.message || '답변 저장에 실패했어요.')
+    if (!r.ok) await dialog.alert({ icon: '⚠️', title: '답변을 저장하지 못했어요', message: r.message })
     fetchSuggestions()
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('이 건의를 삭제하시겠습니까?')) return
+    if (!(await dialog.confirm({ title: '이 건의를 삭제할까요?', message: '삭제하면 되돌릴 수 없어요.', tone: 'danger' }))) return
     const r = await api(`/api/admin/suggestions/${id}`, { method: 'DELETE' })
-    if (!r.ok) { alert(r.message || '삭제에 실패했어요.'); return }
+    if (!r.ok) { await dialog.alert({ icon: '⚠️', title: '삭제하지 못했어요', message: r.message }); return }
     if (expandedId === id) setExpandedId(null)
     fetchSuggestions()
   }

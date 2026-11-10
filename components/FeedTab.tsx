@@ -7,6 +7,7 @@ import { getEmployeeColor } from '@/lib/colors'
 import { getDeviceId } from '@/lib/device'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
+import { useDialog } from '@/lib/dialog'
 import CheerBar from './CheerBar'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
@@ -17,6 +18,7 @@ function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
 
 export default function FeedTab() {
   const { me, isAdmin, requireMe } = useMe()
+  const dialog = useDialog()
   const [logs, setLogs] = useState<ExerciseLog[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
   const [loading, setLoading] = useState(true)
@@ -156,7 +158,11 @@ export default function FeedTab() {
   }
 
   async function handleDelete(id: string, employeeName?: string) {
-    const ok = window.confirm(`${employeeName ?? '이'} 기록을 삭제할까요?`)
+    const ok = await dialog.confirm({
+      title: '이 기록을 삭제할까요?',
+      message: `${employeeName ? `${employeeName}님의 ` : ''}운동 기록이 지워지고, 달린 응원도 함께 사라져요.`,
+      tone: 'danger',
+    })
     if (!ok) return
     const r = await api(`/api/logs/${id}`, { method: 'DELETE' })
     if (!r.ok) {

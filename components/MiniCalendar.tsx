@@ -1,10 +1,12 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+// 집계형 달력 — 직원별 색 점 대신 날짜별 참여 인원과 참여율 색 농도를 보여줍니다.
+// 직원 수가 늘어도 한 칸에 숫자 하나만 들어가므로 가독성이 유지됩니다.
+// (직원별 색상 정보 자체는 삭제하지 않았고, 피드·랭킹 등에서는 그대로 씁니다)
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
-import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
+import { getCalendarCells } from '@/lib/dateUtils'
+import DayDetail from './CalendarDayDetail'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -26,7 +28,7 @@ function getSeoulYMD() {
 
 type SeoulYMD = ReturnType<typeof getSeoulYMD>
 
-export default function MiniCalendar() {
+export default function MiniCalendar({ refreshKey = 0 }: { refreshKey?: number }) {
   // 오늘 날짜는 반드시 "사용자 기기에서, 마운트된 뒤에" 계산한다.
   // 렌더 중에 초기값으로 계산하면 빌드(프리렌더) 시점의 날짜가 HTML에 박혀서,
   // 배포 후 며칠 지난 뒤 앱을 열면 시작할 때 네모가 빌드한 날짜에 표시될 수 있다.
@@ -38,10 +40,8 @@ export default function MiniCalendar() {
       setToday(getSeoulYMD())
     }
     refreshToday()
-    // 탭이 다시 보이거나(백그라운드 복귀) 창이 포커스를 받을 때 즉시 재계산
     document.addEventListener('visibilitychange', refreshToday)
     window.addEventListener('focus', refreshToday)
-    // 오래 켜둔 경우를 대비해 1분마다도 재계산
     const interval = setInterval(refreshToday, 60_000)
     return () => {
       document.removeEventListener('visibilitychange', refreshToday)
@@ -54,77 +54,124 @@ export default function MiniCalendar() {
     return (
       <section>
         <div className="mb-2 h-7" />
-        <div className="card h-[300px] animate-pulse" />
+        <div className="card h-[340px] animate-pulse" />
       </section>
     )
   }
-  return <CalendarBody today={today} />
+  return <CalendarBody today={today} refreshKey={refreshKey} />
 }
 
-function CalendarBody({ today }: { today: SeoulYMD }) {
-  // 현재 보고 있는 연/월 — 마운트 시점의 오늘 기준으로 시작
+export interface DaySummary {
+  d: string // 'YYYY-MM-DD'
+  p: number // 참여 인원 (같은 직원 여러 번 = 1명)
+  n: number // 기록 수
+  s: number // 총 운동 시간(초)
+}
+
+interface MonthSummary {
+  headcount: number | null // 그 달 1일 기준 재직 인원. 없으면 null → 색 농도 안 씀
+  days: DaySummary[]
+}
+
+// 참여율 → 색 단계 (0: 기록 없음, 1~4: 농도, -1: 재직 인원 정보 없음)
+export function levelOf(p: number, headcount: number | null): number {
+  if (!p) return 0
+  if (!headcount) return -1
+  const r = p / headcount
+  if (r < 0.25) return 1
+  if (r < 0.5) return 2
+  if (r < 0.75) return 3
+  return 4
+}
+
+const LEVEL_STYLE: Record<number, string> = {
+  0: 'text-ink-500',
+  [-1]: 'bg-ink-50 text-ink-700',
+  1: 'bg-brand-100 text-brand-800',
+  2: 'bg-brand-200 text-brand-900',
+  3: 'bg-brand-400 text-white',
+  4: 'bg-brand-600 text-white',
+}
+
+const LEGEND_SWATCH: Record<number, string> = {
+  1: 'bg-brand-100',
+  2: 'bg-brand-200',
+  3: 'bg-brand-400',
+  4: 'bg-brand-600',
+}
+
+const LEGEND = [
+  { level: 1, label: '~24%' },
+  { level: 2, label: '~49%' },
+  { level: 3, label: '~74%' },
+  { level: 4, label: '75%~' },
+]
+
+function pad(n: number) {
+  return String(n).padStart(2, '0')
+}
+
+function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: number }) {
   const [year, setYear] = useState(today.year)
   const [month, setMonth] = useState(today.month) // 0-indexed
-
-  const [logs, setLogs] = useState<ExerciseLog[]>([])
+  const [summary, setSummary] = useState<MonthSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [selected, setSelected] = useState<number | null>(null)
 
   const isCurrentMonth = year === today.year && month === today.month
 
-  // 월 이동
   function prevMonth() {
-    if (month === 0) { setYear(y => y - 1); setMonth(11) }
-    else setMonth(m => m - 1)
+    setSelected(null)
+    if (month === 0) { setYear((y) => y - 1); setMonth(11) }
+    else setMonth((m) => m - 1)
   }
   function nextMonth() {
-    if (month === 11) { setYear(y => y + 1); setMonth(0) }
-    else setMonth(m => m + 1)
+    setSelected(null)
+    if (month === 11) { setYear((y) => y + 1); setMonth(0) }
+    else setMonth((m) => m + 1)
   }
   function goToday() {
+    setSelected(null)
     setYear(today.year)
     setMonth(today.month)
   }
 
-  // 달이 바뀔 때마다 해당 달 로그 fetch
-  useEffect(() => {
-    async function fetchLogs() {
-      setLoading(true)
-      const start = new Date(year, month, 1)
-      const end = new Date(year, month + 1, 0)
-      const { data } = await supabase
-        .from('exercise_logs')
-        .select('*, employee:employees(*)')
-        .gte('log_date', toDateKey(start))
-        .lte('log_date', toDateKey(end))
-      setLogs((data as ExerciseLog[]) ?? [])
-      setLoading(false)
+  // 날짜별 집계만 서버(DB 함수)에서 받아옴 — 기록이 많아도 1,000건 제한에 걸리지 않음
+  const fetchSummary = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const { data, error } = await supabase.rpc('calendar_month_summary', { p_month: `${year}-${pad(month + 1)}-01` })
+    if (error) {
+      setError('달력 정보를 불러오지 못했어요.')
+      setSummary(null)
+    } else {
+      setSummary(data as MonthSummary)
     }
-    fetchLogs()
+    setLoading(false)
   }, [year, month])
 
-  const cells = getCalendarCells(year, month)
+  useEffect(() => { fetchSummary() }, [fetchSummary, refreshKey])
 
-  // 날짜(day) -> 직원ID -> 색상
-  const dotsByDay = useMemo(() => {
-    const map = new Map<number, Map<string, string>>()
-    for (const log of logs) {
-      const d = new Date(log.log_date)
-      const day = d.getDate()
-      const inner = map.get(day) ?? new Map<string, string>()
-      inner.set(log.employee_id, getEmployeeColor(log.employee))
-      map.set(day, inner)
-    }
+  const byDay = useMemo(() => {
+    const map = new Map<number, DaySummary>()
+    for (const d of summary?.days ?? []) map.set(Number(d.d.slice(8, 10)), d)
     return map
-  }, [logs])
+  }, [summary])
+
+  const cells = getCalendarCells(year, month)
+  const headcount = summary?.headcount ?? null
+  const selectedDate = selected ? `${year}-${pad(month + 1)}-${pad(selected)}` : null
 
   return (
     <section>
-      {/* 헤더: < 연월 > + 오늘 버튼 */}
+      {/* 헤더: < 연월 > + 이번 달 */}
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button
             onClick={prevMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            aria-label="이전 달"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
           >
             ‹
           </button>
@@ -133,7 +180,8 @@ function CalendarBody({ today }: { today: SeoulYMD }) {
           </span>
           <button
             onClick={nextMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            aria-label="다음 달"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
           >
             ›
           </button>
@@ -149,44 +197,75 @@ function CalendarBody({ today }: { today: SeoulYMD }) {
         )}
       </div>
 
-      <div className={`card grid grid-cols-7 gap-1 text-center transition-opacity ${loading ? 'opacity-40' : ''}`}>
-        {WEEKDAYS.map((w) => (
-          <div key={w} className="text-[11px] font-medium text-ink-300">
-            {w}
-          </div>
-        ))}
-        {cells.map((day, idx) => {
-          const dots = day ? dotsByDay.get(day) : undefined
-          const isToday = isCurrentMonth && day !== null && day === today.day
-          return (
-            <div
-              key={idx}
-              className={`flex h-12 flex-col items-center justify-start rounded-xl pt-1 ${
-                isToday ? 'bg-brand-50 ring-1 ring-inset ring-brand-300' : ''
-              }`}
-            >
-              {day && (
-                <span className={`text-[11px] ${isToday ? 'font-bold text-brand-700' : 'text-ink-500'}`}>
-                  {day}
-                </span>
-              )}
-              {dots && dots.size > 0 && (
-                <div className="mt-0.5 flex max-w-[28px] flex-wrap justify-center gap-0.5">
-                  {Array.from(dots.values())
-                    .slice(0, 4)
-                    .map((color, i) => (
-                      <span
-                        key={i}
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                </div>
-              )}
+      <div className={`card transition-opacity ${loading ? 'opacity-40' : ''}`}>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="pb-1 text-[11px] font-medium text-ink-300">
+              {w}
             </div>
-          )
-        })}
+          ))}
+          {cells.map((day, idx) => {
+            if (!day) return <div key={idx} className="h-12" />
+            const info = byDay.get(day)
+            const level = levelOf(info?.p ?? 0, headcount)
+            const isToday = isCurrentMonth && day === today.day
+            const isSelected = selected === day
+            const isFuture =
+              year > today.year ||
+              (year === today.year && (month > today.month || (month === today.month && day > today.day)))
+            return (
+              <button
+                key={idx}
+                type="button"
+                disabled={isFuture}
+                onClick={() => setSelected(isSelected ? null : day)}
+                aria-label={`${month + 1}월 ${day}일${info ? `, ${info.p}명 참여` : ', 기록 없음'}`}
+                aria-pressed={isSelected}
+                className={`flex h-12 flex-col items-center justify-center rounded-xl transition active:scale-95 disabled:cursor-default disabled:opacity-40 ${
+                  LEVEL_STYLE[level]
+                } ${isSelected ? 'ring-2 ring-inset ring-ink-800' : isToday ? 'ring-2 ring-inset ring-brand-500' : ''}`}
+              >
+                <span className={`text-[12px] leading-none ${isToday ? 'font-bold' : 'font-medium'}`}>{day}</span>
+                {info && info.p > 0 && (
+                  <span className="mt-1 text-[10px] font-semibold leading-none tabular-nums">{info.p}명</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 범례 */}
+        <div className="mt-3 border-t border-ink-100 pt-2.5">
+          {headcount ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {LEGEND.map((l) => (
+                  <span key={l.level} className="flex items-center gap-1 text-[10px] text-ink-400">
+                    <span className={`h-2.5 w-2.5 rounded-[4px] ${LEGEND_SWATCH[l.level]}`} />
+                    {l.label}
+                  </span>
+                ))}
+              </div>
+              <span className="shrink-0 text-[10px] text-ink-300">재직 {headcount}명 기준</span>
+            </div>
+          ) : (
+            <p className="text-[10px] text-ink-300">
+              숫자는 그날 운동한 인원이에요. 재직 인원 정보가 없어 참여율 색은 표시하지 않아요.
+            </p>
+          )}
+          <p className="mt-1 text-[10px] text-ink-300">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
+        </div>
+        {error && <p className="mt-2 text-xs font-medium text-red-500">{error}</p>}
       </div>
+
+      {selectedDate && (
+        <DayDetail
+          date={selectedDate}
+          summary={selected ? byDay.get(selected) : undefined}
+          refreshKey={refreshKey}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </section>
   )
 }

@@ -13,6 +13,8 @@ export default function HomeTab() {
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
   const [logs, setLogs] = useState<ExerciseLog[]>([])
   const [loading, setLoading] = useState(true)
+  // 기록을 남기면 달력 집계도 다시 불러오도록
+  const [calendarKey, setCalendarKey] = useState(0)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -42,8 +44,12 @@ export default function HomeTab() {
   return (
     <div className="space-y-4">
       <TopRankingBoard logs={logs} loading={loading} />
-      <MiniCalendar />
-      <ExerciseLogForm employees={employees} exerciseTypes={exerciseTypes} onSuccess={fetchAll} />
+      <MiniCalendar refreshKey={calendarKey} />
+      <ExerciseLogForm
+        employees={employees}
+        exerciseTypes={exerciseTypes}
+        onSuccess={() => { fetchAll(); setCalendarKey((k) => k + 1) }}
+      />
     </div>
   )
 }
