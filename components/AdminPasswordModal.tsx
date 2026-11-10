@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { api } from '@/lib/api'
 
 export default function AdminPasswordModal({
   onSuccess,
@@ -20,23 +21,14 @@ export default function AdminPasswordModal({
     }
     setSubmitting(true)
     setError('')
-    try {
-      const res = await fetch('/api/verify-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-      const data = await res.json()
-      if (data.ok) {
-        sessionStorage.setItem('admin_unlocked', 'true')
-        onSuccess()
-      } else {
-        setError(data.message || '비밀번호가 올바르지 않아요.')
-      }
-    } catch {
-      setError('확인 중 오류가 발생했어요. 다시 시도해주세요.')
-    } finally {
-      setSubmitting(false)
+    // 비밀번호는 서버에서만 비교하고, 맞으면 서버가 관리자 세션 쿠키(8시간)를 발급합니다
+    const r = await api('/api/verify-admin', { method: 'POST', body: { password } })
+    setSubmitting(false)
+    if (r.ok) {
+      setPassword('')
+      onSuccess()
+    } else {
+      setError(r.message || '비밀번호가 올바르지 않아요.')
     }
   }
 

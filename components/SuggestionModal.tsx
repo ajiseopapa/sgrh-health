@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/api'
 import type { Suggestion, Employee } from '@/types/database'
 
 interface Props {
@@ -104,28 +105,23 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
     setReplyDraft(s.admin_reply ?? '')
     // 관리자가 새 건의를 열어보면 자동으로 '확인함' 처리
     if (opening && isAdmin && s.status === 'new') {
-      await supabase.from('suggestions').update({ status: 'read' }).eq('id', s.id)
+      await api(`/api/admin/suggestions/${s.id}`, { method: 'PATCH', body: { markRead: true } })
       setSuggestions((prev) => prev.map((x) => (x.id === s.id ? { ...x, status: 'read' } : x)))
     }
   }
 
   async function handleSaveReply(id: string) {
     setReplySaving(true)
-    await supabase
-      .from('suggestions')
-      .update({
-        admin_reply: replyDraft.trim() || null,
-        status: replyDraft.trim() ? 'answered' : 'read',
-        replied_at: replyDraft.trim() ? new Date().toISOString() : null,
-      })
-      .eq('id', id)
+    const r = await api(`/api/admin/suggestions/${id}`, { method: 'PATCH', body: { reply: replyDraft } })
     setReplySaving(false)
+    if (!r.ok) alert(r.message || '답변 저장에 실패했어요.')
     fetchSuggestions()
   }
 
   async function handleDelete(id: string) {
     if (!window.confirm('이 건의를 삭제하시겠습니까?')) return
-    await supabase.from('suggestions').delete().eq('id', id)
+    const r = await api(`/api/admin/suggestions/${id}`, { method: 'DELETE' })
+    if (!r.ok) { alert(r.message || '삭제에 실패했어요.'); return }
     if (expandedId === id) setExpandedId(null)
     fetchSuggestions()
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/api'
 import { ExerciseType } from '@/types/database'
 import EmojiPicker from './EmojiPicker'
 
@@ -32,13 +33,12 @@ export default function ExerciseTypeManager() {
   async function handleAdd() {
     if (!name.trim()) { setError('운동 이름을 입력해주세요.'); return }
     setSubmitting(true); setError('')
-    const { error } = await supabase.from('exercise_types').insert({
-      name: name.trim(),
-      icon: icon.trim() || '🏃',
-      track_distance: trackDistance,
+    const r = await api('/api/admin/exercise-types', {
+      method: 'POST',
+      body: { name: name.trim(), icon: icon.trim() || '🏃', trackDistance },
     })
     setSubmitting(false)
-    if (error) { setError(`등록에 실패했어요: ${error.message}`); return }
+    if (!r.ok) { setError(r.message); return }
     setName(''); setIcon('🏃'); setTrackDistance(false)
     fetchList()
   }
@@ -52,22 +52,18 @@ export default function ExerciseTypeManager() {
   async function handleUpdate() {
     if (!editingId) return
     if (!editName.trim()) { setError('운동 이름을 입력해주세요.'); return }
-    const { error } = await supabase.from('exercise_types')
-      .update({ name: editName.trim(), icon: editIcon.trim() || '🏃', track_distance: editTrackDistance })
-      .eq('id', editingId)
-    if (error) { setError(`수정에 실패했어요: ${error.message}`); return }
+    const r = await api(`/api/admin/exercise-types/${editingId}`, {
+      method: 'PATCH',
+      body: { name: editName.trim(), icon: editIcon.trim() || '🏃', trackDistance: editTrackDistance },
+    })
+    if (!r.ok) { setError(r.message); return }
     setEditingId(null); setError(''); fetchList()
   }
 
   async function handleDelete(id: string, typeName: string) {
     if (!window.confirm(`'${typeName}' 종목을 삭제할까요?`)) return
-    const { error } = await supabase.from('exercise_types').delete().eq('id', id)
-    if (error) {
-      setError(error.code === '23503'
-        ? `'${typeName}'으로 기록된 운동 일지가 있어서 삭제할 수 없어요.`
-        : `삭제에 실패했어요: ${error.message}`)
-      return
-    }
+    const r = await api(`/api/admin/exercise-types/${id}`, { method: 'DELETE' })
+    if (!r.ok) { setError(r.message || `'${typeName}' 삭제에 실패했어요.`); return }
     fetchList()
   }
 

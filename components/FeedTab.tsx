@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
 import { getDeviceId } from '@/lib/device'
+import { api } from '@/lib/api'
+import { useMe } from '@/lib/me'
 import CheerBar from './CheerBar'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
@@ -14,6 +16,7 @@ function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
 }
 
 export default function FeedTab() {
+  const { me, isAdmin, requireMe } = useMe()
   const [logs, setLogs] = useState<ExerciseLog[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,11 +77,11 @@ export default function FeedTab() {
       (r) => r.log_id === logId && r.device_id === device && r.emoji === emoji
     )
 
-    // 이미 누른 응원이면 취소
+    // 이미 누른 응원이면 취소 (화면을 먼저 바꾸고 서버에 저장)
     if (existing) {
       setReactions((prev) => prev.filter((r) => r.id !== existing.id))
-      const { error } = await supabase.from('log_reactions').delete().eq('id', existing.id)
-      if (error) {
+      const r = await api('/api/reactions', { method: 'POST', body: { logId, deviceId: device, emoji } })
+      if (!r.ok) {
         setError('응원 취소에 실패했어요.')
         load()
       }
@@ -96,18 +99,18 @@ export default function FeedTab() {
     }
     setReactions((prev) => [...prev, temp])
 
-    const { data, error } = await supabase
-      .from('log_reactions')
-      .insert({ log_id: logId, device_id: device, emoji })
-      .select('*')
-      .single()
-
-    if (error) {
-      setReactions((prev) => prev.filter((r) => r.id !== tempId))
-      setError('응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.')
+    const r = await api<{ action: string; reaction?: LogReaction }>('/api/reactions', {
+      method: 'POST',
+      body: { logId, deviceId: device, emoji },
+    })
+    if (!r.ok || r.data.action !== 'added' || !r.data.reaction) {
+      setReactions((prev) => prev.filter((x) => x.id !== tempId))
+      if (!r.ok) setError('응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.')
+      else load()
       return
     }
-    setReactions((prev) => prev.map((r) => (r.id === tempId ? (data as LogReaction) : r)))
+    const saved = r.data.reaction
+    setReactions((prev) => prev.map((x) => (x.id === tempId ? saved : x)))
   }
 
   function startEdit(log: ExerciseLog) {
@@ -130,20 +133,22 @@ export default function FeedTab() {
     const s = parseInt(editS || '0', 10)
     const totalSeconds = h * 3600 + m * 60 + s || null
 
-    const { error } = await supabase
-      .from('exercise_logs')
-      .update({
-        exercise_type_id: editTypeId,
-        log_date: editDate,
-        duration_seconds: totalSeconds,
-        duration_minutes: totalSeconds ? Math.round(totalSeconds / 60) : null,
-        distance_km: editDistance ? parseFloat(editDistance) : null,
-        memo: editMemo || null,
-      })
-      .eq('id', editingId)
+    if (!totalSeconds) { setError('운동 시간을 입력해주세요.'); return }
 
-    if (error) {
-      setError(`수정에 실패했어요: ${error.message}`)
+    const r = await api(`/api/logs/${editingId}`, {
+      method: 'PATCH',
+      body: {
+        exerciseTypeId: editTypeId,
+        logDate: editDate,
+        durationSeconds: totalSeconds,
+        distanceKm: editDistance ? parseFloat(editDistance) : null,
+        memo: editMemo || null,
+      },
+    })
+
+    if (!r.ok) {
+      if (r.data.needLogin || r.data.mustChangePin) { requireMe(); return }
+      setError(r.message || '수정에 실패했어요.')
       return
     }
     setEditingId(null)
@@ -153,9 +158,10 @@ export default function FeedTab() {
   async function handleDelete(id: string, employeeName?: string) {
     const ok = window.confirm(`${employeeName ?? '이'} 기록을 삭제할까요?`)
     if (!ok) return
-    const { error } = await supabase.from('exercise_logs').delete().eq('id', id)
-    if (error) {
-      setError(`삭제에 실패했어요: ${error.message}`)
+    const r = await api(`/api/logs/${id}`, { method: 'DELETE' })
+    if (!r.ok) {
+      if (r.data.needLogin || r.data.mustChangePin) { requireMe(); return }
+      setError(r.message || '삭제에 실패했어요.')
       return
     }
     load()
@@ -184,6 +190,8 @@ export default function FeedTab() {
             ? calcPace(durationSec, log.distance_km, paceMode)
             : ''
           const isEditing = editingId === log.id
+          // 버튼 표시는 편의용이고, 실제 허용 여부는 서버가 다시 확인합니다
+          const canManage = isAdmin || (me !== null && me.id === log.employee_id)
 
           return (
             <li key={log.id} className="card flex gap-3 py-3.5">
@@ -296,6 +304,7 @@ export default function FeedTab() {
                       onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
                     />
 
+                    {canManage && (
                     <div className="mt-2 flex gap-2">
                       <button
                         onClick={() => startEdit(log)}
@@ -310,6 +319,7 @@ export default function FeedTab() {
                         삭제
                       </button>
                     </div>
+                    )}
                   </>
                 )}
               </div>

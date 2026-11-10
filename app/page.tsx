@@ -10,6 +10,8 @@ import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
 import SplashScreen from '@/components/SplashScreen'
+import IdentityModal from '@/components/IdentityModal'
+import { MeProvider, useMe } from '@/lib/me'
 
 type TabKey = 'home' | 'stats' | 'feed' | 'record'
 
@@ -21,13 +23,21 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 ]
 
 export default function Page() {
+  return (
+    <MeProvider>
+      <AppShell />
+    </MeProvider>
+  )
+}
+
+function AppShell() {
+  const { isAdmin, refresh, adminLogout } = useMe()
   const [showSplash, setShowSplash] = useState(true)
   const [tab, setTab] = useState<TabKey>('home')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showAnnouncements, setShowAnnouncements] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const hasUnreadAnnouncements = useHasUnreadAnnouncements()
   const hasNewSuggestions = useHasNewSuggestions(isAdmin)
@@ -40,9 +50,10 @@ export default function Page() {
     }
   }
 
-  function handleLogout() {
-    setIsAdmin(false)
-    sessionStorage.removeItem('admin_unlocked')
+  // 관리자 여부는 서버의 관리자 세션(8시간)이 기준입니다
+  async function handleLogout() {
+    setShowSettings(false)
+    await adminLogout()
   }
 
   return (
@@ -134,9 +145,8 @@ export default function Page() {
 
       {showPasswordModal && (
         <AdminPasswordModal
-          onSuccess={() => {
-            setIsAdmin(true)
-            sessionStorage.setItem('admin_unlocked', 'true')
+          onSuccess={async () => {
+            await refresh()
             setShowPasswordModal(false)
             setShowSettings(true)
           }}
@@ -159,6 +169,8 @@ export default function Page() {
           isAdmin={isAdmin}
         />
       )}
+
+      <IdentityModal />
 
       {showSettings && (
         <SettingsPanel

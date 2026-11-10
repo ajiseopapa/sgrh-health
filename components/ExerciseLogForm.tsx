@@ -1,22 +1,23 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useMemo, useRef } from 'react'
 import { Employee, ExerciseType, calcPace, getPaceMode } from '@/types/database'
+import { api, newRequestId } from '@/lib/api'
+import { useMe } from '@/lib/me'
 import { toDateKey } from '@/lib/dateUtils'
 import SectionTitle from './SectionTitle'
 
 export default function ExerciseLogForm({
-  employees,
   exerciseTypes,
   onSuccess,
 }: {
-  employees: Employee[]
+  employees?: Employee[]
   exerciseTypes: ExerciseType[]
   onSuccess: () => void
 }) {
-  const [query, setQuery] = useState('')
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const { me, mustChangePin, loaded, requireMe, logout } = useMe()
+  // 같은 입력을 두 번 보내도 한 번만 저장되도록, 기록 한 건마다 요청 번호를 하나씩 씁니다
+  const requestIdRef = useRef<string>(newRequestId())
   const [exerciseTypeId, setExerciseTypeId] = useState('')
   const [date, setDate] = useState(toDateKey(new Date()))
   const [durationH, setDurationH] = useState('')
@@ -26,14 +27,6 @@ export default function ExerciseLogForm({
   const [memo, setMemo] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
-
-  const filtered = useMemo(() => {
-    if (!query) return []
-    const q = query.trim().toLowerCase()
-    return employees
-      .filter((e) => e.name.toLowerCase().includes(q) || e.employee_number?.toLowerCase().includes(q))
-      .slice(0, 5)
-  }, [employees, query])
 
   const selectedType = exerciseTypes.find((t) => t.id === exerciseTypeId)
   const isDistanceType = selectedType?.track_distance ?? false
@@ -57,32 +50,40 @@ export default function ExerciseLogForm({
   }, [totalSeconds, distanceKm, paceMode])
 
   function resetForm() {
-    setQuery(''); setSelectedEmployee(null); setExerciseTypeId('')
+    setExerciseTypeId('')
     setDate(toDateKey(new Date()))
     setDurationH(''); setDurationM(''); setDurationS('')
     setDistanceKm(''); setMemo('')
   }
 
   async function handleSubmit() {
-    if (!selectedEmployee || !exerciseTypeId) {
-      setMessage('이름과 운동 종목을 선택해주세요.')
+    if (!me || mustChangePin) {
+      requireMe()
       return
     }
+    if (!exerciseTypeId) { setMessage('운동 종목을 선택해주세요.'); return }
+    if (!totalSeconds) { setMessage('운동 시간을 입력해주세요.'); return }
     setSubmitting(true); setMessage('')
-    const { error } = await supabase.from('exercise_logs').insert({
-      employee_id: selectedEmployee.id,
-      exercise_type_id: exerciseTypeId,
-      log_date: date,
-      duration_seconds: totalSeconds,
-      duration_minutes: totalSeconds ? Math.round(totalSeconds / 60) : null,
-      distance_km: distanceKm ? parseFloat(distanceKm) : null,
-      memo: memo || null,
+    const r = await api('/api/logs', {
+      method: 'POST',
+      body: {
+        requestId: requestIdRef.current,
+        exerciseTypeId,
+        logDate: date,
+        durationSeconds: totalSeconds,
+        distanceKm: distanceKm ? parseFloat(distanceKm) : null,
+        memo: memo || null,
+      },
     })
     setSubmitting(false)
-    if (error) { setMessage('기록 저장에 실패했어요. 다시 시도해주세요.'); return }
-    const name = selectedEmployee.name
+    if (!r.ok) {
+      if (r.data.needLogin || r.data.mustChangePin) { requireMe(); return }
+      setMessage(r.message || '기록 저장에 실패했어요. 다시 시도해주세요.')
+      return
+    }
+    requestIdRef.current = newRequestId()
     resetForm()
-    setMessage(`${name}님의 운동이 기록되었어요! 💪`)
+    setMessage(`${me.name}님의 운동이 기록되었어요! 💪`)
     onSuccess()
   }
 
@@ -92,29 +93,28 @@ export default function ExerciseLogForm({
     <section className="card space-y-3">
       <SectionTitle>✍️ 운동 기록하기</SectionTitle>
 
-      {/* 이름/사번 검색 */}
-      <div className="relative">
-        <input
-          value={selectedEmployee ? selectedEmployee.name : query}
-          onChange={(e) => { setSelectedEmployee(null); setQuery(e.target.value) }}
-          placeholder="이름 또는 사번 검색"
-          className="input-field"
-        />
-        {filtered.length > 0 && !selectedEmployee && (
-          <ul className="absolute z-10 mt-1 w-full max-h-40 overflow-auto rounded-xl bg-white py-1 shadow-raised">
-            {filtered.map((e) => (
-              <li
-                key={e.id}
-                onClick={() => { setSelectedEmployee(e); setQuery('') }}
-                className="cursor-pointer px-3 py-2 text-sm text-ink-800 transition hover:bg-brand-50"
-              >
-                {e.name}
-                <span className="ml-1 text-xs text-ink-300">#{e.employee_number}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* 누구로 기록하는지 — 본인 확인은 처음 한 번만 */}
+      {!loaded ? (
+        <div className="h-11 animate-pulse rounded-xl bg-ink-100" />
+      ) : me ? (
+        <div className="flex items-center justify-between rounded-xl bg-brand-50 px-3 py-2.5">
+          <span className="text-sm text-ink-800">
+            <span className="font-semibold">{me.name}</span>님으로 기록 중
+            {mustChangePin && <span className="ml-1 text-xs text-red-500">(PIN 변경 필요)</span>}
+          </span>
+          <button
+            type="button"
+            onClick={async () => { await logout(); setMessage('') }}
+            className="text-xs font-medium text-brand-700"
+          >
+            바꾸기
+          </button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => requireMe()} className="btn-secondary w-full">
+          🙋 본인 확인하고 기록하기
+        </button>
+      )}
 
       {/* 종목 선택 */}
       <select
@@ -133,7 +133,7 @@ export default function ExerciseLogForm({
 
       {/* 운동 시간 — 시/분/초 */}
       <div>
-        <p className="mb-1.5 text-xs font-medium text-ink-400">운동 시간</p>
+        <p className="mb-1.5 text-xs font-medium text-ink-400">운동 시간 <span className="text-red-400">*</span></p>
         <div className="flex gap-1.5">
           {/* 시간 */}
           <div className="relative flex-1">

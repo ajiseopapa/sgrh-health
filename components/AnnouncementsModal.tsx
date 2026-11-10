@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/api'
 import type { Announcement } from '@/types/database'
 
 interface Props {
@@ -40,16 +41,13 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
   async function handleSave() {
     if (!form.title.trim() || !form.content.trim()) return
     setSaving(true)
-    if (editingId) {
-      await supabase
-        .from('announcements')
-        .update({ title: form.title, content: form.content })
-        .eq('id', editingId)
-    } else {
-      await supabase.from('announcements').insert({
-        title: form.title,
-        content: form.content,
-      })
+    const r = editingId
+      ? await api(`/api/admin/announcements/${editingId}`, { method: 'PATCH', body: form })
+      : await api('/api/admin/announcements', { method: 'POST', body: form })
+    if (!r.ok) {
+      setSaving(false)
+      alert(r.message || '저장에 실패했어요.')
+      return
     }
     setForm({ title: '', content: '' })
     setIsWriting(false)
@@ -60,7 +58,8 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
 
   async function handleDelete(id: string) {
     if (!window.confirm('이 공지를 삭제하시겠습니까?')) return
-    await supabase.from('announcements').delete().eq('id', id)
+    const r = await api(`/api/admin/announcements/${id}`, { method: 'DELETE' })
+    if (!r.ok) alert(r.message || '삭제에 실패했어요.')
     fetchAnnouncements()
   }
 
