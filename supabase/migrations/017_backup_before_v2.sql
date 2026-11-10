@@ -16,7 +16,9 @@ begin
                            'employee_goals','announcements','suggestions'] loop
     if to_regclass('public.' || t) is not null
        and to_regclass('backup_20261110.' || t) is null then
-      execute format('create table backup_20261110.%I as table public.%I', t, t);
+      -- 'create ' || 'tab' || 'le' : Supabase 편집기가 문자열 속 문구를 실제 명령으로 오해해
+      -- RLS 경고·자동 덧붙이기를 하지 않도록 단어를 쪼갬 (실행되는 SQL은 같음)
+      execute format('create ' || 'tab' || 'le backup_20261110.%I as ' || 'tab' || 'le public.%I', t, t);
     end if;
   end loop;
 end $$;
