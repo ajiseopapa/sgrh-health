@@ -10,8 +10,25 @@ const jakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://sgrh-health.vercel.app'),
   title: '직원 운동 관리',
-  description: '팀 운동 기록 및 랭킹 트래커',
+  description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+  // 카카오톡·세계로톡 등에 링크를 붙였을 때 보이는 미리보기 이미지
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: '세계로병원 직원 운동 관리',
+    title: '직원 운동 관리 시스템',
+    description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+    locale: 'ko_KR',
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: '직원 운동 관리 시스템' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '직원 운동 관리 시스템',
+    description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+    images: ['/og.jpg'],
+  },
 }
 
 export const viewport: Viewport = {
