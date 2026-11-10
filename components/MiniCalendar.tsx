@@ -69,8 +69,16 @@ export interface DaySummary {
 }
 
 interface MonthSummary {
-  headcount: number | null // 그 달 1일 기준 재직 인원. 없으면 null → 색 농도 안 씀
+  headcount: number | null // 참여율 분모. 없으면(0명·미확인) null → "인원 정보 없음", 색 농도 안 씀
+  headcount_basis?: HeadcountBasis // 분모 기준. 020(이전 버전) 응답에는 없음 → registered로 봄
   days: DaySummary[]
+}
+
+// 분모 기준별 화면 문구. 인사팀 재직 인원 자료로 바뀌면 DB가 'hr'을 돌려주고 문구만 자동으로 바뀝니다.
+export type HeadcountBasis = 'registered' | 'hr'
+export const BASIS_LABEL: Record<HeadcountBasis, { rate: string; count: string }> = {
+  registered: { rate: '등록 직원 기준 참여율', count: '등록 직원' },
+  hr: { rate: '재직 인원 기준 참여율', count: '재직' },
 }
 
 // 참여율 → 색 단계 (0: 기록 없음, 1~4: 농도, -1: 재직 인원 정보 없음)
@@ -161,6 +169,7 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
 
   const cells = getCalendarCells(year, month)
   const headcount = summary?.headcount ?? null
+  const basis = BASIS_LABEL[summary?.headcount_basis ?? 'registered']
   const selectedDate = selected ? `${year}-${pad(month + 1)}-${pad(selected)}` : null
 
   return (
@@ -237,7 +246,10 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
         {/* 범례 */}
         <div className="mt-3 border-t border-ink-100 pt-2.5">
           {headcount ? (
-            <div className="flex items-center justify-between gap-2">
+            <>
+              <p className="mb-1.5 text-[10px] font-medium text-ink-500">
+                {basis.rate} <span className="font-normal text-ink-300">· {basis.count} {headcount}명</span>
+              </p>
               <div className="flex items-center gap-2">
                 {LEGEND.map((l) => (
                   <span key={l.level} className="flex items-center gap-1 text-[10px] text-ink-400">
@@ -246,11 +258,10 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
                   </span>
                 ))}
               </div>
-              <span className="shrink-0 text-[10px] text-ink-300">재직 {headcount}명 기준</span>
-            </div>
+            </>
           ) : (
             <p className="text-[10px] text-ink-300">
-              숫자는 그날 운동한 인원이에요. 재직 인원 정보가 없어 참여율 색은 표시하지 않아요.
+              <span className="font-medium text-ink-500">인원 정보 없음</span> · 숫자는 그날 운동한 인원이에요. 참여율 색은 표시하지 않아요.
             </p>
           )}
           <p className="mt-1 text-[10px] text-ink-300">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
@@ -262,6 +273,8 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
         <DayDetail
           date={selectedDate}
           summary={selected ? byDay.get(selected) : undefined}
+          headcount={headcount}
+          rateLabel={basis.rate}
           refreshKey={refreshKey}
           onClose={() => setSelected(null)}
         />

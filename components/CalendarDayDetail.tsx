@@ -28,11 +28,15 @@ function secondsOf(r: Row) {
 export default function CalendarDayDetail({
   date,
   summary,
+  headcount,
+  rateLabel,
   refreshKey,
   onClose,
 }: {
   date: string // 'YYYY-MM-DD'
   summary: DaySummary | undefined
+  headcount: number | null
+  rateLabel: string
   refreshKey: number
   onClose: () => void
 }) {
@@ -116,6 +120,19 @@ export default function CalendarDayDetail({
           <p className="text-[10px] text-ink-400">총 운동 시간</p>
         </div>
       </div>
+
+      {/* 참여율 (분모가 없으면 비율 대신 "인원 정보 없음") */}
+      <p className="text-xs text-ink-400">
+        {headcount ? (
+          <>
+            {rateLabel}{' '}
+            <span className="font-semibold text-ink-700">{Math.round((p / headcount) * 100)}%</span>
+            <span className="text-ink-300"> ({p}/{headcount}명)</span>
+          </>
+        ) : (
+          <>참여율: <span className="font-semibold text-ink-600">인원 정보 없음</span></>
+        )}
+      </p>
 
       {/* 직원별 기록 */}
       {n === 0 && !loading ? (

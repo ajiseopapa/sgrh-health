@@ -1,0 +1,2167 @@
+{
+ "before": {
+  "functions": [
+   {
+    "proname": "hit_rate_limit",
+    "args": "p_bucket text, p_limit integer, p_window_seconds integer",
+    "vol": "v",
+    "secdef": true,
+    "cfg": [
+     "search_path=public"
+    ],
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "defhash": "46379a3f6b0d5d50465c1c843aa64198"
+   }
+  ],
+  "tables": [
+   "announcements",
+   "audit_logs",
+   "auth_sessions",
+   "employee_goals",
+   "employee_pins",
+   "employees",
+   "exercise_logs",
+   "exercise_types",
+   "log_reactions",
+   "rate_limits",
+   "suggestions"
+  ],
+  "columns": [
+   {
+    "table_name": "announcements",
+    "column_name": "content",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "action",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "actor_employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "actor_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "after_data",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "before_data",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "record_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "table_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "last_seen_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "role",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "token_hash",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "goal_count",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "12"
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "year_month",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "failed_count",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "0"
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "is_temp",
+    "data_type": "boolean",
+    "is_nullable": "NO",
+    "column_default": "true"
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "locked_until",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "pin_hash",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "color",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "employees",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "employee_number",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employees",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "client_request_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "distance_km",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "duration_minutes",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "duration_seconds",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "exercise_type_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "log_date",
+    "data_type": "date",
+    "is_nullable": "NO",
+    "column_default": "CURRENT_DATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "memo",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "icon",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'🏃'::text"
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "track_distance",
+    "data_type": "boolean",
+    "is_nullable": "NO",
+    "column_default": "false"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "device_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "emoji",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "log_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "bucket",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "hits",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "0"
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "window_start",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "admin_reply",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "content",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "employee_name",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "replied_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": "'new'::text"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   }
+  ],
+  "constraints": [
+   {
+    "t": "announcements",
+    "conname": "announcements_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_action_check",
+    "d": "CHECK ((action = ANY (ARRAY['insert'::text, 'update'::text, 'delete'::text])))"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_actor_type_check",
+    "d": "CHECK ((actor_type = ANY (ARRAY['employee'::text, 'admin'::text, 'system'::text])))"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_role_check",
+    "d": "CHECK ((role = ANY (ARRAY['employee'::text, 'admin'::text])))"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_token_hash_key",
+    "d": "UNIQUE (token_hash)"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_employee_id_year_month_key",
+    "d": "UNIQUE (employee_id, year_month)"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "employee_pins",
+    "conname": "employee_pins_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "employee_pins",
+    "conname": "employee_pins_pkey",
+    "d": "PRIMARY KEY (employee_id)"
+   },
+   {
+    "t": "employees",
+    "conname": "employees_employee_number_key",
+    "d": "UNIQUE (employee_number)"
+   },
+   {
+    "t": "employees",
+    "conname": "employees_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_exercise_type_id_fkey",
+    "d": "FOREIGN KEY (exercise_type_id) REFERENCES exercise_types(id)"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "exercise_types",
+    "conname": "exercise_types_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "log_reactions",
+    "conname": "log_reactions_log_id_fkey",
+    "d": "FOREIGN KEY (log_id) REFERENCES exercise_logs(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "log_reactions",
+    "conname": "log_reactions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "rate_limits",
+    "conname": "rate_limits_pkey",
+    "d": "PRIMARY KEY (bucket)"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_status_check",
+    "d": "CHECK ((status = ANY (ARRAY['new'::text, 'read'::text, 'answered'::text])))"
+   }
+  ],
+  "indexes": [
+   {
+    "indexname": "announcements_pkey",
+    "indexdef": "CREATE UNIQUE INDEX announcements_pkey ON public.announcements USING btree (id)"
+   },
+   {
+    "indexname": "audit_logs_created_idx",
+    "indexdef": "CREATE INDEX audit_logs_created_idx ON public.audit_logs USING btree (created_at DESC)"
+   },
+   {
+    "indexname": "audit_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+   },
+   {
+    "indexname": "auth_sessions_employee_idx",
+    "indexdef": "CREATE INDEX auth_sessions_employee_idx ON public.auth_sessions USING btree (employee_id)"
+   },
+   {
+    "indexname": "auth_sessions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX auth_sessions_pkey ON public.auth_sessions USING btree (id)"
+   },
+   {
+    "indexname": "auth_sessions_token_hash_key",
+    "indexdef": "CREATE UNIQUE INDEX auth_sessions_token_hash_key ON public.auth_sessions USING btree (token_hash)"
+   },
+   {
+    "indexname": "employee_goals_employee_id_year_month_key",
+    "indexdef": "CREATE UNIQUE INDEX employee_goals_employee_id_year_month_key ON public.employee_goals USING btree (employee_id, year_month)"
+   },
+   {
+    "indexname": "employee_goals_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employee_goals_pkey ON public.employee_goals USING btree (id)"
+   },
+   {
+    "indexname": "employee_pins_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employee_pins_pkey ON public.employee_pins USING btree (employee_id)"
+   },
+   {
+    "indexname": "employees_employee_number_key",
+    "indexdef": "CREATE UNIQUE INDEX employees_employee_number_key ON public.employees USING btree (employee_number)"
+   },
+   {
+    "indexname": "employees_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employees_pkey ON public.employees USING btree (id)"
+   },
+   {
+    "indexname": "exercise_logs_client_request_uniq",
+    "indexdef": "CREATE UNIQUE INDEX exercise_logs_client_request_uniq ON public.exercise_logs USING btree (client_request_id) WHERE (client_request_id IS NOT NULL)"
+   },
+   {
+    "indexname": "exercise_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX exercise_logs_pkey ON public.exercise_logs USING btree (id)"
+   },
+   {
+    "indexname": "exercise_types_pkey",
+    "indexdef": "CREATE UNIQUE INDEX exercise_types_pkey ON public.exercise_types USING btree (id)"
+   },
+   {
+    "indexname": "idx_logs_date",
+    "indexdef": "CREATE INDEX idx_logs_date ON public.exercise_logs USING btree (log_date)"
+   },
+   {
+    "indexname": "idx_logs_employee",
+    "indexdef": "CREATE INDEX idx_logs_employee ON public.exercise_logs USING btree (employee_id)"
+   },
+   {
+    "indexname": "log_reactions_device_uniq",
+    "indexdef": "CREATE UNIQUE INDEX log_reactions_device_uniq ON public.log_reactions USING btree (log_id, device_id, emoji)"
+   },
+   {
+    "indexname": "log_reactions_log_id_idx",
+    "indexdef": "CREATE INDEX log_reactions_log_id_idx ON public.log_reactions USING btree (log_id)"
+   },
+   {
+    "indexname": "log_reactions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX log_reactions_pkey ON public.log_reactions USING btree (id)"
+   },
+   {
+    "indexname": "rate_limits_pkey",
+    "indexdef": "CREATE UNIQUE INDEX rate_limits_pkey ON public.rate_limits USING btree (bucket)"
+   },
+   {
+    "indexname": "suggestions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX suggestions_pkey ON public.suggestions USING btree (id)"
+   }
+  ],
+  "policies": [
+   {
+    "tablename": "announcements",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "employees",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "exercise_logs",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "exercise_types",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "log_reactions",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "suggestions",
+    "policyname": "test open insert",
+    "cmd": "INSERT",
+    "roles": "{public}",
+    "qual": null,
+    "with_check": "true"
+   },
+   {
+    "tablename": "suggestions",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   }
+  ],
+  "rls": [
+   {
+    "relname": "announcements",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "audit_logs",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "auth_sessions",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employee_goals",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employee_pins",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employees",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "exercise_logs",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "exercise_types",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "log_reactions",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "rate_limits",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "suggestions",
+    "relrowsecurity": true
+   }
+  ],
+  "tableGrants": [
+   {
+    "table_name": "announcements",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   }
+  ],
+  "data": {
+   "announcements": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "audit_logs": {
+    "n": 48,
+    "h": "b7f54eb3c795b187b077094120d179c8"
+   },
+   "auth_sessions": {
+    "n": 1,
+    "h": "c0914c70cd4f0d73fd4ead8ee8e3d776"
+   },
+   "employee_goals": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "employee_pins": {
+    "n": 4,
+    "h": "a1f42638d19c3ad4f621fd8391934300"
+   },
+   "employees": {
+    "n": 305,
+    "h": "56a11be6d32dbd2ef64719a3e402662a"
+   },
+   "exercise_logs": {
+    "n": 1473,
+    "h": "dcda51eeeebbcc53fe6e0aa64eb9d1ac"
+   },
+   "exercise_types": {
+    "n": 6,
+    "h": "66959718e4466e60b4ae54a86ad95f9a"
+   },
+   "log_reactions": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "rate_limits": {
+    "n": 4,
+    "h": "15f265c738f9e978684081b9ae4e1104"
+   },
+   "suggestions": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   }
+  }
+ },
+ "after": {
+  "functions": [
+   {
+    "proname": "calendar_month_summary",
+    "args": "p_month date",
+    "vol": "s",
+    "secdef": false,
+    "cfg": [
+     "search_path=public"
+    ],
+    "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "defhash": "792eb90693575e56d6fa382522eb0d10"
+   },
+   {
+    "proname": "hit_rate_limit",
+    "args": "p_bucket text, p_limit integer, p_window_seconds integer",
+    "vol": "v",
+    "secdef": true,
+    "cfg": [
+     "search_path=public"
+    ],
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "defhash": "46379a3f6b0d5d50465c1c843aa64198"
+   }
+  ],
+  "tables": [
+   "announcements",
+   "audit_logs",
+   "auth_sessions",
+   "employee_goals",
+   "employee_pins",
+   "employees",
+   "exercise_logs",
+   "exercise_types",
+   "log_reactions",
+   "rate_limits",
+   "suggestions"
+  ],
+  "columns": [
+   {
+    "table_name": "announcements",
+    "column_name": "content",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "announcements",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "action",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "actor_employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "actor_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "after_data",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "before_data",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "record_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "audit_logs",
+    "column_name": "table_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "last_seen_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "role",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "auth_sessions",
+    "column_name": "token_hash",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "goal_count",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "12"
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "employee_goals",
+    "column_name": "year_month",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "failed_count",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "0"
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "is_temp",
+    "data_type": "boolean",
+    "is_nullable": "NO",
+    "column_default": "true"
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "locked_until",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "pin_hash",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employee_pins",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "color",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "employees",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "employee_number",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "employees",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "employees",
+    "column_name": "name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "client_request_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "distance_km",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "duration_minutes",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "duration_seconds",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "exercise_type_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "log_date",
+    "data_type": "date",
+    "is_nullable": "NO",
+    "column_default": "CURRENT_DATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "column_name": "memo",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "icon",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'🏃'::text"
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "exercise_types",
+    "column_name": "track_distance",
+    "data_type": "boolean",
+    "is_nullable": "NO",
+    "column_default": "false"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "device_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "emoji",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "log_reactions",
+    "column_name": "log_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "bucket",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "hits",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "0"
+   },
+   {
+    "table_name": "rate_limits",
+    "column_name": "window_start",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "admin_reply",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "content",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "NO",
+    "column_default": "now()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "employee_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "employee_name",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "replied_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": "'new'::text"
+   },
+   {
+    "table_name": "suggestions",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+   }
+  ],
+  "constraints": [
+   {
+    "t": "announcements",
+    "conname": "announcements_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_action_check",
+    "d": "CHECK ((action = ANY (ARRAY['insert'::text, 'update'::text, 'delete'::text])))"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_actor_type_check",
+    "d": "CHECK ((actor_type = ANY (ARRAY['employee'::text, 'admin'::text, 'system'::text])))"
+   },
+   {
+    "t": "audit_logs",
+    "conname": "audit_logs_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_role_check",
+    "d": "CHECK ((role = ANY (ARRAY['employee'::text, 'admin'::text])))"
+   },
+   {
+    "t": "auth_sessions",
+    "conname": "auth_sessions_token_hash_key",
+    "d": "UNIQUE (token_hash)"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_employee_id_year_month_key",
+    "d": "UNIQUE (employee_id, year_month)"
+   },
+   {
+    "t": "employee_goals",
+    "conname": "employee_goals_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "employee_pins",
+    "conname": "employee_pins_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "employee_pins",
+    "conname": "employee_pins_pkey",
+    "d": "PRIMARY KEY (employee_id)"
+   },
+   {
+    "t": "employees",
+    "conname": "employees_employee_number_key",
+    "d": "UNIQUE (employee_number)"
+   },
+   {
+    "t": "employees",
+    "conname": "employees_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_exercise_type_id_fkey",
+    "d": "FOREIGN KEY (exercise_type_id) REFERENCES exercise_types(id)"
+   },
+   {
+    "t": "exercise_logs",
+    "conname": "exercise_logs_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "exercise_types",
+    "conname": "exercise_types_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "log_reactions",
+    "conname": "log_reactions_log_id_fkey",
+    "d": "FOREIGN KEY (log_id) REFERENCES exercise_logs(id) ON DELETE CASCADE"
+   },
+   {
+    "t": "log_reactions",
+    "conname": "log_reactions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "rate_limits",
+    "conname": "rate_limits_pkey",
+    "d": "PRIMARY KEY (bucket)"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_employee_id_fkey",
+    "d": "FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_pkey",
+    "d": "PRIMARY KEY (id)"
+   },
+   {
+    "t": "suggestions",
+    "conname": "suggestions_status_check",
+    "d": "CHECK ((status = ANY (ARRAY['new'::text, 'read'::text, 'answered'::text])))"
+   }
+  ],
+  "indexes": [
+   {
+    "indexname": "announcements_pkey",
+    "indexdef": "CREATE UNIQUE INDEX announcements_pkey ON public.announcements USING btree (id)"
+   },
+   {
+    "indexname": "audit_logs_created_idx",
+    "indexdef": "CREATE INDEX audit_logs_created_idx ON public.audit_logs USING btree (created_at DESC)"
+   },
+   {
+    "indexname": "audit_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+   },
+   {
+    "indexname": "auth_sessions_employee_idx",
+    "indexdef": "CREATE INDEX auth_sessions_employee_idx ON public.auth_sessions USING btree (employee_id)"
+   },
+   {
+    "indexname": "auth_sessions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX auth_sessions_pkey ON public.auth_sessions USING btree (id)"
+   },
+   {
+    "indexname": "auth_sessions_token_hash_key",
+    "indexdef": "CREATE UNIQUE INDEX auth_sessions_token_hash_key ON public.auth_sessions USING btree (token_hash)"
+   },
+   {
+    "indexname": "employee_goals_employee_id_year_month_key",
+    "indexdef": "CREATE UNIQUE INDEX employee_goals_employee_id_year_month_key ON public.employee_goals USING btree (employee_id, year_month)"
+   },
+   {
+    "indexname": "employee_goals_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employee_goals_pkey ON public.employee_goals USING btree (id)"
+   },
+   {
+    "indexname": "employee_pins_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employee_pins_pkey ON public.employee_pins USING btree (employee_id)"
+   },
+   {
+    "indexname": "employees_employee_number_key",
+    "indexdef": "CREATE UNIQUE INDEX employees_employee_number_key ON public.employees USING btree (employee_number)"
+   },
+   {
+    "indexname": "employees_pkey",
+    "indexdef": "CREATE UNIQUE INDEX employees_pkey ON public.employees USING btree (id)"
+   },
+   {
+    "indexname": "exercise_logs_client_request_uniq",
+    "indexdef": "CREATE UNIQUE INDEX exercise_logs_client_request_uniq ON public.exercise_logs USING btree (client_request_id) WHERE (client_request_id IS NOT NULL)"
+   },
+   {
+    "indexname": "exercise_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX exercise_logs_pkey ON public.exercise_logs USING btree (id)"
+   },
+   {
+    "indexname": "exercise_types_pkey",
+    "indexdef": "CREATE UNIQUE INDEX exercise_types_pkey ON public.exercise_types USING btree (id)"
+   },
+   {
+    "indexname": "idx_logs_date",
+    "indexdef": "CREATE INDEX idx_logs_date ON public.exercise_logs USING btree (log_date)"
+   },
+   {
+    "indexname": "idx_logs_employee",
+    "indexdef": "CREATE INDEX idx_logs_employee ON public.exercise_logs USING btree (employee_id)"
+   },
+   {
+    "indexname": "log_reactions_device_uniq",
+    "indexdef": "CREATE UNIQUE INDEX log_reactions_device_uniq ON public.log_reactions USING btree (log_id, device_id, emoji)"
+   },
+   {
+    "indexname": "log_reactions_log_id_idx",
+    "indexdef": "CREATE INDEX log_reactions_log_id_idx ON public.log_reactions USING btree (log_id)"
+   },
+   {
+    "indexname": "log_reactions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX log_reactions_pkey ON public.log_reactions USING btree (id)"
+   },
+   {
+    "indexname": "rate_limits_pkey",
+    "indexdef": "CREATE UNIQUE INDEX rate_limits_pkey ON public.rate_limits USING btree (bucket)"
+   },
+   {
+    "indexname": "suggestions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX suggestions_pkey ON public.suggestions USING btree (id)"
+   }
+  ],
+  "policies": [
+   {
+    "tablename": "announcements",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "employees",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "exercise_logs",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "exercise_types",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "log_reactions",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   },
+   {
+    "tablename": "suggestions",
+    "policyname": "test open insert",
+    "cmd": "INSERT",
+    "roles": "{public}",
+    "qual": null,
+    "with_check": "true"
+   },
+   {
+    "tablename": "suggestions",
+    "policyname": "test open select",
+    "cmd": "SELECT",
+    "roles": "{public}",
+    "qual": "true",
+    "with_check": null
+   }
+  ],
+  "rls": [
+   {
+    "relname": "announcements",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "audit_logs",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "auth_sessions",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employee_goals",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employee_pins",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "employees",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "exercise_logs",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "exercise_types",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "log_reactions",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "rate_limits",
+    "relrowsecurity": true
+   },
+   {
+    "relname": "suggestions",
+    "relrowsecurity": true
+   }
+  ],
+  "tableGrants": [
+   {
+    "table_name": "announcements",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "announcements",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "audit_logs",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "auth_sessions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_goals",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employee_pins",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "employees",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_logs",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "exercise_types",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "log_reactions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "rate_limits",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "anon",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "authenticated",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "postgres",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   },
+   {
+    "table_name": "suggestions",
+    "grantee": "service_role",
+    "p": "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+   }
+  ],
+  "data": {
+   "announcements": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "audit_logs": {
+    "n": 48,
+    "h": "b7f54eb3c795b187b077094120d179c8"
+   },
+   "auth_sessions": {
+    "n": 1,
+    "h": "c0914c70cd4f0d73fd4ead8ee8e3d776"
+   },
+   "employee_goals": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "employee_pins": {
+    "n": 4,
+    "h": "a1f42638d19c3ad4f621fd8391934300"
+   },
+   "employees": {
+    "n": 305,
+    "h": "56a11be6d32dbd2ef64719a3e402662a"
+   },
+   "exercise_logs": {
+    "n": 1473,
+    "h": "dcda51eeeebbcc53fe6e0aa64eb9d1ac"
+   },
+   "exercise_types": {
+    "n": 6,
+    "h": "66959718e4466e60b4ae54a86ad95f9a"
+   },
+   "log_reactions": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   },
+   "rate_limits": {
+    "n": 4,
+    "h": "15f265c738f9e978684081b9ae4e1104"
+   },
+   "suggestions": {
+    "n": 0,
+    "h": "d41d8cd98f00b204e9800998ecf8427e"
+   }
+  }
+ }
+}

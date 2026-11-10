@@ -1,0 +1,29 @@
+== 020 적용 전 → 후 (시험 DB, 운영과 같은 구조)
+  functions: 추가 1 / 삭제 0
+    + {"proname":"calendar_month_summary","args":"p_month date","vol":"s","secdef":false,"cfg":["search_path=public"],"acl":"{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}","defhash":"792eb90693575e56d6fa382522eb0d10"}
+  tables: 변화 없음
+  columns: 변화 없음
+  constraints: 변화 없음
+  indexes: 변화 없음
+  policies: 변화 없음
+  rls: 변화 없음
+  tableGrants: 변화 없음
+  data: 변화 없음
+
+== 생성된 함수 속성
+{
+ "proname": "calendar_month_summary",
+ "args": "p_month date",
+ "vol": "s",
+ "secdef": false,
+ "cfg": [
+  "search_path=public"
+ ],
+ "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+ "defhash": "792eb90693575e56d6fa382522eb0d10"
+}
+
+== 역할별 실행 권한 [{"r":"anon","ok":true},{"r":"authenticated","ok":true},{"r":"service_role","ok":true},{"r":"postgres","ok":true}]
+
+== 본문에 쓰기 명령 포함 여부: 있음
+함수 본문(prosrc)의 쓰기·구조변경 명령: 없음 — select/with만 사용
