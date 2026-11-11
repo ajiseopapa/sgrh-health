@@ -12,6 +12,8 @@
 //     - 9월에도 기록 → 그 달 1일 기준 등록 직원 0명이라 "재직 인원 없음"(색 농도 없이 숫자만) 확인용
 //  3) 달력 집계 함수 결과를 실제 기록 전체(1,000건 제한 없이 나눠 읽기)와 날짜별로 대조
 //  4) 기록 수정·삭제 뒤 집계가 바로 바뀌는지 확인
+//  (11-11 추가) 이번 달 5일에 등록한 직원 3명이 그 뒤로 운동 → 날짜별 분모(h)가 그날까지 등록 인원으로 늘고,
+//               어느 날도 참여 인원이 분모를 넘지 않는지(100% 초과 없음) 확인
 import { createClient } from '@supabase/supabase-js'
 import { loadEnv } from './backup.mjs'
 
@@ -74,7 +76,13 @@ function expected(logs) {
   return map
 }
 
-async function compareMonth(label, monthFirst, nextFirst, wantHeadcount) {
+// 한국 시간 날짜 d가 끝나기 전에 등록된 직원 수 (0명이면 null) — DB의 calendar_headcount와 같은 정의
+const kstEnd = (d) => new Date(new Date(`${d}T00:00:00+09:00`).getTime() + 86400000)
+let allEmps = []
+const regBy = (d) => allEmps.filter((e) => new Date(e.created_at) < kstEnd(d)).length || null
+const lastDay = (first, next) => new Date(new Date(`${next}T00:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10)
+
+async function compareMonth(label, monthFirst, nextFirst, wantNull = false) {
   const t0 = performance.now()
   const { data, error } = await anon.rpc('calendar_month_summary', { p_month: monthFirst })
   const ms = Math.round(performance.now() - t0)
@@ -87,14 +95,27 @@ async function compareMonth(label, monthFirst, nextFirst, wantHeadcount) {
     if (!e || e.set.size !== d.p || e.n !== d.n || e.s !== Number(d.s)) mismatch++
   }
   if (exp.size !== data.days.length) mismatch += Math.abs(exp.size - data.days.length)
-  const hcOk = data.headcount === wantHeadcount
+  // 날짜별 분모(h)와 100% 초과 여부
+  let hBad = 0, over = 0
+  let adj = 0
+  for (const d of data.days) {
+    const reg = regBy(d.d)
+    const want = reg === null ? null : Math.max(reg, d.p) // 등록 전 날짜 기록이 있으면 참여 인원이 분모
+    if (want !== null && want !== reg) adj++
+    if (d.h !== want) hBad++
+    if (d.h && d.p > d.h) over++
+  }
+  const refDay = [lastDay(monthFirst, nextFirst), today].sort()[0]
+  const wantHeadcount = wantNull ? null : regBy(refDay)
+  const hcOk = data.headcount === wantHeadcount && regBy(refDay) === wantHeadcount && data.headcount_basis === 'registered'
   const multi = logs.length - [...exp.values()].reduce((a, e) => a + e.set.size, 0)
   console.log(
     `  ${label}: 기록 ${logs.length}건 · 기록 있는 날 ${data.days.length}일 · 같은 날 중복 기록 ${multi}건 → ` +
       `날짜별 대조 ${mismatch === 0 ? '✅ 전부 일치' : `❌ ${mismatch}일 불일치`} · ` +
-      `재직 인원 ${data.headcount ?? '없음'} ${hcOk ? '✅' : `❌(기대 ${wantHeadcount ?? '없음'})`} · 응답 ${ms}ms`
+      `범례 분모 ${data.headcount ?? '없음'} ${hcOk ? '✅' : `❌(기대 ${wantHeadcount ?? '없음'})`} · ` +
+      `날짜별 분모 ${hBad === 0 ? '✅' : `❌ ${hBad}일 불일치`}${adj ? `(등록 전 날짜 기록 보정 ${adj}일)` : ''} · 100% 초과 ${over === 0 ? '0일 ✅' : `❌ ${over}일`} · 응답 ${ms}ms`
   )
-  return { ok: mismatch === 0 && hcOk, data }
+  return { ok: mismatch === 0 && hcOk && hBad === 0 && over === 0, data }
 }
 
 let allOk = true
@@ -115,9 +136,18 @@ for (const sizeArg of sizes) {
     employee_number: `C${String(i + 1).padStart(4, '0')}`,
     created_at: '2026-10-01T00:00:00+09:00',
   }))
-  await insertBatches('employees', emps)
-  const { data: created } = await db.from('employees').select('id').like('employee_number', 'C%')
-  const ids = created.map((e) => e.id)
+  // 월 중 등록 직원 3명 (이번 달 5일 등록)
+  const midDay = Math.min(5, D)
+  const mid = Array.from({ length: 3 }, (_, i) => ({
+    name: `달력월중${i + 1}`,
+    employee_number: `C9${String(i + 1).padStart(3, '0')}`,
+    created_at: `${Y}-${pad(M)}-${pad(midDay)}T09:00:00+09:00`,
+  }))
+  await insertBatches('employees', [...emps, ...mid])
+  const { data: created } = await db.from('employees').select('id, employee_number').like('employee_number', 'C%')
+  const ids = created.filter((e) => !e.employee_number.startsWith('C9')).map((e) => e.id)
+  const midIds = created.filter((e) => e.employee_number.startsWith('C9')).map((e) => e.id)
+  allEmps = (await db.from('employees').select('created_at')).data
   const { data: types } = await db.from('exercise_types').select('id')
 
   // 2) 기록 만들기
@@ -140,6 +170,11 @@ for (const sizeArg of sizes) {
       }
     }
   }
+  // 월 중 등록 직원: 등록일부터 매일 운동 (기록 없는 날 제외)
+  for (let day = midDay; day <= D; day++) {
+    if (day % 7 === 0) continue
+    for (const id of midIds) logs.push({ employee_id: id, exercise_type_id: types[0].id, log_date: `${Y}-${pad(M)}-${pad(day)}`, duration_seconds: 900, memo: '달력시험' })
+  }
   // 지난달 기록 + 직원 등록 전 달(9월) 기록 (재직 인원 없음 확인용)
   for (const id of ids.slice(0, Math.min(5, ids.length))) {
     logs.push({ employee_id: id, exercise_type_id: types[0].id, log_date: `${prevMonth}-15`, duration_seconds: 1800, memo: '달력시험' })
@@ -149,15 +184,20 @@ for (const sizeArg of sizes) {
 
   // 3) 대조 — 이번 달은 재직 N명, 지난달은 10월 1일 이전 등록 직원이 0명 → 재직 인원 없음
   const nextFirst = M === 12 ? `${Y + 1}-01-01` : `${Y}-${pad(M + 1)}-01`
-  const cur = await compareMonth('이번 달', monthKey, nextFirst, N)
-  const prev = await compareMonth('지난달', `${prevMonth}-01`, monthKey, N) // 10월 1일 등록 → 10월 재직에 포함
-  const none = await compareMonth('직원 등록 전 달(9월)', `${noStaffMonth}-01`, `${prevMonth}-01`, null)
+  const cur = await compareMonth('이번 달', monthKey, nextFirst)
+  const prev = await compareMonth('지난달', `${prevMonth}-01`, monthKey) // 10월 1일 등록 → 10월 분모에 포함
+  const none = await compareMonth('직원 등록 전 달(9월)', `${noStaffMonth}-01`, `${prevMonth}-01`, true)
+  const hOf = (d) => Math.max(regBy(d.d), d.p)
+  const midH = cur.data.days.filter((d) => d.d >= `${Y}-${pad(M)}-${pad(midDay)}`).every((d) => d.h === hOf(d) && d.h >= regBy(`${Y}-${pad(M)}-${pad(midDay)}`)) &&
+    cur.data.days.some((d) => d.d < `${Y}-${pad(M)}-${pad(midDay)}` && d.h === hOf(d))
+  console.log(`  월 중 등록 3명(${midDay}일): 등록 전 날짜 분모 ${regBy(`${Y}-${pad(M)}-01`)}명 → 등록 뒤 ${regBy(`${Y}-${pad(M)}-${pad(midDay)}`)}명 ${midH ? '✅' : '❌'}`)
+  allOk = allOk && midH
   allOk = allOk && cur.ok && prev.ok && none.ok
 
   // 참여율 구간 분포
   const bucket = { '1~24%': 0, '25~49%': 0, '50~74%': 0, '75~100%': 0 }
   for (const d of cur.data.days) {
-    const r = d.p / N
+    const r = d.p / d.h
     bucket[r < 0.25 ? '1~24%' : r < 0.5 ? '25~49%' : r < 0.75 ? '50~74%' : '75~100%']++
   }
   console.log(`  색 구간 분포: ${Object.entries(bucket).map(([k, v]) => `${k} ${v}일`).join(' · ')}`)

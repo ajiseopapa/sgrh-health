@@ -66,6 +66,12 @@ export interface DaySummary {
   p: number // 참여 인원 (같은 직원 여러 번 = 1명)
   n: number // 기록 수
   s: number // 총 운동 시간(초)
+  h?: number | null // 그날까지 등록된 직원 수 = 그날 참여율 분모. 020 응답에는 없음 → 월 분모로 대신함
+}
+
+// 그날 참여율 분모: 날짜별 값(021)이 있으면 그것, 없으면 월 분모(020 호환)
+export function dayHeadcount(info: DaySummary | undefined, monthHeadcount: number | null): number | null {
+  return info && info.h !== undefined ? info.h : monthHeadcount
 }
 
 interface MonthSummary {
@@ -216,7 +222,7 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
           {cells.map((day, idx) => {
             if (!day) return <div key={idx} className="h-12" />
             const info = byDay.get(day)
-            const level = levelOf(info?.p ?? 0, headcount)
+            const level = levelOf(info?.p ?? 0, dayHeadcount(info, headcount))
             const isToday = isCurrentMonth && day === today.day
             const isSelected = selected === day
             const isFuture =
@@ -248,7 +254,7 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
           {headcount ? (
             <>
               <p className="mb-1.5 text-[10px] font-medium text-ink-500">
-                {basis.rate} <span className="font-normal text-ink-300">· {basis.count} {headcount}명</span>
+                {basis.rate} <span className="font-normal text-ink-300">· {basis.count} {headcount}명({isCurrentMonth ? '오늘' : '말일'} 기준)</span>
               </p>
               <div className="flex items-center gap-2">
                 {LEGEND.map((l) => (
@@ -273,7 +279,7 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
         <DayDetail
           date={selectedDate}
           summary={selected ? byDay.get(selected) : undefined}
-          headcount={headcount}
+          headcount={dayHeadcount(selected ? byDay.get(selected) : undefined, headcount)}
           rateLabel={basis.rate}
           refreshKey={refreshKey}
           onClose={() => setSelected(null)}

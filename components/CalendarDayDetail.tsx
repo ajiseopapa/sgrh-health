@@ -126,7 +126,7 @@ export default function CalendarDayDetail({
         {headcount ? (
           <>
             {rateLabel}{' '}
-            <span className="font-semibold text-ink-700">{Math.round((p / headcount) * 100)}%</span>
+            <span className="font-semibold text-ink-700">{Math.min(100, Math.round((p / headcount) * 100))}%</span>
             <span className="text-ink-300"> ({p}/{headcount}명)</span>
           </>
         ) : (
