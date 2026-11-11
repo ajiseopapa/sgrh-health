@@ -6,6 +6,7 @@
 // - env 파일 없이: HTTP 점검만 (로그인 없는 요청이 막히는지)
 // - env 파일(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY만 있으면 됨): 공개 키 직접 접근 점검 추가
 // - --after-lock: 019 실행 뒤 "공개 키 직접 쓰기 차단"까지 확인
+// - --after-023: 023 실행 뒤 "공개 키로 races 읽기·쓰기 차단" 확인
 // - --after-022: 022 실행 뒤 "응원 기기 식별값 공개 읽기 차단"과 새 응원 요약 API까지 확인
 //
 // 쓰기 시도는 모두 "존재하지 않는 직원·기록 ID"로만 합니다.
@@ -20,6 +21,7 @@ const base = args[0]?.replace(/\/$/, '')
 const envFile = args.find((a, i) => i > 0 && !a.startsWith('--'))
 const AFTER_LOCK = args.includes('--after-lock')
 const AFTER_022 = args.includes('--after-022')
+const AFTER_023 = args.includes('--after-023')
 if (!base?.startsWith('https://') && !base?.startsWith('http://localhost')) {
   console.error('사용법: node scripts/prod-check.mjs https://주소 [env 파일] [--after-lock]')
   process.exit(1)
@@ -98,6 +100,13 @@ if (envFile && existsSync(envFile)) {
     const { data: someLogs } = await anon.from('exercise_logs').select('id').order('created_at', { ascending: false }).limit(20)
     const r = await http('/api/reactions/summary', { method: 'POST', body: { logIds: (someLogs ?? []).map((l) => l.id), deviceId: 'prodcheck-device-0000' } })
     check('응원 요약 API 동작 (숫자만, 기기 식별값 없음)', r.status === 200 && Array.isArray(r.json.cheers) && !JSON.stringify(r.json).includes('device'), `status ${r.status}`)
+  }
+
+  if (AFTER_023) {
+    const { data, error } = await anon.from('races').select('id').limit(1)
+    check('공개 키로 races 읽기 차단 (023)', !!error || (data ?? []).length === 0, error?.code ?? '')
+    const { error: wErr } = await anon.from('races').insert({ name: 'prodcheck', race_date: '2026-01-01', location: 'x', distances: 'x' })
+    check('공개 키로 races 넣기 차단 (023)', !!wErr && wErr.code === '42501', `오류 코드 ${wErr?.code}`)
   }
 
   const tries = [

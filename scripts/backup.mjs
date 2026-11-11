@@ -23,6 +23,7 @@ export const TABLES = [
   'employee_pins',
   'auth_sessions',
   'audit_logs',
+  'races', // 앱은 안 쓰는 옛 대회 테이블. 023(접근 차단) 전후 보존 확인용. 없으면 건너뜀
 ]
 
 export function loadEnv(file) {
