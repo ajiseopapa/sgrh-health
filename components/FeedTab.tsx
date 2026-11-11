@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
+import { ExerciseLog, ExerciseType, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
 import { getDeviceId } from '@/lib/device'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { useDialog } from '@/lib/dialog'
-import CheerBar from './CheerBar'
+import CheerBar, { CheerState } from './CheerBar'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -33,10 +33,14 @@ export default function FeedTab() {
   const [editMemo, setEditMemo] = useState('')
   const [error, setError] = useState('')
 
-  // ── 서로 칭찬하기 ──
-  const [reactions, setReactions] = useState<LogReaction[]>([])
-  // 응원 취소 판단 기준. 이름을 묻지 않으려고 사람 대신 기기를 기억합니다.
-  const [deviceId, setDeviceId] = useState('')
+  // ── 서로 칭찬하기 (익명, 기기 기준) ──
+  // 키: `${기록 id}|${이모지}` → 응원 수, 이 기기가 눌렀는지. 다른 기기의 식별값은 받지 않습니다.
+  const [cheers, setCheers] = useState<Record<string, CheerState>>({})
+  // 버튼별로 "마지막으로 누른 상태"와 "보내는 중"을 기억 → 연타해도 요청이 겹치지 않고 마지막 상태로 끝남
+  const wanted = useRef(new Map<string, boolean>())
+  const sending = useRef(new Set<string>())
+  const cheersRef = useRef(cheers)
+  cheersRef.current = cheers
 
   async function load() {
     setLoading(true)
@@ -53,66 +57,77 @@ export default function FeedTab() {
     setLogs(logList)
     setExerciseTypes(typeRes.data ?? [])
 
-    if (logList.length > 0) {
-      const { data } = await supabase
-        .from('log_reactions')
-        .select('*')
-        .in('log_id', logList.map((l) => l.id))
-      setReactions((data as LogReaction[]) ?? [])
-    } else {
-      setReactions([])
-    }
+    await loadCheers(logList.map((l) => l.id))
     setLoading(false)
   }
 
+  async function loadCheers(logIds: string[]) {
+    if (logIds.length === 0) return setCheers({})
+    const r = await api<{ cheers: { log_id: string; emoji: string; count: number; mine: boolean }[] }>(
+      '/api/reactions/summary',
+      { method: 'POST', body: { logIds, deviceId: getDeviceId() } }
+    )
+    if (!r.ok) return
+    const next: Record<string, CheerState> = {}
+    for (const c of r.data.cheers) next[`${c.log_id}|${c.emoji}`] = { count: c.count, mine: c.mine }
+    // 보내는 중인 버튼은 화면의 상태를 그대로 둠(마지막으로 누른 상태 유지)
+    setCheers((prev) => {
+      for (const key of wanted.current.keys()) if (prev[key]) next[key] = prev[key]
+      return next
+    })
+  }
+
   useEffect(() => {
-    setDeviceId(getDeviceId())
     load()
   }, [])
 
-  // 응원 누르기 — 아무것도 묻지 않고 바로 반영합니다.
-  async function handleToggleCheer(logId: string, emoji: string) {
+  // 응원 누르기 — 화면을 먼저 바꾸고, 서버에는 "켜기/끄기"를 상태로 보냅니다.
+  // 같은 버튼을 빠르게 여러 번 눌러도 요청은 하나씩만 나가고, 마지막으로 누른 상태로 끝납니다.
+  function handleToggleCheer(logId: string, emoji: string) {
     setError('')
-    const device = deviceId || getDeviceId()
-
-    const existing = reactions.find(
-      (r) => r.log_id === logId && r.device_id === device && r.emoji === emoji
-    )
-
-    // 이미 누른 응원이면 취소 (화면을 먼저 바꾸고 서버에 저장)
-    if (existing) {
-      setReactions((prev) => prev.filter((r) => r.id !== existing.id))
-      const r = await api('/api/reactions', { method: 'POST', body: { logId, deviceId: device, emoji } })
-      if (!r.ok) {
-        setError('응원 취소에 실패했어요.')
-        load()
-      }
-      return
-    }
-
-    // 낙관적 반영 후 저장 (탭 반응이 즉시 보이도록)
-    const tempId = `temp-${logId}-${emoji}`
-    const temp: LogReaction = {
-      id: tempId,
-      log_id: logId,
-      device_id: device,
-      emoji,
-      created_at: new Date().toISOString(),
-    }
-    setReactions((prev) => [...prev, temp])
-
-    const r = await api<{ action: string; reaction?: LogReaction }>('/api/reactions', {
-      method: 'POST',
-      body: { logId, deviceId: device, emoji },
+    const key = `${logId}|${emoji}`
+    // 지금 화면에 보이는 상태의 반대로. (보내는 중이면 마지막으로 누른 상태 기준)
+    const shownMine = wanted.current.has(key) ? wanted.current.get(key)! : (cheersRef.current[key]?.mine ?? false)
+    const on = !shownMine
+    wanted.current.set(key, on)
+    setCheers((prev) => {
+      const cur = prev[key] ?? { count: 0, mine: false }
+      if (cur.mine === on) return prev
+      return { ...prev, [key]: { mine: on, count: Math.max(0, cur.count + (on ? 1 : -1)) } }
     })
-    if (!r.ok || r.data.action !== 'added' || !r.data.reaction) {
-      setReactions((prev) => prev.filter((x) => x.id !== tempId))
-      if (!r.ok) setError('응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.')
-      else load()
-      return
+    void sendCheer(logId, emoji)
+  }
+
+  async function sendCheer(logId: string, emoji: string) {
+    const key = `${logId}|${emoji}`
+    if (sending.current.has(key)) return // 보내는 중이면 끝난 뒤 마지막 상태로 한 번 더 보냄
+    sending.current.add(key)
+    try {
+      for (;;) {
+        const on = wanted.current.get(key)
+        if (on === undefined) return
+        const r = await api<{ on: boolean; count: number }>('/api/reactions', {
+          method: 'POST',
+          body: { logId, deviceId: getDeviceId(), emoji, on },
+        })
+        if (!r.ok) {
+          wanted.current.delete(key)
+          setError(on ? '응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.' : '응원 취소에 실패했어요.')
+          await loadCheers(logs.map((l) => l.id))
+          return
+        }
+        const latest = wanted.current.get(key)
+        if (latest === r.data.on) {
+          // 서버 결과가 마지막으로 누른 상태와 같음 → 서버 숫자로 맞추고 끝
+          wanted.current.delete(key)
+          setCheers((prev) => ({ ...prev, [key]: { mine: r.data.on, count: r.data.count } }))
+          return
+        }
+        // 보내는 동안 다시 눌림 → 화면은 마지막 상태 그대로 두고, 그 상태로 한 번 더 보냄
+      }
+    } finally {
+      sending.current.delete(key)
     }
-    const saved = r.data.reaction
-    setReactions((prev) => prev.map((x) => (x.id === tempId ? saved : x)))
   }
 
   function startEdit(log: ExerciseLog) {
@@ -305,8 +320,11 @@ export default function FeedTab() {
                     {log.memo && <p className="mt-1.5 text-xs italic text-ink-400">"{log.memo}"</p>}
 
                     <CheerBar
-                      reactions={reactions.filter((r) => r.log_id === log.id)}
-                      myDeviceId={deviceId}
+                      cheers={{
+                        '👏': cheers[`${log.id}|👏`],
+                        '💪': cheers[`${log.id}|💪`],
+                        '🔥': cheers[`${log.id}|🔥`],
+                      }}
                       onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
                     />
 

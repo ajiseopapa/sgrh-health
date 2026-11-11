@@ -71,3 +71,6 @@ export function cleanText(v: unknown, max: number): string | null {
   if (!t || t.length > max) return null
   return t
 }
+
+// 응원 기기 식별값: 브라우저가 만든 무작위 값(이름·전화번호 같은 개인정보 아님). 영문·숫자·- 8~64자
+export const DEVICE_RE = /^[A-Za-z0-9-]{8,64}$/

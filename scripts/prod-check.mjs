@@ -6,6 +6,7 @@
 // - env 파일 없이: HTTP 점검만 (로그인 없는 요청이 막히는지)
 // - env 파일(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY만 있으면 됨): 공개 키 직접 접근 점검 추가
 // - --after-lock: 019 실행 뒤 "공개 키 직접 쓰기 차단"까지 확인
+// - --after-022: 022 실행 뒤 "응원 기기 식별값 공개 읽기 차단"과 새 응원 요약 API까지 확인
 //
 // 쓰기 시도는 모두 "존재하지 않는 직원·기록 ID"로만 합니다.
 //   차단돼 있으면 → 권한 오류(42501)
@@ -18,6 +19,7 @@ const args = process.argv.slice(2)
 const base = args[0]?.replace(/\/$/, '')
 const envFile = args.find((a, i) => i > 0 && !a.startsWith('--'))
 const AFTER_LOCK = args.includes('--after-lock')
+const AFTER_022 = args.includes('--after-022')
 if (!base?.startsWith('https://') && !base?.startsWith('http://localhost')) {
   console.error('사용법: node scripts/prod-check.mjs https://주소 [env 파일] [--after-lock]')
   process.exit(1)
@@ -87,6 +89,15 @@ if (envFile && existsSync(envFile)) {
   for (const t of ['employees', 'exercise_logs', 'exercise_types']) {
     const { error } = await anon.from(t).select('id').limit(1)
     check(`화면용 읽기 정상: ${t}`, !error, error?.message ?? '')
+  }
+
+  if (AFTER_022) {
+    // 응원 행을 직접 읽으면 0행이어야 함(기기 식별값 노출 차단). 요약 API는 숫자만 돌려줌
+    const { data, error } = await anon.from('log_reactions').select('device_id').limit(1)
+    check('공개 키로 응원 기기 식별값 읽기 차단 (022)', !!error || (data ?? []).length === 0)
+    const { data: someLogs } = await anon.from('exercise_logs').select('id').order('created_at', { ascending: false }).limit(20)
+    const r = await http('/api/reactions/summary', { method: 'POST', body: { logIds: (someLogs ?? []).map((l) => l.id), deviceId: 'prodcheck-device-0000' } })
+    check('응원 요약 API 동작 (숫자만, 기기 식별값 없음)', r.status === 200 && Array.isArray(r.json.cheers) && !JSON.stringify(r.json).includes('device'), `status ${r.status}`)
   }
 
   const tries = [

@@ -1,24 +1,24 @@
 'use client'
 
-import { CHEER_EMOJIS, CHEER_LABEL, LogReaction } from '@/types/database'
+import { CHEER_EMOJIS, CHEER_LABEL } from '@/types/database'
+
+export interface CheerState {
+  count: number
+  mine: boolean // 이 기기에서 누른 응원인지
+}
 
 interface Props {
-  /** 이 기록에 달린 응원만 걸러서 넘겨주세요 */
-  reactions: LogReaction[]
-  /** 내 기기 id. 내가 누른 이모지를 색으로 표시하는 데만 씁니다 */
-  myDeviceId?: string
+  /** 이 기록의 이모지별 응원 상태 (없으면 0개·안 누름) */
+  cheers: Partial<Record<string, CheerState>>
   onToggle: (emoji: string) => void
 }
 
-export default function CheerBar({ reactions, myDeviceId, onToggle }: Props) {
+export default function CheerBar({ cheers, onToggle }: Props) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
       {CHEER_EMOJIS.map((emoji) => {
-        const mine = reactions.filter((r) => r.emoji === emoji)
-        const count = mine.length
-        const isMine = myDeviceId
-          ? mine.some((r) => r.device_id === myDeviceId)
-          : false
+        const count = cheers[emoji]?.count ?? 0
+        const isMine = cheers[emoji]?.mine ?? false
         const label = CHEER_LABEL[emoji] ?? '응원'
 
         return (
