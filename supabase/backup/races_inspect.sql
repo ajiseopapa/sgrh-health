@@ -28,10 +28,9 @@ where n.nspname not in ('pg_catalog', 'information_schema', 'extensions', 'graph
 
 union all
 -- 5) races를 쓰는 뷰
-select '5 뷰', v.table_schema || '.' || v.table_name, 'races 사용'
+select '5 뷰', v.view_schema || '.' || v.view_name, 'races 사용'
 from information_schema.view_table_usage v
-where v.table_schema = 'public' and v.table_name <> 'races' and v.table_name is not null
-  and exists (select 1 from information_schema.view_table_usage u where u.view_name = v.view_name and u.table_name = 'races')
+where v.table_schema = 'public' and v.table_name = 'races'
 
 union all
 -- 6) RLS 정책
