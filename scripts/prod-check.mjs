@@ -105,7 +105,8 @@ if (envFile && existsSync(envFile)) {
   if (AFTER_023) {
     const { data, error } = await anon.from('races').select('id').limit(1)
     check('공개 키로 races 읽기 차단 (023)', !!error || (data ?? []).length === 0, error?.code ?? '')
-    const { error: wErr } = await anon.from('races').insert({ name: 'prodcheck', race_date: '2026-01-01', location: 'x', distances: 'x' })
+    // 필수 칸 name을 일부러 빼서, 차단이 안 돼 있어도(23502) 운영에 행이 생기지 않게 함
+    const { error: wErr } = await anon.from('races').insert({ race_date: '2026-01-01', location: 'x', distances: 'x' })
     check('공개 키로 races 넣기 차단 (023)', !!wErr && wErr.code === '42501', `오류 코드 ${wErr?.code}`)
   }
 
