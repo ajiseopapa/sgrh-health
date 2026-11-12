@@ -102,14 +102,12 @@ function AppShell() {
         {TABS.map((t) => {
           const on = tab === t.key
           return (
-            <button key={t.key} onClick={() => setTab(t.key)} aria-current={on ? 'page' : undefined}
+            <button key={t.key} onClick={() => setTab(t.key)} aria-current={on ? 'page' : undefined} aria-label={t.label}
               className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors ${
                 on ? 'text-ink-900' : 'text-ink-400'
               }`}>
               <Icon name={t.icon} size={22} />
-              <span className="flex items-center gap-1">
-                {t.label}
-              </span>
+              <span aria-hidden="true">{t.label}</span>
               <span className={`h-[3px] w-5 rounded-full ${on ? 'bg-brand-600' : 'bg-transparent'}`} aria-hidden="true" />
             </button>
           )
