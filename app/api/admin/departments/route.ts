@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDb } from '@/lib/server/db'
 import { cleanText } from '@/lib/server/validate'
 import { fail, guardAdminWrite, handle, ok, readJson, requireAdmin, writeAudit } from '@/lib/server/guard'
-import { kstToday } from '@/lib/server/engagement'
+import { kstToday, readAllRows } from '@/lib/server/engagement'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,9 @@ export const GET = handle(async () => {
   const ym = kstToday().slice(0, 7)
   const [{ data: depts }, { data: open }, { data: heads }] = await Promise.all([
     db.from('departments').select('id, name, sort_order').order('sort_order').order('name'),
-    db.from('employee_departments').select('employee_id, department_id, start_date').is('end_date', null),
+    readAllRows<{ employee_id: string; department_id: string; start_date: string }>(
+      () => db.from('employee_departments').select('employee_id, department_id, start_date').is('end_date', null), ['employee_id']
+    ).then((data) => ({ data })),
     db.from('department_headcounts').select('department_id, year_month, headcount, source, updated_at').order('year_month', { ascending: false }),
   ])
   const members = new Map<string, number>()

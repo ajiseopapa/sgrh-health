@@ -38,6 +38,20 @@ export function monthEnd(date: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+// ── 1,000행 제한 없이 끝까지 나눠 읽기 (정렬 칸을 꼭 지정) ──
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function readAllRows<T>(make: () => any, orderBy: string[]): Promise<T[]> {
+  const out: T[] = []
+  for (let off = 0; ; off += 1000) {
+    let q = make()
+    for (const col of orderBy) q = q.order(col)
+    const { data, error } = await q.range(off, off + 999)
+    if (error) throw new Error('ROWS_READ_FAILED')
+    out.push(...((data ?? []) as T[]))
+    if (!data || data.length < 1000) return out
+  }
+}
+
 // ── 기록 읽기 (1,000건 제한 없이) ──
 export interface LogLite {
   employee_id: string
@@ -259,7 +273,9 @@ export async function departmentRanking(db: SupabaseClient, period: 'week' | 'mo
   const [logs, { data: depts }, { data: hist }, { data: heads }] = await Promise.all([
     loadLogs(db, { from, to }),
     db.from('departments').select('id, name, sort_order').order('sort_order').order('name'),
-    db.from('employee_departments').select('employee_id, department_id, start_date, end_date'),
+    readAllRows<{ employee_id: string; department_id: string; start_date: string; end_date: string | null }>(
+      () => db.from('employee_departments').select('employee_id, department_id, start_date, end_date'), ['employee_id', 'start_date']
+    ).then((data) => ({ data })),
     db.from('department_headcounts').select('department_id, headcount, source').eq('year_month', yearMonth),
   ])
   const deptOf = (employeeId: string, date: string): string | null => {

@@ -1,6 +1,6 @@
 import { serverDb } from '@/lib/server/db'
 import { handle, ok } from '@/lib/server/guard'
-import { addDays, challengeStatus, ChallengeRow, kstToday } from '@/lib/server/engagement'
+import { addDays, challengeStatus, ChallengeRow, kstToday, readAllRows } from '@/lib/server/engagement'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,12 +9,13 @@ export const dynamic = 'force-dynamic'
 export const GET = handle(async () => {
   const db = serverDb()
   const today = kstToday()
-  const [{ data: chs }, { data: parts }] = await Promise.all([
-    db.from('challenges').select('id, title, description, metric, target, start_date, end_date').gte('end_date', addDays(today, -30)).order('start_date'),
-    db.from('challenge_participants').select('challenge_id'),
-  ])
+  const { data: chs } = await db.from('challenges').select('id, title, description, metric, target, start_date, end_date').gte('end_date', addDays(today, -30)).order('start_date')
+  const ids = (chs ?? []).map((c) => c.id)
+  const parts = ids.length
+    ? await readAllRows<{ challenge_id: string }>(() => db.from('challenge_participants').select('challenge_id, employee_id').in('challenge_id', ids), ['challenge_id', 'employee_id'])
+    : []
   const count = new Map<string, number>()
-  for (const p of parts ?? []) count.set(p.challenge_id, (count.get(p.challenge_id) ?? 0) + 1)
+  for (const p of parts) count.set(p.challenge_id, (count.get(p.challenge_id) ?? 0) + 1)
   return ok({
     today,
     challenges: ((chs ?? []) as ChallengeRow[]).map((c) => ({ ...c, status: challengeStatus(c, today), participants: count.get(c.id) ?? 0 })),

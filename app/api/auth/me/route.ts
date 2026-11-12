@@ -12,11 +12,15 @@ export const GET = handle(async () => {
   if (emp?.employeeId) {
     const db = serverDb()
     const [{ data: e }, { data: p }] = await Promise.all([
-      db.from('employees').select('id, name, employee_number, color').eq('id', emp.employeeId).maybeSingle(),
+      db.from('employees').select('id, name, employee_number, color, left_at').eq('id', emp.employeeId).maybeSingle(),
       db.from('employee_pins').select('is_temp').eq('employee_id', emp.employeeId).maybeSingle(),
     ])
-    if (e && p) {
-      me = e
+    // v2.1: 퇴사일이 지난 직원은 로그인 안 된 것으로 표시
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+    if (e && p && !(e.left_at && e.left_at < today)) {
+      const { left_at: _l, ...rest } = e
+      void _l
+      me = rest
       mustChangePin = p.is_temp
     }
   }

@@ -28,7 +28,7 @@ export default function CheerBar({ cheers, onToggle }: Props) {
             onClick={() => onToggle(emoji)}
             aria-label={`${label}${count > 0 ? ` ${count}개` : ''}`}
             aria-pressed={isMine}
-            className={`flex min-h-[40px] min-w-[52px] items-center justify-center gap-1 rounded-full border px-3 text-[14px] font-bold tabular-nums transition ${
+            className={`flex min-h-[44px] min-w-[56px] items-center justify-center gap-1 rounded-full border px-3 text-[14px] font-bold tabular-nums transition ${
               isMine
                 ? 'border-brand-600 bg-brand-50 text-brand-800'
                 : 'border-ink-200 text-ink-600'

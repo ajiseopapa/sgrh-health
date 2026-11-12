@@ -84,12 +84,19 @@ export interface EmployeeAuth { session: Session; employeeId: string }
 export async function requireEmployee(opts: { allowTempPin?: boolean } = {}): Promise<EmployeeAuth | NextResponse> {
   const session = await getSession('employee')
   if (!session || !session.employeeId) return fail(401, '먼저 본인 확인을 해주세요.', { needLogin: true })
+  // v2.1: 퇴사일이 지난 직원의 세션은 쓰지 않음 (퇴사 처리 전에 받아 둔 세션 포함)
+  const { data: emp } = await serverDb().from('employees').select('left_at').eq('id', session.employeeId).maybeSingle()
+  if (!emp || (emp.left_at && emp.left_at < todaySeoulDate())) return fail(401, '먼저 본인 확인을 해주세요.', { needLogin: true })
   if (!opts.allowTempPin) {
     const { data } = await serverDb().from('employee_pins').select('is_temp').eq('employee_id', session.employeeId).maybeSingle()
     if (!data) return fail(401, '먼저 본인 확인을 해주세요.', { needLogin: true })
     if (data.is_temp) return fail(403, '임시 PIN을 내 PIN으로 먼저 바꿔주세요.', { mustChangePin: true })
   }
   return { session, employeeId: session.employeeId }
+}
+
+function todaySeoulDate(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 }
 
 export async function requireAdmin(): Promise<Session | NextResponse> {

@@ -21,8 +21,10 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
 
   // 오늘 운동한 동료 수 (공개된 기록에서 사람 수만 셈)
   useEffect(() => {
-    supabase.from('exercise_logs').select('employee_id').eq('log_date', seoulToday()).then(({ data: rows }) => {
-      setTeamToday(new Set((rows ?? []).map((r) => r.employee_id)).size)
+    const t = seoulToday()
+    supabase.rpc('calendar_month_summary', { p_month: `${t.slice(0, 7)}-01` }).then(({ data: m }) => {
+      const day = (m as { days?: { d: string; p: number }[] } | null)?.days?.find((d) => d.d === t)
+      setTeamToday(day?.p ?? 0)
     })
   }, [])
 

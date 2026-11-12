@@ -66,12 +66,12 @@ input[type='date'] {
 
   /* 글자 버튼(목록 안의 수정·삭제 등): 최소 터치 높이 확보 */
   .pill-action {
-    @apply inline-flex min-h-[36px] items-center rounded-md px-2.5 text-[13px] font-semibold underline-offset-4 transition hover:underline active:bg-ink-50;
+    @apply inline-flex min-h-[44px] items-center rounded-md px-2.5 text-[13px] font-semibold underline-offset-4 transition hover:underline active:bg-ink-50;
   }
 
   /* 선택 칩 (종목·기간·분 선택) */
   .chip {
-    @apply inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-ink-200 bg-sheet px-3 text-[14px] font-semibold text-ink-700 transition active:bg-ink-50;
+    @apply inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-ink-200 bg-sheet px-3 text-[14px] font-semibold text-ink-700 transition active:bg-ink-50;
   }
   .chip[aria-pressed='true'],
   .chip[aria-checked='true'] {

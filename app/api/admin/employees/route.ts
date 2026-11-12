@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { serverDb } from '@/lib/server/db'
 import { cleanText } from '@/lib/server/validate'
 import { fail, guardAdminWrite, handle, ok, readJson, requireAdmin, writeAudit } from '@/lib/server/guard'
+import { readAllRows } from '@/lib/server/engagement'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,9 @@ export const GET = handle(async () => {
   const [{ data: emps }, { data: pins }, { data: open }] = await Promise.all([
     db.from('employees').select('*').order('name'),
     db.from('employee_pins').select('employee_id, is_temp, locked_until'),
-    db.from('employee_departments').select('employee_id, department_id, start_date, departments(name)').is('end_date', null),
+    readAllRows<{ employee_id: string; department_id: string; start_date: string; departments: { name: string } | { name: string }[] | null }>(
+      () => db.from('employee_departments').select('employee_id, department_id, start_date, departments(name)').is('end_date', null), ['employee_id']
+    ).then((data) => ({ data })),
   ])
   const deptMap = new Map((open ?? []).map((o) => [o.employee_id, o]))
   const pinMap = new Map((pins ?? []).map((p) => [p.employee_id, p]))

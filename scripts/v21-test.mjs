@@ -302,6 +302,44 @@ async function main() {
   }
   r = await new Device().call('/api/admin/departments', { method: 'POST', body: { name: '시험v21-x' } })
   check('CSRF 헤더 있어도 관리자 세션 없으면 거부', r.status === 401)
+
+  section('9. 오늘 퇴사 처리 → 다음 날부터 세션 차단')
+  r = await admin.call(`/api/admin/employees/${E.V004}/retire`, { method: 'POST', body: { leftAt: TODAY } })
+  const v4b = new Device()
+  r = await v4b.call('/api/auth/login', { method: 'POST', body: { employeeId: E.V004, pin: PINS.V004 } })
+  check('퇴사일(마지막 근무일) 당일에는 로그인 가능', r.ok === true)
+  r = await v4b.call('/api/me/engagement')
+  check('당일 세션으로 내 현황 조회 가능', r.ok === true)
+  // 다음 날이 된 것처럼: 퇴사일을 어제로 바꿈 → 이미 받은 세션도 막혀야 함
+  await db.from('employees').update({ left_at: add(TODAY, -1) }).eq('id', E.V004)
+  r = await v4b.call('/api/me/engagement')
+  check('퇴사일이 지나면 이미 받은 세션으로 현황 조회 거부', r.status === 401)
+  r = await v4b.call('/api/logs', { method: 'POST', body: { requestId: 'rid-retired-0001', exerciseTypeId: typeId, logDate: TODAY, durationSeconds: 600, distanceKm: null, memo: null } })
+  check('퇴사일이 지나면 기록 작성 거부', r.status === 401)
+  r = await v4b.call('/api/auth/me')
+  check('퇴사일이 지나면 로그인 상태도 없음으로 표시', r.ok && r.me === null)
+
+  section('10. 참여 행 1,000건 초과 집계')
+  const allEmp = []
+  for (let off = 0; ; off += 1000) {
+    const { data } = await db.from('employees').select('id').order('id').range(off, off + 999)
+    allEmp.push(...data)
+    if (data.length < 1000) break
+  }
+  const per = Math.min(300, allEmp.length)
+  const bigIds = []
+  for (let i = 0; i < 4; i++) bigIds.push((await mk(`시험v21-대량${i}`, 'sessions', 1, TODAY, add(TODAY, 3))).challenge.id)
+  const rows = bigIds.flatMap((cid) => allEmp.slice(0, per).map((e) => ({ challenge_id: cid, employee_id: e.id })))
+  for (let i = 0; i < rows.length; i += 500) await db.from('challenge_participants').insert(rows.slice(i, i + 500))
+  r = await nobody.call('/api/challenges')
+  const pubCounts = bigIds.map((id) => r.challenges.find((c) => c.id === id)?.participants)
+  check(`공개 목록 참여 인원: 챌린지 4개 × ${per}명 = ${rows.length}행에서도 잘리지 않음`, rows.length > 1000 && pubCounts.every((n) => n === per), pubCounts.join(','))
+  r = await admin.call('/api/admin/challenges')
+  const admCounts = bigIds.map((id) => r.challenges.find((c) => c.id === id)?.participants)
+  check('관리자 현황 참여 인원도 잘리지 않음', admCounts.every((n) => n === per), admCounts.join(','))
+  r = await eng('V001')
+  const myCounts = bigIds.map((id) => r.challenges?.find((c) => c.id === id)?.participants)
+  check('내 현황의 참여 인원도 잘리지 않음', myCounts.every((n) => n === per), myCounts.join(','))
 }
 
 try {

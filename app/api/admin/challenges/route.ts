@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDb } from '@/lib/server/db'
 import { parseChallenge } from '@/lib/server/challenge-input'
 import { fail, guardAdminWrite, handle, ok, readJson, requireAdmin, writeAudit } from '@/lib/server/guard'
-import { challengeProgress, challengeStatus, ChallengeRow, dailyCredits, kstToday, loadLogs } from '@/lib/server/engagement'
+import { challengeProgress, challengeStatus, ChallengeRow, dailyCredits, kstToday, loadLogs, readAllRows } from '@/lib/server/engagement'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,16 +12,16 @@ export const GET = handle(async () => {
   if (admin instanceof NextResponse) return admin
   const db = serverDb()
   const today = kstToday()
-  const [{ data: chs }, { data: parts }] = await Promise.all([
+  const [{ data: chs }, parts] = await Promise.all([
     db.from('challenges').select('*').order('start_date', { ascending: false }),
-    db.from('challenge_participants').select('challenge_id, employee_id'),
+    readAllRows<{ challenge_id: string; employee_id: string }>(() => db.from('challenge_participants').select('challenge_id, employee_id'), ['challenge_id', 'employee_id']),
   ])
   const list = (chs ?? []) as ChallengeRow[]
   const minStart = list.reduce((m, c) => (c.start_date < m ? c.start_date : m), today)
   const credits = list.length ? dailyCredits(await loadLogs(db, { from: minStart })) : []
   return ok({
     challenges: list.map((c) => {
-      const ps = (parts ?? []).filter((p) => p.challenge_id === c.id)
+      const ps = parts.filter((p) => p.challenge_id === c.id)
       const achieved = ps.filter((p) => challengeProgress(c, credits.filter((x) => x.employeeId === p.employee_id), today) >= c.target).length
       return { ...c, status: challengeStatus(c, today), participants: ps.length, achieved }
     }),
