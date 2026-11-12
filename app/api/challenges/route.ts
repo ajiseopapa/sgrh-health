@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export const GET = handle(async () => {
   const db = serverDb()
   const today = kstToday()
-  const { data: chs } = await db.from('challenges').select('id, title, description, metric, target, start_date, end_date').gte('end_date', addDays(today, -30)).order('start_date')
+  const { data: chs } = await db.from('challenges').select('id, title, description, metric, target, start_date, end_date, closed').gte('end_date', addDays(today, -30)).order('start_date')
   const ids = (chs ?? []).map((c) => c.id)
   const parts = ids.length
     ? await readAllRows<{ challenge_id: string }>(() => db.from('challenge_participants').select('challenge_id, employee_id').in('challenge_id', ids), ['challenge_id', 'employee_id'])

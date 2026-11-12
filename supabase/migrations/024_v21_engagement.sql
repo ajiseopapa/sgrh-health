@@ -73,6 +73,9 @@ create table if not exists public.challenges (
   check (end_date >= start_date)
 );
 
+-- 관리자가 '지금 끝내기'로 닫은 챌린지 (오늘 시작한 챌린지도 바로 끝낼 수 있게. P1 화면 확인 중 보완)
+alter table public.challenges add column if not exists closed boolean not null default false;
+
 create table if not exists public.challenge_participants (
   challenge_id uuid not null references public.challenges(id) on delete cascade,
   employee_id  uuid not null references public.employees(id) on delete cascade,

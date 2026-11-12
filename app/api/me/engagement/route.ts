@@ -14,7 +14,7 @@ export const GET = handle(async () => {
   const o = await employeeOverview(db, auth.employeeId)
 
   const [{ data: chs }, { data: mine }] = await Promise.all([
-    db.from('challenges').select('id, title, description, metric, target, start_date, end_date').gte('end_date', addDaysSafe(o.today, -30)).order('start_date'),
+    db.from('challenges').select('id, title, description, metric, target, start_date, end_date, closed').gte('end_date', addDaysSafe(o.today, -30)).order('start_date'),
     db.from('challenge_participants').select('challenge_id, joined_at').eq('employee_id', auth.employeeId),
   ])
   const ids = (chs ?? []).map((c) => c.id)

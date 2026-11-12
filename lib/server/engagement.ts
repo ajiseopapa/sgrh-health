@@ -244,8 +244,9 @@ export async function employeeOverview(db: SupabaseClient, employeeId: string, t
 }
 
 // ── 챌린지 ──
-export interface ChallengeRow { id: string; title: string; description: string | null; metric: Metric; target: number; start_date: string; end_date: string }
+export interface ChallengeRow { id: string; title: string; description: string | null; metric: Metric; target: number; start_date: string; end_date: string; closed?: boolean }
 export function challengeStatus(c: ChallengeRow, today: string): 'upcoming' | 'active' | 'ended' {
+  if (c.closed) return 'ended' // 관리자가 끝낸 챌린지
   return today < c.start_date ? 'upcoming' : today > c.end_date ? 'ended' : 'active'
 }
 /** 시작일 전 기록은 빼고, 기간 안(오늘까지)의 기록만 셉니다. 참여일과는 무관. */

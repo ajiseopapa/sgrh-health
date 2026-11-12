@@ -243,6 +243,15 @@ async function main() {
   r = await admin.call('/api/admin/challenges')
   const a1 = r.challenges?.find((c) => c.id === C1.id)
   check('종료 챌린지 참여·달성 인원 집계 (기간 안 기록 기준)', a1?.status === 'ended' && a1?.participants === 1 && a1?.achieved === 0, `참여 ${a1?.participants} 달성 ${a1?.achieved}(오늘 기록은 종료 뒤라 제외)`)
+  // 오늘 시작한 챌린지도 '지금 끝내기'로 바로 끝남(참여 마감)
+  const CT = (await mk('시험v21-오늘시작', 'sessions', 2, TODAY, add(TODAY, 6))).challenge
+  await dev.V001.call(`/api/challenges/${CT.id}/join`, { method: 'POST' })
+  r = await admin.call(`/api/admin/challenges/${CT.id}`, { method: 'PATCH', body: { endNow: true } })
+  check('오늘 시작한 챌린지 지금 끝내기 → 끝남', r.ok && r.challenge?.closed === true && r.challenge?.end_date === TODAY)
+  r = await admin.call('/api/admin/challenges')
+  check('관리자 현황에서 끝남으로 표시', r.challenges?.find((c) => c.id === CT.id)?.status === 'ended')
+  r = await dev.V002.call(`/api/challenges/${CT.id}/join`, { method: 'POST' })
+  check('끝낸 챌린지에는 새로 참여 불가', r.status === 400)
   r = await nobody.call('/api/challenges')
   check('공개 챌린지 목록: 참여 인원만, 이름 없음', r.ok && !JSON.stringify(r).includes('v21시험') && r.challenges?.some((c) => c.id === C1.id))
 

@@ -22,7 +22,8 @@ export const PATCH = handle(async (req: NextRequest, { params }: { params: { id:
   if (body?.endNow === true) {
     const today = kstToday()
     const end = addDays(today, -1) >= before.start_date ? addDays(today, -1) : before.start_date
-    patch = { end_date: end }
+    // 종료일을 어제로(시작일보다 앞설 수 없으면 시작일로) + 닫힘 표시 → 바로 '끝남', 참여 마감
+    patch = { end_date: end, closed: true }
   } else {
     const p = parseChallenge(body)
     if ('error' in p) return fail(400, p.error as string)

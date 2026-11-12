@@ -8,7 +8,7 @@ import { METRIC_LABEL, METRIC_UNIT } from '@/lib/engagement'
 import { Empty, Loading, Notice } from '@/lib/ui'
 
 type Metric = 'sessions' | 'minutes' | 'active_days'
-interface Row { id: string; title: string; description: string | null; metric: Metric; target: number; start_date: string; end_date: string; status: 'upcoming' | 'active' | 'ended'; participants: number; achieved: number }
+interface Row { id: string; title: string; description: string | null; metric: Metric; target: number; start_date: string; end_date: string; closed?: boolean; status: 'upcoming' | 'active' | 'ended'; participants: number; achieved: number }
 const STATUS = { active: '진행 중', upcoming: '시작 전', ended: '끝남' } as const
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 const plus = (d: string, n: number) => { const x = new Date(`${d}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10) }
@@ -16,6 +16,7 @@ const plus = (d: string, n: number) => { const x = new Date(`${d}T00:00:00Z`); x
 export default function ChallengeManager() {
   const dialog = useDialog()
   const [list, setList] = useState<Row[] | null>(null)
+  const [failed, setFailed] = useState(false)
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [metric, setMetric] = useState<Metric>('sessions')
@@ -27,6 +28,7 @@ export default function ChallengeManager() {
   async function load() {
     const r = await api<{ challenges: Row[] }>('/api/admin/challenges')
     setList(r.ok ? r.data.challenges : [])
+    setFailed(!r.ok)
     if (!r.ok) setMsg({ tone: 'error', text: r.message })
   }
   useEffect(() => { load() }, [])
@@ -59,15 +61,15 @@ export default function ChallengeManager() {
             <button key={m} type="button" role="radio" aria-checked={metric === m} className="chip" onClick={() => setMetric(m)}>{METRIC_LABEL[m]}</button>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <label className="text-[13px] text-ink-600">목표({METRIC_UNIT[metric]})
-            <input type="number" inputMode="numeric" min={1} value={target} onChange={(e) => setTarget(e.target.value)} className="input-field mt-1 py-2 text-right tabular-nums" />
-          </label>
+        <label className="block w-32 text-[13px] text-ink-600">목표({METRIC_UNIT[metric]})
+          <input type="number" inputMode="numeric" min={1} value={target} onChange={(e) => setTarget(e.target.value)} className="input-field mt-1 py-2 text-right tabular-nums" />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
           <label className="text-[13px] text-ink-600">시작
-            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="input-field mt-1 px-2 py-2 text-[14px]" />
+            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="input-field mt-1 px-2 py-2 text-[15px]" />
           </label>
           <label className="text-[13px] text-ink-600">끝
-            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="input-field mt-1 px-2 py-2 text-[14px]" />
+            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="input-field mt-1 px-2 py-2 text-[15px]" />
           </label>
         </div>
         <button onClick={create} disabled={!title.trim()} className="btn-primary">챌린지 열기</button>
@@ -77,11 +79,11 @@ export default function ChallengeManager() {
 
       <div>
         <p className="mb-2 text-[15px] font-bold text-ink-900">챌린지 현황</p>
-        {!list ? <Loading /> : list.length === 0 ? <Empty title="연 챌린지가 없어요." /> : (
+        {!list ? <Loading /> : failed ? null : list.length === 0 ? <Empty title="연 챌린지가 없어요." /> : (
           <ul className="divide-y divide-line border-y border-line">
             {list.map((c) => (
               <li key={c.id} className="py-3.5">
-                <p className="text-[13px] font-semibold tabular-nums text-ink-500">{STATUS[c.status]} · {c.start_date} ~ {c.end_date}</p>
+                <p className="text-[13px] font-semibold tabular-nums text-ink-500">{STATUS[c.status]}{c.closed ? '(관리자 종료)' : ''} · {c.start_date} ~ {c.end_date}</p>
                 <p className="mt-0.5 text-[15px] font-bold text-ink-900">{c.title}</p>
                 <p className="mt-0.5 text-[13px] text-ink-600">
                   {METRIC_LABEL[c.metric]} {c.target}{METRIC_UNIT[c.metric]} · 참여 {c.participants}명 · 달성 {c.achieved}명

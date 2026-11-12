@@ -13,6 +13,7 @@ interface Mismatch { id: string; name: string; participants: number; headcount: 
 export default function DepartmentManager() {
   const [list, setList] = useState<Dept[] | null>(null)
   const [mismatches, setMismatches] = useState<Mismatch[]>([])
+  const [failed, setFailed] = useState(false) // 불러오기 실패(권한 등) — 빈 목록 문구를 띄우지 않음
   const [ym, setYm] = useState('')
   const [name, setName] = useState('')
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
@@ -23,7 +24,8 @@ export default function DepartmentManager() {
 
   async function load() {
     const r = await api<{ yearMonth: string; departments: Dept[]; mismatches: Mismatch[] }>('/api/admin/departments')
-    if (!r.ok) { setMsg({ tone: 'error', text: r.message }); setList([]); return }
+    if (!r.ok) { setMsg({ tone: 'error', text: r.message }); setFailed(true); setList([]); return }
+    setFailed(false)
     setList(r.data.departments)
     setMismatches(r.data.mismatches ?? [])
     setYm((v) => v || r.data.yearMonth)
@@ -58,8 +60,9 @@ export default function DepartmentManager() {
       if (!r2.ok) { setMsg({ tone: 'error', text: r2.message }); return }
     }
     setEditing(null)
-    setMsg({ tone: 'success', text: clear ? `${ym} 인원 자료를 지웠어요.` : `${d.name} ${ym} 인원을 저장했어요.` })
-    load()
+    await load()
+    const shown = rename.trim() || d.name
+    setMsg({ tone: 'success', text: clear ? `${shown} ${ym} 인원 자료를 지웠어요.` : `${shown} ${ym} 인원을 저장했어요.` })
   }
 
   return (
@@ -95,7 +98,7 @@ export default function DepartmentManager() {
           </div>
         )}
         {msg && <div className="mb-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-        {!list ? <Loading /> : list.length === 0 ? (
+        {!list ? <Loading /> : failed ? null : list.length === 0 ? (
           <Empty title="아직 부서가 없어요." desc="위에서 부서를 만든 뒤, 직원 메뉴에서 소속을 정해 주세요." />
         ) : (
           <ul className="divide-y divide-line border-y border-line">
