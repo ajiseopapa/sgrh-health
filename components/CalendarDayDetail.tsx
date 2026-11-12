@@ -2,6 +2,7 @@
 
 // 달력에서 고른 날짜의 상세 — 요약(참여 인원·기록 수·총 시간)은 달력 집계값을 그대로 쓰고,
 // 직원별 기록은 그 날짜 것만 30건씩 나눠 불러옵니다(기록이 많아도 한 번에 다 받지 않음).
+import { Icon } from '@/lib/ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getEmployeeColor } from '@/lib/colors'
@@ -93,41 +94,41 @@ export default function CalendarDayDetail({
   const s = summary?.s ?? 0
 
   return (
-    <div className="card mt-3 space-y-3">
+    <div className="mt-5 space-y-4 border-t border-ink-900 pt-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-ink-900">{title}</p>
+        <p className="text-[17px] font-extrabold tracking-[-0.02em] text-ink-900">{title}</p>
         <button
           onClick={onClose}
           aria-label="날짜 상세 닫기"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-ink-400 transition active:bg-ink-100"
+          className="-mr-2.5 flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50"
         >
-          ✕
+          <Icon name="close" size={20} />
         </button>
       </div>
 
       {/* 요약 */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-xl bg-brand-50 py-2.5">
-          <p className="text-base font-bold text-brand-700 tabular-nums">{p}명</p>
-          <p className="text-[10px] text-ink-400">참여</p>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <p className="num text-[26px] leading-none text-brand-600">{p}<span className="ml-0.5 text-[13px] font-bold text-ink-500">명</span></p>
+          <p className="mt-1 text-[12px] text-ink-500">참여</p>
         </div>
-        <div className="rounded-xl bg-ink-50 py-2.5">
-          <p className="text-base font-bold text-ink-800 tabular-nums">{n}회</p>
-          <p className="text-[10px] text-ink-400">기록</p>
+        <div>
+          <p className="num text-[26px] leading-none text-ink-900">{n}<span className="ml-0.5 text-[13px] font-bold text-ink-500">회</span></p>
+          <p className="mt-1 text-[12px] text-ink-500">기록</p>
         </div>
-        <div className="rounded-xl bg-ink-50 py-2.5">
-          <p className="text-base font-bold text-ink-800">{s > 0 ? formatDuration(s) : '-'}</p>
-          <p className="text-[10px] text-ink-400">총 운동 시간</p>
+        <div>
+          <p className="text-[15px] font-extrabold leading-[26px] tabular-nums text-ink-900">{s > 0 ? formatDuration(s) : '-'}</p>
+          <p className="mt-1 text-[12px] text-ink-500">총 운동 시간</p>
         </div>
       </div>
 
       {/* 참여율 (분모가 없으면 비율 대신 "인원 정보 없음") */}
-      <p className="text-xs text-ink-400">
+      <p className="text-[13px] text-ink-600">
         {headcount ? (
           <>
             {rateLabel}{' '}
             <span className="font-semibold text-ink-700">{Math.min(100, Math.round((p / headcount) * 100))}%</span>
-            <span className="text-ink-300"> ({p}/{headcount}명)</span>
+            <span className="text-ink-500"> ({p}/{headcount}명)</span>
           </>
         ) : (
           <>참여율: <span className="font-semibold text-ink-600">인원 정보 없음</span></>
@@ -136,11 +137,11 @@ export default function CalendarDayDetail({
 
       {/* 직원별 기록 */}
       {n === 0 && !loading ? (
-        <p className="py-4 text-center text-sm text-ink-400">이날은 운동 기록이 없어요.</p>
+        <p className="py-3 text-[14px] text-ink-500">이날은 운동 기록이 없어요.</p>
       ) : (
-        <ul className="divide-y divide-ink-100">
+        <ul className="divide-y divide-line border-t border-line">
           {groups.map((g) => (
-            <li key={g.name + g.color} className="flex gap-3 py-2.5">
+            <li key={g.name + g.color} className="flex gap-3 py-3">
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                 style={{ backgroundColor: g.color }}
@@ -148,17 +149,17 @@ export default function CalendarDayDetail({
                 {g.name[0]}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink-800">
+                <p className="text-[15px] font-bold text-ink-900">
                   {g.name}
-                  {g.logs.length > 1 && <span className="ml-1 text-xs font-normal text-ink-400">{g.logs.length}회</span>}
+                  {g.logs.length > 1 && <span className="ml-1 text-[13px] font-normal text-ink-500">{g.logs.length}회</span>}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {g.logs.map((l) => {
                     const sec = secondsOf(l)
                     return (
-                      <span key={l.id} className="inline-flex items-center gap-1 rounded-full bg-ink-50 px-2 py-0.5 text-xs text-ink-600">
+                      <span key={l.id} className="inline-flex items-center gap-1 text-[13px] text-ink-700">
                         {l.exercise_type?.icon} {l.exercise_type?.name ?? '운동'}
-                        <span className="text-ink-400">· {sec ? formatDuration(sec) : '시간 없음'}</span>
+                        <span className="text-ink-500">· {sec ? formatDuration(sec) : '시간 없음'}</span>
                       </span>
                     )
                   })}
@@ -169,8 +170,8 @@ export default function CalendarDayDetail({
         </ul>
       )}
 
-      {loading && <div className="h-10 animate-pulse rounded-xl bg-ink-100" />}
-      {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+      {loading && <div className="h-10 animate-pulse rounded-md bg-ink-100" />}
+      {error && <p role="alert" className="text-[14px] font-semibold text-red-700">{error}</p>}
       {!loading && rows.length < total && (
         <button onClick={() => fetchPage(rows.length)} className="btn-secondary w-full text-sm">
           기록 더 보기 ({rows.length}/{total})

@@ -3,6 +3,7 @@ export interface Employee {
   name: string
   employee_number: string
   color: string | null // 커스텀 색상 코드 (예: '#FF6B6B'). null이면 자동(해시) 색상 사용.
+  left_at?: string | null // v2.1 퇴사일(마지막 근무일). 없으면 재직
   created_at: string
 }
 

@@ -9,6 +9,7 @@ import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
+import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -188,20 +189,21 @@ export default function FeedTab() {
     load()
   }
 
-  if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />
+  if (loading && logs.length === 0) return <div><PageHead title="피드" sub="동료들이 남긴 최근 운동이에요." /><Loading lines={4} /></div>
 
   if (logs.length === 0) {
-    return <div className="card text-center text-sm text-ink-400">아직 기록이 없어요.</div>
+    return <div><PageHead title="피드" /><Empty title="아직 기록이 없어요." desc="기록 탭에서 첫 운동을 남겨 보세요." /></div>
   }
 
   const editingType = exerciseTypes.find((t) => t.id === editTypeId)
   const editingIsDistance = editingType?.track_distance ?? false
 
   return (
-    <div className="space-y-2.5">
-      {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+    <div>
+      <PageHead title="피드" sub="동료들이 남긴 최근 운동이에요." />
+      {error && <div className="pb-3"><Notice tone="error">{error}</Notice></div>}
 
-      <ul className="space-y-2.5">
+      <ul className="divide-y divide-line border-t border-line">
         {logs.map((log) => {
           const typeName = log.exercise_type?.name ?? ''
           const paceMode = getPaceMode(typeName)
@@ -215,17 +217,18 @@ export default function FeedTab() {
           const canManage = isAdmin || (me !== null && me.id === log.employee_id)
 
           return (
-            <li key={log.id} className="card flex gap-3 py-3.5">
+            <li key={log.id} className="flex gap-3 py-5">
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white"
                 style={{ backgroundColor: getEmployeeColor(log.employee) }}
+                aria-hidden="true"
               >
                 {log.employee?.name?.[0] ?? '?'}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-ink-800">{log.employee?.name}</span>
-                  {!isEditing && <span className="shrink-0 text-xs text-ink-300">{log.log_date}</span>}
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
+                  {!isEditing && <span className="shrink-0 text-[13px] tabular-nums text-ink-500">{log.log_date.slice(5).replace('-', '.')}</span>}
                 </div>
 
                 {isEditing ? (
@@ -233,7 +236,7 @@ export default function FeedTab() {
                     <select
                       value={editTypeId}
                       onChange={(e) => setEditTypeId(e.target.value)}
-                      className="input-field py-1.5 text-sm"
+                      className="input-field py-2"
                     >
                       {exerciseTypes.map((t) => (
                         <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
@@ -244,26 +247,26 @@ export default function FeedTab() {
                       type="date"
                       value={editDate}
                       onChange={(e) => setEditDate(e.target.value)}
-                      className="input-field py-1.5 text-sm"
+                      className="input-field py-2"
                     />
 
                     <div className="flex gap-1.5">
                       <div className="relative flex-1">
                         <input type="number" min={0} max={23} value={editH}
                           onChange={(e) => setEditH(e.target.value)} placeholder="0"
-                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                          className="input-field py-2 pr-7 text-right tabular-nums" />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">시</span>
                       </div>
                       <div className="relative flex-1">
                         <input type="number" min={0} max={59} value={editM}
                           onChange={(e) => setEditM(e.target.value)} placeholder="0"
-                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                          className="input-field py-2 pr-7 text-right tabular-nums" />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">분</span>
                       </div>
                       <div className="relative flex-1">
                         <input type="number" min={0} max={59} value={editS}
                           onChange={(e) => setEditS(e.target.value)} placeholder="0"
-                          className="input-field py-1.5 pr-6 text-right text-sm" />
+                          className="input-field py-2 pr-7 text-right tabular-nums" />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">초</span>
                       </div>
                     </div>
@@ -275,7 +278,7 @@ export default function FeedTab() {
                           value={editDistance}
                           onChange={(e) => setEditDistance(e.target.value)}
                           placeholder="0.00"
-                          className="input-field py-1.5 pr-10 text-right text-sm"
+                          className="input-field py-2 pr-10 text-right tabular-nums"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">km</span>
                       </div>
@@ -286,38 +289,25 @@ export default function FeedTab() {
                       onChange={(e) => setEditMemo(e.target.value)}
                       placeholder="메모"
                       rows={2}
-                      className="input-field resize-none py-1.5 text-sm"
+                      className="input-field resize-none py-2"
                     />
 
                     <div className="flex gap-2">
-                      <button onClick={handleUpdate} className="btn-primary flex-1 py-1.5 text-xs">저장</button>
-                      <button onClick={() => setEditingId(null)} className="btn-secondary py-1.5 text-xs">취소</button>
+                      <button onClick={handleUpdate} className="btn-primary flex-1">저장</button>
+                      <button onClick={() => setEditingId(null)} className="btn-secondary">취소</button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                        {log.exercise_type?.icon} {typeName}
-                      </span>
-                      {durationSec ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600">
-                          ⏱ {formatDuration(durationSec)}
-                        </span>
-                      ) : null}
-                      {log.distance_km ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600">
-                          📍 {Number(log.distance_km).toFixed(2)} km
-                        </span>
-                      ) : null}
-                      {pace ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2 py-0.5 text-xs font-medium text-accent-600">
-                          ⚡ {pace}
-                        </span>
-                      ) : null}
-                    </div>
+                    <p className="mt-1 text-[15px] text-ink-800">
+                      <span aria-hidden="true" className="mr-1">{log.exercise_type?.icon}</span>
+                      <span className="font-semibold">{typeName}</span>
+                      {durationSec ? <span className="tabular-nums text-ink-600"> · {formatDuration(durationSec)}</span> : null}
+                      {log.distance_km ? <span className="tabular-nums text-ink-600"> · {Number(log.distance_km).toFixed(2)}km</span> : null}
+                      {pace ? <span className="tabular-nums text-ink-600"> · {pace}</span> : null}
+                    </p>
 
-                    {log.memo && <p className="mt-1.5 text-xs italic text-ink-400">"{log.memo}"</p>}
+                    {log.memo && <p className="mt-1.5 text-[14px] leading-relaxed text-ink-600">{log.memo}</p>}
 
                     <CheerBar
                       cheers={{
@@ -329,16 +319,16 @@ export default function FeedTab() {
                     />
 
                     {canManage && (
-                    <div className="mt-2 flex gap-2">
+                    <div className="-ml-2.5 mt-1 flex gap-1">
                       <button
                         onClick={() => startEdit(log)}
-                        className="pill-action bg-brand-50 text-brand-700"
+                        className="pill-action text-ink-700"
                       >
                         수정
                       </button>
                       <button
                         onClick={() => handleDelete(log.id, log.employee?.name)}
-                        className="pill-action bg-red-50 text-red-500"
+                        className="pill-action text-red-700"
                       >
                         삭제
                       </button>

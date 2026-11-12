@@ -99,7 +99,7 @@ export default function ExerciseTypeManager() {
             className={`relative h-6 w-11 rounded-full transition-colors ${trackDistance ? 'bg-brand-500' : 'bg-ink-200'}`}
           >
             <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${trackDistance ? 'translate-x-5' : 'translate-x-0.5'}`}
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-paper shadow transition-transform ${trackDistance ? 'translate-x-5' : 'translate-x-0.5'}`}
             />
           </div>
         </label>
@@ -117,7 +117,7 @@ export default function ExerciseTypeManager() {
           운동 종목 목록 ({list.length}개)
         </p>
         {loading ? (
-          <div className="h-20 animate-pulse rounded-2xl bg-ink-100" />
+          <div className="h-20 animate-pulse rounded-md bg-ink-100" />
         ) : list.length === 0 ? (
           <div className="card text-center text-sm text-ink-400">등록된 운동 종목이 없어요.</div>
         ) : (
@@ -141,7 +141,7 @@ export default function ExerciseTypeManager() {
                         className={`relative h-5 w-9 rounded-full transition-colors ${editTrackDistance ? 'bg-brand-500' : 'bg-ink-200'}`}
                       >
                         <span
-                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${editTrackDistance ? 'translate-x-4' : 'translate-x-0.5'}`}
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-paper shadow transition-transform ${editTrackDistance ? 'translate-x-4' : 'translate-x-0.5'}`}
                         />
                       </div>
                     </label>

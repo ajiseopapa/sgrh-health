@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * v2.1 디자인 원칙
+ *  - 바탕은 아이보리 한 장. 영역은 카드 대신 여백·구분선·글자 크기로 나눕니다.
+ *  - 포인트 색(brand 초록)은 진행률·선택 상태·중요 숫자에만. 주 버튼은 차콜.
+ *  - 둥근 모서리는 작게(6~10px), 그림자는 떠 있는 창에만.
+ */
+
 html,
 body {
   max-width: 100vw;
@@ -11,7 +18,10 @@ body {
 body {
   -webkit-tap-highlight-color: transparent;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #f8f7f3;
+  background-color: #f4f0e8;
+  color: #1b1916;
+  font-feature-settings: 'tnum' 0;
+  word-break: keep-all;
 }
 
 /* 날짜 input의 기본 모양을 살짝 정돈 */
@@ -19,30 +29,52 @@ input[type='date'] {
   -webkit-appearance: none;
 }
 
+/* 키보드로 이동할 때만 보이는 초점 표시 */
+:focus-visible {
+  outline: 2px solid #1d6a48;
+  outline-offset: 2px;
+}
+
 @layer components {
-  /* 보더 대신 그림자로 떠 있는 느낌을 주는 기본 카드 */
+  /* 예전 카드: 이제는 위쪽 구분선 + 여백으로만 구분하는 평평한 영역 */
   .card {
-    @apply rounded-2xl bg-white p-4 shadow-card;
+    @apply rounded-none border-t border-line bg-transparent px-0 py-5 shadow-none;
   }
 
-  /* 섹션 위에 붙는 작은 라벨 (eyebrow) */
+  /* 영역 이름: 작은 굵은 글씨 (이모지·대문자 장식 없이) */
   .section-title {
-    @apply mb-2 text-xs font-semibold uppercase tracking-wide text-ink-400;
+    @apply mb-3 text-[13px] font-bold tracking-[-0.01em] text-ink-900;
+  }
+
+  /* 큰 숫자 */
+  .num {
+    @apply font-extrabold tabular-nums tracking-[-0.03em];
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-ink-100 bg-surface px-3 py-2.5 text-sm text-ink-900 placeholder:text-ink-300 outline-none transition focus:border-transparent focus:ring-2 focus:ring-brand-400;
+    @apply w-full rounded-lg border border-ink-200 bg-sheet px-3 py-3 text-base text-ink-900 placeholder:text-ink-400 outline-none transition focus:border-ink-900 focus:ring-0;
   }
 
+  /* 주 버튼: 차콜 바탕. 높이 48px(터치 영역) */
   .btn-primary {
-    @apply w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] active:bg-brand-700 disabled:opacity-50 disabled:active:scale-100;
+    @apply flex min-h-[48px] w-full items-center justify-center rounded-lg bg-ink-900 px-4 text-[15px] font-bold text-paper transition active:bg-ink-700 disabled:bg-ink-300 disabled:text-paper;
   }
 
   .btn-secondary {
-    @apply flex-1 rounded-xl border border-ink-200 py-2.5 text-sm font-medium text-ink-500 transition active:scale-[0.98] active:bg-ink-50;
+    @apply flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-ink-900/80 px-4 text-sm font-semibold text-ink-900 transition active:bg-ink-50 disabled:opacity-50;
   }
 
+  /* 글자 버튼(목록 안의 수정·삭제 등): 최소 터치 높이 확보 */
   .pill-action {
-    @apply rounded-lg px-2.5 py-1 text-xs font-medium transition active:scale-95;
+    @apply inline-flex min-h-[36px] items-center rounded-md px-2.5 text-[13px] font-semibold underline-offset-4 transition hover:underline active:bg-ink-50;
+  }
+
+  /* 선택 칩 (종목·기간·분 선택) */
+  .chip {
+    @apply inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-ink-200 bg-sheet px-3 text-[14px] font-semibold text-ink-700 transition active:bg-ink-50;
+  }
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'] {
+    @apply border-ink-900 bg-ink-900 text-paper;
   }
 }

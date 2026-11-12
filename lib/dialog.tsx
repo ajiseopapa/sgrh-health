@@ -65,7 +65,6 @@ function DialogView({ pending, onClose }: { pending: Pending; onClose: (result: 
   const okRef = useRef<HTMLButtonElement>(null)
   const isConfirm = pending.kind === 'confirm'
   const danger = isConfirm && pending.opts.tone === 'danger'
-  const icon = pending.opts.icon ?? (danger ? '🗑️' : isConfirm ? '❓' : 'ℹ️')
 
   useEffect(() => {
     okRef.current?.focus()
@@ -78,7 +77,7 @@ function DialogView({ pending, onClose }: { pending: Pending; onClose: (result: 
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 px-4 pb-6 sm:items-center sm:pb-0"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/45 px-4 pb-6 sm:items-center sm:pb-0"
       onClick={() => onClose(false)}
       role="presentation"
     >
@@ -87,35 +86,26 @@ function DialogView({ pending, onClose }: { pending: Pending; onClose: (result: 
         aria-modal="true"
         aria-labelledby="dialog-title"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm animate-[dialogIn_0.16s_ease-out] rounded-3xl bg-white p-6 shadow-raised"
+        className="w-full max-w-sm animate-[dialogIn_0.16s_ease-out] rounded-xl bg-paper p-6 shadow-raised"
       >
-        <div className="flex flex-col items-center text-center">
-          <span
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl text-2xl ${
-              danger ? 'bg-red-50' : 'bg-brand-50'
-            }`}
-          >
-            {icon}
-          </span>
-          <h3 id="dialog-title" className="mt-3 text-base font-bold text-ink-900">
-            {pending.opts.title}
-          </h3>
-          {pending.opts.message && (
-            <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-ink-500">{pending.opts.message}</p>
-          )}
-        </div>
+        <h3 id="dialog-title" className="text-[19px] font-extrabold leading-snug tracking-[-0.02em] text-ink-900">
+          {pending.opts.title}
+        </h3>
+        {pending.opts.message && (
+          <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-ink-600">{pending.opts.message}</p>
+        )}
 
-        <div className="mt-5 flex gap-2">
+        <div className="mt-6 flex gap-2">
           {isConfirm && (
-            <button onClick={() => onClose(false)} className="btn-secondary h-12 flex-1">
+            <button onClick={() => onClose(false)} className="btn-secondary min-h-[48px] flex-1">
               {pending.opts.cancelText ?? '취소'}
             </button>
           )}
           <button
             ref={okRef}
             onClick={() => onClose(true)}
-            className={`h-12 flex-1 rounded-xl text-sm font-semibold text-white transition active:scale-[0.98] ${
-              danger ? 'bg-red-500 active:bg-red-600' : 'bg-brand-600 active:bg-brand-700'
+            className={`min-h-[48px] flex-1 rounded-lg text-[15px] font-bold text-paper transition ${
+              danger ? 'bg-red-700 active:bg-red-800' : 'bg-ink-900 active:bg-ink-700'
             }`}
           >
             {pending.opts.confirmText ?? (danger ? '삭제' : '확인')}

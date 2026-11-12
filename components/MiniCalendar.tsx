@@ -7,6 +7,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getCalendarCells } from '@/lib/dateUtils'
 import DayDetail from './CalendarDayDetail'
+import { Icon } from '@/lib/ui'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -99,19 +100,19 @@ export function levelOf(p: number, headcount: number | null): number {
 }
 
 const LEVEL_STYLE: Record<number, string> = {
-  0: 'text-ink-500',
-  [-1]: 'bg-ink-50 text-ink-700',
-  1: 'bg-brand-100 text-brand-800',
+  0: 'text-ink-600',
+  [-1]: 'bg-ink-100 text-ink-800',
+  1: 'bg-brand-100 text-brand-900',
   2: 'bg-brand-200 text-brand-900',
-  3: 'bg-brand-400 text-white',
-  4: 'bg-brand-600 text-white',
+  3: 'bg-brand-500 text-white',
+  4: 'bg-brand-700 text-white',
 }
 
 const LEGEND_SWATCH: Record<number, string> = {
   1: 'bg-brand-100',
   2: 'bg-brand-200',
-  3: 'bg-brand-400',
-  4: 'bg-brand-600',
+  3: 'bg-brand-500',
+  4: 'bg-brand-700',
 }
 
 const LEGEND = [
@@ -181,46 +182,46 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
   return (
     <section>
       {/* 헤더: < 연월 > + 이번 달 */}
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="-ml-2.5 flex items-center">
           <button
             onClick={prevMonth}
             aria-label="이전 달"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50"
           >
-            ‹
+            <Icon name="chevron-left" size={20} />
           </button>
-          <span className="min-w-[72px] text-center text-sm font-bold text-ink-800">
+          <span className="min-w-[88px] text-center text-[15px] font-bold tabular-nums text-ink-900">
             {year}년 {month + 1}월
           </span>
           <button
             onClick={nextMonth}
             aria-label="다음 달"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50"
           >
-            ›
+            <Icon name="chevron-right" size={20} />
           </button>
         </div>
 
         {!isCurrentMonth && (
           <button
             onClick={goToday}
-            className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition active:bg-brand-100"
+            className="pill-action text-ink-900 underline"
           >
             이번 달
           </button>
         )}
       </div>
 
-      <div className={`card transition-opacity ${loading ? 'opacity-40' : ''}`}>
+      <div className={`transition-opacity ${loading ? 'opacity-40' : ''}`}>
         <div className="grid grid-cols-7 gap-1 text-center">
           {WEEKDAYS.map((w) => (
-            <div key={w} className="pb-1 text-[11px] font-medium text-ink-300">
+            <div key={w} className="pb-1.5 text-[12px] font-semibold text-ink-500">
               {w}
             </div>
           ))}
           {cells.map((day, idx) => {
-            if (!day) return <div key={idx} className="h-12" />
+            if (!day) return <div key={idx} className="h-[52px]" />
             const info = byDay.get(day)
             const level = levelOf(info?.p ?? 0, dayHeadcount(info, headcount))
             const isToday = isCurrentMonth && day === today.day
@@ -236,13 +237,13 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
                 onClick={() => setSelected(isSelected ? null : day)}
                 aria-label={`${month + 1}월 ${day}일${info ? `, ${info.p}명 참여` : ', 기록 없음'}`}
                 aria-pressed={isSelected}
-                className={`flex h-12 flex-col items-center justify-center rounded-xl transition active:scale-95 disabled:cursor-default disabled:opacity-40 ${
+                className={`flex h-[52px] flex-col items-center justify-center rounded-md transition disabled:cursor-default disabled:opacity-35 ${
                   LEVEL_STYLE[level]
-                } ${isSelected ? 'ring-2 ring-inset ring-ink-800' : isToday ? 'ring-2 ring-inset ring-brand-500' : ''}`}
+                } ${isSelected ? 'ring-2 ring-inset ring-ink-900' : isToday ? 'ring-[1.5px] ring-inset ring-ink-900/70' : ''}`}
               >
-                <span className={`text-[12px] leading-none ${isToday ? 'font-bold' : 'font-medium'}`}>{day}</span>
+                <span className={`text-[14px] leading-none tabular-nums ${isToday ? 'font-extrabold' : 'font-semibold'}`}>{day}</span>
                 {info && info.p > 0 && (
-                  <span className="mt-1 text-[10px] font-semibold leading-none tabular-nums">{info.p}명</span>
+                  <span className="mt-1 text-[11px] font-bold leading-none tabular-nums">{info.p}명</span>
                 )}
               </button>
             )
@@ -250,29 +251,29 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
         </div>
 
         {/* 범례 */}
-        <div className="mt-3 border-t border-ink-100 pt-2.5">
+        <div className="mt-4 space-y-1.5">
           {headcount ? (
             <>
-              <p className="mb-1.5 text-[10px] font-medium text-ink-500">
-                {basis.rate} <span className="font-normal text-ink-300">· {basis.count} {headcount}명({isCurrentMonth ? '오늘' : '말일'} 기준)</span>
+              <p className="text-[12px] font-semibold text-ink-700">
+                {basis.rate} <span className="font-normal text-ink-500">· {basis.count} {headcount}명({isCurrentMonth ? '오늘' : '말일'} 기준)</span>
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {LEGEND.map((l) => (
-                  <span key={l.level} className="flex items-center gap-1 text-[10px] text-ink-400">
-                    <span className={`h-2.5 w-2.5 rounded-[4px] ${LEGEND_SWATCH[l.level]}`} />
+                  <span key={l.level} className="flex items-center gap-1 text-[12px] tabular-nums text-ink-500">
+                    <span className={`h-3 w-3 rounded-sm ${LEGEND_SWATCH[l.level]}`} />
                     {l.label}
                   </span>
                 ))}
               </div>
             </>
           ) : (
-            <p className="text-[10px] text-ink-300">
-              <span className="font-medium text-ink-500">인원 정보 없음</span> · 숫자는 그날 운동한 인원이에요. 참여율 색은 표시하지 않아요.
+            <p className="text-[12px] text-ink-500">
+              <span className="font-semibold text-ink-700">인원 정보 없음</span> · 숫자는 그날 운동한 인원이에요. 참여율 색은 표시하지 않아요.
             </p>
           )}
-          <p className="mt-1 text-[10px] text-ink-300">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
+          <p className="text-[12px] text-ink-500">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
         </div>
-        {error && <p className="mt-2 text-xs font-medium text-red-500">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-[14px] font-semibold text-red-700">{error}</p>}
       </div>
 
       {selectedDate && (

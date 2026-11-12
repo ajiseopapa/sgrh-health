@@ -8,7 +8,7 @@ export interface ApiResult<T = Record<string, unknown>> {
 
 export async function api<T = Record<string, unknown>>(
   path: string,
-  init: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown } = {}
+  init: { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown } = {}
 ): Promise<ApiResult<T>> {
   try {
     const res = await fetch(path, {

@@ -33,16 +33,11 @@ export default function AdminPasswordModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-6">
-      <div className="w-full max-w-xs space-y-4 rounded-3xl bg-white p-6 shadow-raised">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-xl">
-            🔒
-          </span>
-          <div>
-            <h3 className="text-base font-bold text-ink-900">관리자 확인</h3>
-            <p className="text-xs text-ink-400">비밀번호를 입력해주세요.</p>
-          </div>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/45 px-6">
+      <div className="w-full max-w-xs space-y-4 rounded-xl bg-paper p-6 shadow-raised">
+        <div>
+          <h3 className="text-[19px] font-extrabold tracking-[-0.02em] text-ink-900">관리자 확인</h3>
+          <p className="mt-1 text-[14px] text-ink-600">관리자 비밀번호를 입력해주세요.</p>
         </div>
 
         <input

@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import HomeTab from '@/components/HomeTab'
-import StatsTab from '@/components/StatsTab'
 import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
+import ChallengeTab from '@/components/ChallengeTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
@@ -12,14 +12,16 @@ import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionMo
 import IdentityModal from '@/components/IdentityModal'
 import { MeProvider, useMe } from '@/lib/me'
 import { DialogProvider } from '@/lib/dialog'
+import { Icon } from '@/lib/ui'
 
-type TabKey = 'home' | 'stats' | 'feed' | 'record'
+// 직원 화면은 네 개만. 관리 기능은 위쪽 '관리'에서 따로 엽니다.
+export type TabKey = 'home' | 'record' | 'challenge' | 'feed'
 
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'home',   label: '홈',   icon: '🏠' },
-  { key: 'stats',  label: '통계', icon: '📊' },
-  { key: 'feed',   label: '피드', icon: '📝' },
-  { key: 'record', label: '기록', icon: '👤' },
+const TABS: { key: TabKey; label: string; icon: 'home' | 'pencil' | 'flag' | 'feed' }[] = [
+  { key: 'home', label: '홈', icon: 'home' },
+  { key: 'record', label: '기록', icon: 'pencil' },
+  { key: 'challenge', label: '도전', icon: 'flag' },
+  { key: 'feed', label: '피드', icon: 'feed' },
 ]
 
 export default function Page() {
@@ -57,90 +59,61 @@ function AppShell() {
     await adminLogout()
   }
 
+  function HeadButton({ label, icon, dot, onClick }: { label: string; icon: 'bell' | 'chat' | 'gear'; dot?: boolean; onClick: () => void }) {
+    return (
+      <button onClick={onClick} aria-label={label}
+        className="relative flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50">
+        <Icon name={icon} size={21} />
+        {dot && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-600" aria-hidden="true" />}
+        {dot && <span className="sr-only">(새 소식)</span>}
+      </button>
+    )
+  }
+
   return (
     <>
-      <div className="flex min-h-screen flex-col bg-surface pb-20">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-surface/90 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-base">
-            🏋️
-          </span>
-          <h1 className="text-base font-bold tracking-tight text-ink-900">직원 운동 관리</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <div className="flex min-h-screen flex-col bg-paper pb-24">
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-paper/95 px-5 pb-2 pt-3 backdrop-blur">
+        <p className="text-[17px] font-extrabold tracking-[-0.02em] text-ink-900">
+          직원 운동<span className="text-brand-600">.</span>
+        </p>
+        <div className="-mr-2 flex items-center">
           {isAdmin && (
-            <>
-              <span className="rounded-full bg-brand-100 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
-                관리자
-              </span>
-              <button
-                onClick={handleLogout}
-                className="rounded-full px-2.5 py-1 text-[11px] font-medium text-ink-400 transition active:bg-ink-100"
-              >
-                로그아웃
-              </button>
-            </>
+            <button onClick={handleLogout} className="mr-1 min-h-[44px] px-2 text-[13px] font-semibold text-ink-500">
+              관리자 로그아웃
+            </button>
           )}
-          <button
-            onClick={() => setShowSuggestions(true)}
-            aria-label="건의함"
-            className="relative flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
-          >
-            💬
-            {hasNewSuggestions && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-            )}
-          </button>
-          <button
-            onClick={() => setShowAnnouncements(true)}
-            aria-label="업데이트 내역"
-            className="relative flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
-          >
-            🔔
-            {hasUnreadAnnouncements && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-            )}
-          </button>
-          <button
-            onClick={handleSettingsClick}
-            aria-label="관리 설정"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-base text-ink-400 transition active:bg-ink-100"
-          >
-            ⚙️
-          </button>
+          <HeadButton label="공지" icon="bell" dot={hasUnreadAnnouncements} onClick={() => setShowAnnouncements(true)} />
+          <HeadButton label="건의함" icon="chat" dot={hasNewSuggestions} onClick={() => setShowSuggestions(true)} />
+          <HeadButton label={isAdmin ? '관리 설정' : '관리자'} icon="gear" onClick={handleSettingsClick} />
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4">
-        {tab === 'home'   && <HomeTab   key={`home-${refreshKey}`} />}
-        {tab === 'stats'  && <StatsTab  key={`stats-${refreshKey}`} />}
-        {tab === 'feed'   && <FeedTab   key={`feed-${refreshKey}`} />}
-        {tab === 'record' && <RecordTab key={`record-${refreshKey}`} />}
+      <main className="flex-1 px-5">
+        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => setTab('challenge')} />}
+        {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
+        {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}`} />}
+        {tab === 'feed'      && <FeedTab      key={`feed-${refreshKey}`} />}
       </main>
 
-      <nav
-        className="fixed bottom-0 left-0 right-0 mx-auto flex max-w-md gap-1 bg-white/95 px-3 py-2 shadow-nav backdrop-blur"
-        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
-      >
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium transition-colors ${
-              tab === t.key ? 'text-brand-600' : 'text-ink-300'
-            }`}
-          >
-            <span
-              className={`flex h-7 w-7 items-center justify-center rounded-lg text-base transition-colors ${
-                tab === t.key ? 'bg-brand-50' : ''
-              }`}
-            >
-              {t.icon}
-            </span>
-            {t.label}
-          </button>
-        ))}
+      <nav aria-label="주 메뉴"
+        className="fixed bottom-0 left-0 right-0 z-20 mx-auto flex max-w-[480px] border-t border-line bg-paper/95 backdrop-blur"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {TABS.map((t) => {
+          const on = tab === t.key
+          return (
+            <button key={t.key} onClick={() => setTab(t.key)} aria-current={on ? 'page' : undefined}
+              className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors ${
+                on ? 'text-ink-900' : 'text-ink-400'
+              }`}>
+              <Icon name={t.icon} size={22} />
+              <span className="flex items-center gap-1">
+                {t.label}
+              </span>
+              <span className={`h-[3px] w-5 rounded-full ${on ? 'bg-brand-600' : 'bg-transparent'}`} aria-hidden="true" />
+            </button>
+          )
+        })}
       </nav>
 
       {showPasswordModal && (

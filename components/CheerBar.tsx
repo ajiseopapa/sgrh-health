@@ -15,7 +15,7 @@ interface Props {
 
 export default function CheerBar({ cheers, onToggle }: Props) {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+    <div className="-ml-1 mt-2.5 flex flex-wrap items-center gap-1">
       {CHEER_EMOJIS.map((emoji) => {
         const count = cheers[emoji]?.count ?? 0
         const isMine = cheers[emoji]?.mine ?? false
@@ -28,15 +28,13 @@ export default function CheerBar({ cheers, onToggle }: Props) {
             onClick={() => onToggle(emoji)}
             aria-label={`${label}${count > 0 ? ` ${count}개` : ''}`}
             aria-pressed={isMine}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
+            className={`flex min-h-[40px] min-w-[52px] items-center justify-center gap-1 rounded-full border px-3 text-[14px] font-bold tabular-nums transition ${
               isMine
-                ? 'bg-brand-100 text-brand-700'
-                : count > 0
-                  ? 'bg-ink-50 text-ink-600'
-                  : 'bg-ink-50 text-ink-300'
+                ? 'border-brand-600 bg-brand-50 text-brand-800'
+                : 'border-ink-200 text-ink-600'
             }`}
           >
-            <span className="text-sm leading-none">{emoji}</span>
+            <span className="text-[16px] leading-none">{emoji}</span>
             {count > 0 && <span className="tabular-nums">{count}</span>}
           </button>
         )

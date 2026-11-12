@@ -42,15 +42,15 @@ export default function PinIssueResult({ issued, onClose }: { issued: IssuedPin[
 
   return (
     <div className="space-y-3">
-      <div className="card space-y-1.5 border border-amber-200 bg-amber-50">
-        <p className="text-sm font-bold text-amber-700">⚠️ 이 화면은 한 번만 보여요</p>
-        <p className="text-xs text-amber-700">
+      <div className="card space-y-1.5 border border-ink-900 bg-transparent">
+        <p className="text-sm font-bold text-ink-900">이 화면은 한 번만 보여요</p>
+        <p className="text-xs text-ink-900">
           닫으면 다시 볼 수 없어요. 출력하거나 직원에게 전달한 뒤 닫아주세요.
           잃어버리면 그 직원만 다시 초기화하면 됩니다.
         </p>
       </div>
 
-      <button onClick={print} className="btn-primary">🖨 배부표 출력</button>
+      <button onClick={print} className="btn-primary">배부표 출력</button>
 
       <ul className="card divide-y divide-ink-100 p-0">
         {issued.map((p) => (
@@ -65,7 +65,7 @@ export default function PinIssueResult({ issued, onClose }: { issued: IssuedPin[
 
       {confirmClose ? (
         <div className="flex gap-2">
-          <button onClick={onClose} className="btn-primary flex-1 bg-red-500">네, 닫을게요</button>
+          <button onClick={onClose} className="btn-primary flex-1 bg-red-700">네, 닫을게요</button>
           <button onClick={() => setConfirmClose(false)} className="btn-secondary">아니요</button>
         </div>
       ) : (

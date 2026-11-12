@@ -1,54 +1,42 @@
 'use client'
 
+// 관리 설정 — 직원 메뉴와 분리된 관리자 전용 화면
 import { useState } from 'react'
 import EmployeeManager from './EmployeeManager'
 import ExerciseTypeManager from './ExerciseTypeManager'
+import DepartmentManager from './DepartmentManager'
+import ChallengeManager from './ChallengeManager'
+import { Icon, Segmented } from '@/lib/ui'
 
-type Section = 'employees' | 'exercises'
+type Section = 'employees' | 'departments' | 'challenges' | 'exercises'
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [section, setSection] = useState<Section>('employees')
 
-  const TABS: { key: Section; label: string }[] = [
-    { key: 'employees', label: '직원' },
-    { key: 'exercises', label: '운동 종목' },
-  ]
-
   return (
-    <div className="fixed inset-0 z-30 flex justify-center bg-black/30">
-      <div className="flex h-full w-full max-w-md flex-col bg-surface">
-        <header className="flex items-center justify-between border-b border-ink-100 bg-white px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-base">
-              ⚙️
-            </span>
-            <h2 className="text-base font-bold tracking-tight text-ink-900">관리 설정</h2>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="닫기"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-ink-400 transition active:bg-ink-100"
-          >
-            ✕
+    <div className="fixed inset-0 z-30 flex justify-center bg-ink-900/45">
+      <div role="dialog" aria-modal="true" aria-label="관리 설정" className="flex h-full w-full max-w-[480px] flex-col bg-paper">
+        <header className="flex items-center justify-between px-5 pb-2 pt-3">
+          <h2 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink-900">관리</h2>
+          <button onClick={onClose} aria-label="관리 닫기"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50">
+            <Icon name="close" size={22} />
           </button>
         </header>
 
-        <div className="flex gap-1 rounded-xl bg-ink-100 p-1 m-4">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setSection(t.key)}
-              className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-                section === t.key ? 'bg-white text-brand-700 shadow-card' : 'text-ink-400'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="px-5">
+          <Segmented label="관리 메뉴" value={section} onChange={setSection} options={[
+            { value: 'employees', label: '직원' },
+            { value: 'departments', label: '부서' },
+            { value: 'challenges', label: '챌린지' },
+            { value: 'exercises', label: '종목' },
+          ]} />
         </div>
 
-        <div className="flex-1 overflow-auto px-4 pb-6">
+        <div className="flex-1 overflow-auto px-5 pb-10 pt-5">
           {section === 'employees' && <EmployeeManager />}
+          {section === 'departments' && <DepartmentManager />}
+          {section === 'challenges' && <ChallengeManager />}
           {section === 'exercises' && <ExerciseTypeManager />}
         </div>
       </div>

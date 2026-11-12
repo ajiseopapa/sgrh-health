@@ -49,7 +49,9 @@ export default function IdentityModal() {
       setStep('change')
     } else {
       setStep('pick'); setPicked(null)
-      supabase.from('employees').select('*').order('name').then(({ data }) => setEmployees(data ?? []))
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+      supabase.from('employees').select('*').order('name').then(({ data }) =>
+        setEmployees((data ?? []).filter((e: { left_at?: string | null }) => !e.left_at || e.left_at >= today)))
     }
     // 창이 열릴 때 한 번만 초기화 (열린 동안 me가 바뀌어도 입력을 지우지 않음)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,14 +99,11 @@ export default function IdentityModal() {
   const cameFromLogin = step === 'change' && picked !== null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
-      <div className="w-full max-w-xs space-y-4 rounded-3xl bg-white p-6 shadow-raised">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/45 px-6">
+      <div className="w-full max-w-xs space-y-4 rounded-xl bg-paper p-6 shadow-raised">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-xl">
-            {step === 'change' ? '🔑' : '🙋'}
-          </span>
           <div>
-            <h3 className="text-base font-bold text-ink-900">
+            <h3 className="text-[19px] font-extrabold tracking-[-0.02em] text-ink-900">
               {step === 'change' ? '내 PIN 정하기' : '본인 확인'}
             </h3>
             <p className="text-xs text-ink-400">
@@ -125,7 +124,7 @@ export default function IdentityModal() {
               className="input-field"
             />
             {filtered.length > 0 && (
-              <ul className="mt-1 max-h-48 overflow-auto rounded-xl bg-white py-1 shadow-raised">
+              <ul className="mt-1 max-h-48 overflow-auto rounded-xl bg-paper py-1 shadow-raised">
                 {filtered.map((e) => (
                   <li key={e.id}>
                     <button

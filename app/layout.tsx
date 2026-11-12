@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-// 영문/숫자는 Plus Jakarta Sans, 한글은 자동으로 시스템 폰트로 폴백됩니다.
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-})
+// 글꼴: Pretendard (한글·영문·숫자 한 벌). 웹폰트 CSS만 불러오고 라이브러리는 추가하지 않음.
+const PRETENDARD = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sgrh-health.vercel.app'),
@@ -34,16 +29,20 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 확대 허용 (접근성: 글씨를 키워 보는 직원을 막지 않음)
+  themeColor: '#F4F0E8',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={jakarta.variable}>
-      <body className="bg-surface font-sans text-ink-900 antialiased">
-        {/* max-w-md로 모바일 폭에 고정, 데스크탑에서 봐도 깨지지 않게 가운데 정렬 */}
-        <div className="mx-auto min-h-screen max-w-md bg-surface">{children}</div>
+    <html lang="ko">
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={PRETENDARD} />
+      </head>
+      <body className="bg-paper font-sans text-ink-900 antialiased">
+        {/* 휴대폰 폭 기준. 태블릿·PC에서는 가운데 한 줄로 보이고 양옆은 같은 바탕 */}
+        <div className="mx-auto min-h-screen max-w-[480px] bg-paper">{children}</div>
       </body>
     </html>
   )
