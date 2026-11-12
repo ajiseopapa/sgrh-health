@@ -150,6 +150,18 @@ async function main() {
     const { data, error } = await anon.from(t).select('*').limit(1)
     check(`공개 키로 ${t} 읽기 차단`, !!error || (data ?? []).length === 0, error?.code ?? '')
   }
+  {
+    const { error: e1 } = await anon.from('employees').select('left_at').limit(1)
+    check('공개 키로 employees.left_at 읽기 차단', e1?.code === '42501', e1?.code)
+    const { error: e2 } = await anon.from('employees').select('*').limit(1)
+    check('공개 키로 employees 전체(*) 읽기 차단', e2?.code === '42501', e2?.code)
+    const { data: d3, error: e3 } = await anon.from('employees').select('id, name, employee_number, color, created_at').limit(1)
+    check('공개 키로 화면용 칸(이름 등)은 읽기 가능', !e3 && d3?.length === 1)
+    const { error: e4 } = await anon.from('exercise_logs').select('id, employee:employees(left_at)').limit(1)
+    check('기록 조회에 끼워 넣어도 left_at 읽기 차단', !!e4, e4?.code)
+    const pub = await nobody.call('/api/employees')
+    check('이름 목록 API에 퇴사일 칸 없음', pub.ok && !JSON.stringify(pub).includes('left_at'))
+  }
   const { error: insErr } = await anon.from('personal_goals').insert({ employee_id: E.V001, kind: 'sessions', target: 1, effective_from: MON })
   check('공개 키로 목표 직접 쓰기 차단', !!insErr)
 
@@ -262,6 +274,18 @@ async function main() {
   const hcPut = await admin.call(`/api/admin/departments/${DA.id}/headcount`, { method: 'PUT', body: { yearMonth: YM, headcount: 4, source: '시험 인사팀 자료' } })
   r = await nobody.call('/api/departments/ranking?period=week')
   check('인사팀 인원 입력 → 참여율 = 참여 2 / 인원 4', r.departments?.find((d) => d.id === DA.id)?.rate === 0.5 && r.departments?.find((d) => d.id === DB.id)?.rate === null, `입력 ${hcPut.status} ${hcPut.message ?? ''} · A ${JSON.stringify(r.departments?.find((d) => d.id === DA.id))}`)
+  // 참여 인원 > 인사팀 인원이면 100%로 자르지 않고 '인원 확인 필요' + 관리자 경고, 원래 값 보존
+  await admin.call(`/api/admin/departments/${DA.id}/headcount`, { method: 'PUT', body: { yearMonth: YM, headcount: 1, source: '시험 불일치' } })
+  r = await nobody.call('/api/departments/ranking?period=week')
+  const mm = r.departments?.find((d) => d.id === DA.id)
+  check('참여 2 > 인사팀 1 → 100%로 자르지 않고 인원 확인 필요(rate null)', mm?.rateStatus === 'check_needed' && mm?.rate === null && mm?.participants === 2 && mm?.headcount === 1, JSON.stringify(mm))
+  const ad = await admin.call('/api/admin/departments')
+  check('관리자 부서 화면에 불일치 경고', ad.mismatches?.some((x) => x.id === DA.id && x.participants === 2 && x.headcount === 1))
+  const { data: hcRow } = await db.from('department_headcounts').select('headcount').eq('department_id', DA.id).eq('year_month', YM).single()
+  check('인사팀 입력값은 바뀌지 않고 보존', hcRow.headcount === 1)
+  await admin.call(`/api/admin/departments/${DA.id}/headcount`, { method: 'PUT', body: { yearMonth: YM, headcount: 4, source: '시험 인사팀 자료' } })
+  r = await nobody.call('/api/departments/ranking?period=week')
+  check('인원 바로잡으면 다시 참여율 표시', r.departments?.find((d) => d.id === DA.id)?.rateStatus === 'ok')
   // 부서 이동: V002 를 오늘부터 B로 → 오늘 기록은 B, 이전 기록은 A
   r = await admin.call(`/api/admin/employees/${E.V002}/department`, { method: 'POST', body: { departmentId: DB.id, startDate: TODAY } })
   const { data: hist } = await db.from('employee_departments').select('department_id, start_date, end_date').eq('employee_id', E.V002).order('start_date')
@@ -285,6 +309,10 @@ async function main() {
   check('퇴사자 운동 기록 보존', before === after && after > 0, `${after}건`)
   const { data: h3 } = await db.from('employee_departments').select('end_date').eq('employee_id', E.V003)
   check('퇴사자 부서 이력 보존 (끝날짜 = 퇴사 다음 날)', h3.length === 1 && h3[0].end_date === TODAY)
+  r = await nobody.call('/api/employees')
+  check('퇴사자는 본인 확인 이름 목록에서 빠짐', r.ok && !r.employees.some((e) => e.id === E.V003) && r.employees.some((e) => e.id === E.V001))
+  const { data: anonHc, error: anonHcErr } = await anon.rpc('calendar_headcount', { p_day: TODAY })
+  check('공개 키로 달력 분모 함수는 그대로 동작(퇴사일은 안 나감)', !anonHcErr && typeof anonHc?.count === 'number' && !JSON.stringify(anonHc).includes('left'))
   const { data: hcToday } = await db.rpc('calendar_headcount', { p_day: TODAY })
   const { data: hcYest } = await db.rpc('calendar_headcount', { p_day: add(TODAY, -1) })
   check('달력 분모: 퇴사일까지 포함, 다음 날부터 제외', hcYest.count - hcToday.count >= 1, `어제 ${hcYest.count} → 오늘 ${hcToday.count}`)

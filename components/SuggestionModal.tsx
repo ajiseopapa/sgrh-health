@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<Suggestion['status'], string> = {
 }
 
 const STATUS_STYLE: Record<Suggestion['status'], string> = {
-  new: 'bg-red-50 text-red-500',
+  new: 'bg-red-50 text-red-700',
   read: 'bg-ink-100 text-ink-500',
   answered: 'bg-brand-50 text-brand-700',
 }
@@ -66,7 +66,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
   useEffect(() => {
     if (!isOpen) return
     fetchSuggestions()
-    supabase.from('employees').select('*').order('name').then(({ data }) => setEmployees(data ?? []))
+    api<{ employees: Employee[] }>('/api/employees').then((r) => setEmployees(r.ok ? r.data.employees : []))
   }, [isOpen, fetchSuggestions])
 
   function resetForm() {
@@ -243,7 +243,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            {submitMessage && <p className="text-xs text-red-500">{submitMessage}</p>}
+            {submitMessage && <p className="text-xs text-red-700">{submitMessage}</p>}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
@@ -329,7 +329,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                             <div className="flex justify-end gap-3">
                               <button
                                 onClick={() => handleDelete(s.id)}
-                                className="text-[11px] text-red-400 font-medium"
+                                className="text-[11px] text-red-700 font-medium"
                               >
                                 삭제
                               </button>

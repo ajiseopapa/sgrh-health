@@ -276,7 +276,7 @@ function Seal({ text, unit }: { text: string; unit: string }) {
 }
 
 // ── 순위 ──
-interface DeptRow { id: string; name: string; participants: number; sessions: number; minutes: number; headcount: number | null; rate: number | null }
+interface DeptRow { id: string; name: string; participants: number; sessions: number; minutes: number; headcount: number | null; rate: number | null; rateStatus: 'ok' | 'no_headcount' | 'check_needed' }
 interface Ranking { period: 'week' | 'month'; from: string; to: string; yearMonth: string; departments: DeptRow[]; bySessions: string[]; byMinutes: string[]; unassigned: { participants: number; sessions: number; minutes: number } }
 
 function RankPanel() {
@@ -322,7 +322,9 @@ function RankPanel() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[16px] font-bold text-ink-900">{d.name}</p>
                   <p className="mt-0.5 text-[13px] text-ink-500">
-                    {d.participants}명 참여 · {d.rate !== null ? `참여율 ${Math.round(d.rate * 100)}% (인사팀 ${d.headcount}명 기준)` : '참여율: 인원 정보 없음'}
+                    {d.participants}명 참여 · {d.rateStatus === 'ok' && d.rate !== null
+                      ? `참여율 ${Math.round(d.rate * 100)}% (인사팀 ${d.headcount}명 기준)`
+                      : d.rateStatus === 'check_needed' ? '참여율: 인원 확인 필요' : '참여율: 인원 정보 없음'}
                   </p>
                 </div>
                 <p className="shrink-0 text-right">

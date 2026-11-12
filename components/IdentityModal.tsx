@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { Employee } from '@/types/database'
@@ -49,9 +48,8 @@ export default function IdentityModal() {
       setStep('change')
     } else {
       setStep('pick'); setPicked(null)
-      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
-      supabase.from('employees').select('*').order('name').then(({ data }) =>
-        setEmployees((data ?? []).filter((e: { left_at?: string | null }) => !e.left_at || e.left_at >= today)))
+      // 재직 직원 목록은 서버가 퇴사자를 걸러서 줌(퇴사일은 공개 키로 읽을 수 없음)
+      api<{ employees: Employee[] }>('/api/employees').then((r) => setEmployees(r.ok ? r.data.employees : []))
     }
     // 창이 열릴 때 한 번만 초기화 (열린 동안 me가 바뀌어도 입력을 지우지 않음)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,7 +155,7 @@ export default function IdentityModal() {
           </div>
         )}
 
-        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-700">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <button

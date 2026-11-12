@@ -8,9 +8,11 @@ import { Empty, Loading, Notice } from '@/lib/ui'
 
 interface Head { year_month: string; headcount: number; source: string | null; updated_at: string }
 interface Dept { id: string; name: string; sort_order: number; members: number; headcount: Head | null; headcounts: Head[] }
+interface Mismatch { id: string; name: string; participants: number; headcount: number | null }
 
 export default function DepartmentManager() {
   const [list, setList] = useState<Dept[] | null>(null)
+  const [mismatches, setMismatches] = useState<Mismatch[]>([])
   const [ym, setYm] = useState('')
   const [name, setName] = useState('')
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
@@ -20,9 +22,10 @@ export default function DepartmentManager() {
   const [rename, setRename] = useState('')
 
   async function load() {
-    const r = await api<{ yearMonth: string; departments: Dept[] }>('/api/admin/departments')
+    const r = await api<{ yearMonth: string; departments: Dept[]; mismatches: Mismatch[] }>('/api/admin/departments')
     if (!r.ok) { setMsg({ tone: 'error', text: r.message }); setList([]); return }
     setList(r.data.departments)
+    setMismatches(r.data.mismatches ?? [])
     setYm((v) => v || r.data.yearMonth)
   }
   useEffect(() => { load() }, [])
@@ -80,6 +83,17 @@ export default function DepartmentManager() {
         <p className="mb-3 text-[13px] leading-relaxed text-ink-500">
           인사팀 자료로 확인한 인원만 입력하세요. 입력한 달만 부서 참여율이 나오고, 없으면 &lsquo;인원 정보 없음&rsquo;으로 보여요. 배정 인원은 참고용이에요.
         </p>
+        {mismatches.length > 0 && (
+          <div role="alert" className="mb-4 border-l-2 border-red-700 pl-3">
+            <p className="text-[14px] font-bold text-red-700">인원 확인 필요 {mismatches.length}개 부서</p>
+            <ul className="mt-1 space-y-0.5 text-[13px] text-ink-700">
+              {mismatches.map((m) => (
+                <li key={m.id}>{m.name}: 이번 달 참여 {m.participants}명 &gt; 인사팀 인원 {m.headcount}명</li>
+              ))}
+            </ul>
+            <p className="mt-1 text-[13px] text-ink-500">직원 화면에는 참여율 대신 &lsquo;인원 확인 필요&rsquo;로 보여요. 인사팀 인원이나 직원 소속을 확인해 주세요.</p>
+          </div>
+        )}
         {msg && <div className="mb-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
         {!list ? <Loading /> : list.length === 0 ? (
           <Empty title="아직 부서가 없어요." desc="위에서 부서를 만든 뒤, 직원 메뉴에서 소속을 정해 주세요." />

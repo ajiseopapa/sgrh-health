@@ -190,7 +190,7 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
                         </button>
                         <button
                           onClick={() => handleDelete(a.id)}
-                          className="text-[11px] text-red-400 font-medium"
+                          className="text-[11px] text-red-700 font-medium"
                         >
                           삭제
                         </button>

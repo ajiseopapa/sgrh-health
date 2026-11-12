@@ -67,7 +67,7 @@ export default function StatsTab() {
       const [logRes, countRes] = await Promise.all([
         supabase
           .from('exercise_logs')
-          .select('*, employee:employees(*), exercise_type:exercise_types(*)')
+          .select('*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)')
           .gte('log_date', toDateKey(since)),
         supabase.from('exercise_logs').select('*', { count: 'exact', head: true }),
       ])

@@ -109,7 +109,7 @@ export default function ExerciseTypeManager() {
         <button onClick={handleAdd} disabled={submitting} className="btn-primary">
           {submitting ? '등록 중...' : '등록'}
         </button>
-        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-700">{error}</p>}
       </div>
 
       <div>
@@ -165,7 +165,7 @@ export default function ExerciseTypeManager() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => startEdit(t)} className="pill-action bg-brand-50 text-brand-700">수정</button>
-                      <button onClick={() => handleDelete(t.id, t.name)} className="pill-action bg-red-50 text-red-500">삭제</button>
+                      <button onClick={() => handleDelete(t.id, t.name)} className="pill-action bg-red-50 text-red-700">삭제</button>
                     </div>
                   </div>
                 )}

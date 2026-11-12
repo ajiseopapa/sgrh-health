@@ -28,7 +28,7 @@ async function call(path, method = 'GET', body) {
 }
 
 // ── 화면이 브라우저에서 바로 읽는 것들 (홈·통계·피드·기록·달력·공지·건의함) ──
-for (const [t, sel] of [['employees', '*'], ['exercise_types', '*'], ['exercise_logs', '*, employee:employees(*), exercise_type:exercise_types(*)'], ['log_reactions', '*'], ['announcements', '*'], ['suggestions', '*']]) {
+for (const [t, sel] of [['employees', 'id, name, employee_number, color, created_at'], ['exercise_types', '*'], ['exercise_logs', '*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)'], ['log_reactions', '*'], ['announcements', '*'], ['suggestions', '*']]) {
   const { error } = await anon.from(t).select(sel).limit(5)
   check(`읽기: ${t}`, !error, error?.message ?? '')
 }

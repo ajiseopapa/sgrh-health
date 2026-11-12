@@ -262,8 +262,10 @@ export interface DeptRank {
   participants: number
   sessions: number
   minutes: number
-  headcount: number | null
-  rate: number | null // headcount 가 있을 때만
+  headcount: number | null // 인사팀 확인 인원(입력값 그대로)
+  // ok: 참여율 표시 / no_headcount: 인사팀 인원 없음 / check_needed: 참여 인원이 인사팀 인원보다 많음(자료 불일치)
+  rateStatus: 'ok' | 'no_headcount' | 'check_needed'
+  rate: number | null // ok 일 때만. 100%로 자르지 않음(불일치면 null 로 두고 check_needed)
 }
 export async function departmentRanking(db: SupabaseClient, period: 'week' | 'month', today = kstToday()) {
   const from = period === 'week' ? weekStart(today) : monthStart(today)
@@ -305,7 +307,8 @@ export async function departmentRanking(db: SupabaseClient, period: 'week' | 'mo
       sessions: a?.sessions ?? 0,
       minutes: a ? Math.floor(a.seconds / 60) : 0,
       headcount,
-      rate: headcount ? Math.min(1, participants / headcount) : null,
+      rateStatus: !headcount ? 'no_headcount' : participants > headcount ? 'check_needed' : 'ok',
+      rate: headcount && participants <= headcount ? participants / headcount : null,
     }
   })
   const un = acc.get(null)

@@ -50,7 +50,7 @@ export default function AdminPasswordModal({
           className="input-field"
         />
 
-        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-700">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <button onClick={onCancel} className="btn-secondary">

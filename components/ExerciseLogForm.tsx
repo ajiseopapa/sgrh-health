@@ -2,7 +2,7 @@
 
 // 운동 기록 입력 — 종목 한 번, 시간 한 번 누르면 저장할 수 있게(날짜는 기본 오늘)
 import { useState, useMemo, useRef } from 'react'
-import { ExerciseType, calcPace, getPaceMode } from '@/types/database'
+import { ExerciseType, calcPace, formatDuration, getPaceMode } from '@/types/database'
 import { api, newRequestId } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { Notice } from '@/lib/ui'
@@ -81,9 +81,9 @@ export default function ExerciseLogForm({
     }
     requestIdRef.current = newRequestId()
     const name = selectedType?.name ?? '운동'
-    const min = Math.round(totalSeconds / 60)
+    const saved = formatDuration(totalSeconds)
     resetForm()
-    setMessage({ tone: 'success', text: `${name} ${min}분을 기록했어요.` })
+    setMessage({ tone: 'success', text: `${name} ${saved}을 기록했어요.` })
     onSuccess()
   }
 

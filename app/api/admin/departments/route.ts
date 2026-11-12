@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDb } from '@/lib/server/db'
 import { cleanText } from '@/lib/server/validate'
 import { fail, guardAdminWrite, handle, ok, readJson, requireAdmin, writeAudit } from '@/lib/server/guard'
-import { kstToday, readAllRows } from '@/lib/server/engagement'
+import { departmentRanking, kstToday, readAllRows } from '@/lib/server/engagement'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,8 +21,14 @@ export const GET = handle(async () => {
   ])
   const members = new Map<string, number>()
   for (const o of open ?? []) members.set(o.department_id, (members.get(o.department_id) ?? 0) + 1)
+  // 이번 달 참여 인원이 인사팀 인원보다 많은 부서 = 자료 불일치 경고 (원래 값은 그대로 보여줌)
+  const month = await departmentRanking(db, 'month')
+  const mismatches = month.departments
+    .filter((d) => d.rateStatus === 'check_needed')
+    .map((d) => ({ id: d.id, name: d.name, participants: d.participants, headcount: d.headcount }))
   return ok({
     yearMonth: ym,
+    mismatches,
     departments: (depts ?? []).map((d) => ({
       ...d,
       members: members.get(d.id) ?? 0,

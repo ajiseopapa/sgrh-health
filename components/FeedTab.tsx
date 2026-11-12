@@ -10,6 +10,7 @@ import { useMe } from '@/lib/me'
 import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
+import PeerSearch from './PeerSearch'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -48,7 +49,7 @@ export default function FeedTab() {
     const [logRes, typeRes] = await Promise.all([
       supabase
         .from('exercise_logs')
-        .select('*, employee:employees(*), exercise_type:exercise_types(*)')
+        .select('*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)')
         .order('log_date', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(50),
@@ -201,6 +202,7 @@ export default function FeedTab() {
   return (
     <div>
       <PageHead title="피드" sub="동료들이 남긴 최근 운동이에요." />
+      <PeerSearch />
       {error && <div className="pb-3"><Notice tone="error">{error}</Notice></div>}
 
       <ul className="divide-y divide-line border-t border-line">
