@@ -11,15 +11,23 @@ export const GET = handle(async () => {
   const admin = await requireAdmin()
   if (admin instanceof NextResponse) return admin
   const db = serverDb()
-  const [{ data: emps }, { data: pins }] = await Promise.all([
+  const [{ data: emps }, { data: pins }, { data: open }] = await Promise.all([
     db.from('employees').select('*').order('name'),
     db.from('employee_pins').select('employee_id, is_temp, locked_until'),
+    db.from('employee_departments').select('employee_id, department_id, start_date, departments(name)').is('end_date', null),
   ])
+  const deptMap = new Map((open ?? []).map((o) => [o.employee_id, o]))
   const pinMap = new Map((pins ?? []).map((p) => [p.employee_id, p]))
   const list = (emps ?? []).map((e) => {
     const p = pinMap.get(e.id)
     const locked = !!p?.locked_until && new Date(p.locked_until).getTime() > Date.now()
-    return { ...e, pin_status: !p ? 'none' : locked ? 'locked' : p.is_temp ? 'temp' : 'set' }
+    const d = deptMap.get(e.id) as { department_id: string; start_date: string; departments: { name: string } | { name: string }[] | null } | undefined
+    const deptName = d ? (Array.isArray(d.departments) ? d.departments[0]?.name : d.departments?.name) ?? null : null
+    return {
+      ...e,
+      pin_status: !p ? 'none' : locked ? 'locked' : p.is_temp ? 'temp' : 'set',
+      department: d ? { id: d.department_id, name: deptName, since: d.start_date } : null,
+    }
   })
   return ok({ employees: list })
 })

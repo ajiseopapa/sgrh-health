@@ -15,17 +15,24 @@ import { dbFromEnv, readAll, checksum } from './backup.mjs'
 const ORDER = [
   'employees',
   'exercise_types',
+  'departments', // v2.1
+  'department_headcounts', // v2.1
+  'employee_departments', // v2.1
   'exercise_logs',
   'log_reactions',
   'announcements',
   'suggestions',
   'employee_goals',
   'employee_pins',
+  'personal_goals', // v2.1
+  'challenges', // v2.1
+  'challenge_participants', // v2.1
+  'employee_badges', // v2.1
   'audit_logs',
 ]
 // 로그인 세션은 복원하지 않습니다(복원 후 모두 다시 로그인)
 
-const KEY = { employee_pins: 'employee_id' }
+const KEY = { employee_pins: 'employee_id', department_headcounts: 'department_id', challenge_participants: 'challenge_id', employee_badges: 'employee_id' }
 
 async function main() {
   const args = process.argv.slice(2)

@@ -11,6 +11,11 @@ export function serverDb(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error('SERVER_DB_NOT_CONFIGURED')
-  cached = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  cached = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    // Next.js 는 쿠키를 읽지 않는 GET API 안의 fetch 결과를 캐시할 수 있어(부서 순위·챌린지 목록 등)
+    // 지워진 자료가 계속 보일 수 있습니다. 서버 DB 조회는 항상 새로 읽습니다.
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+  })
   return cached
 }

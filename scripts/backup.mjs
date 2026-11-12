@@ -24,6 +24,14 @@ export const TABLES = [
   'auth_sessions',
   'audit_logs',
   'races', // 앱은 안 쓰는 옛 대회 테이블. 023(접근 차단) 전후 보존 확인용. 없으면 건너뜀
+  // v2.1 (024 실행 전 DB에서는 테이블 없음 → 건너뜀)
+  'departments',
+  'department_headcounts',
+  'employee_departments',
+  'personal_goals',
+  'challenges',
+  'challenge_participants',
+  'employee_badges',
 ]
 
 export function loadEnv(file) {
@@ -52,7 +60,7 @@ export function dbFromEnv(file) {
 export async function readAll(db, table) {
   const rows = []
   const page = 1000
-  const key = table === 'employee_pins' ? 'employee_id' : 'id'
+  const key = { employee_pins: 'employee_id', department_headcounts: 'department_id', challenge_participants: 'challenge_id', employee_badges: 'employee_id' }[table] ?? 'id'
   for (let from = 0; ; from += page) {
     const { data, error } = await db.from(table).select('*').order(key, { ascending: true }).range(from, from + page - 1)
     if (error) {

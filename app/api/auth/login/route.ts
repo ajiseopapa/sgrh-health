@@ -3,7 +3,7 @@ import { serverDb } from '@/lib/server/db'
 import { verifyPin, PIN_RE } from '@/lib/server/pin'
 import { createSession } from '@/lib/server/session'
 import { checkCsrf, clientIpHash, fail, handle, hitRateLimit, isRateLimited, LIMITS, ok, readJson } from '@/lib/server/guard'
-import { UUID_RE } from '@/lib/server/validate'
+import { todaySeoul, UUID_RE } from '@/lib/server/validate'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +61,9 @@ export const POST = handle(async (req: NextRequest) => {
   }
 
   await db.from('employee_pins').update({ failed_count: 0, locked_until: null }).eq('employee_id', employeeId)
+  // v2.1: 퇴사 처리된 직원(퇴사일이 지남)은 로그인하지 않음. 기록은 그대로 남습니다.
+  const { data: emp } = await db.from('employees').select('left_at').eq('id', employeeId).maybeSingle()
+  if (emp?.left_at && emp.left_at < todaySeoul()) return fail(403, '퇴사 처리된 계정이에요. 관리자에게 문의해주세요.')
   await createSession('employee', employeeId)
   return ok({ mustChangePin: row.is_temp })
 })

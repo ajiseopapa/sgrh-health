@@ -9,7 +9,7 @@ export function todaySeoul(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 }
 
-function isValidDate(s: string) {
+export function isValidDate(s: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false
   const d = new Date(`${s}T00:00:00Z`)
   return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s
