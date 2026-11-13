@@ -1,5 +1,5 @@
 import { ExerciseLog } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
+import { getEmployeeColor, textOnColor } from '@/lib/colors'
 import SectionTitle from './SectionTitle'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -51,8 +51,8 @@ export default function TopRankingBoard({
             >
               <span className="text-2xl">{MEDALS[i]}</span>
               <span
-                className="mt-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: r.color }}
+                className="mt-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: r.color, color: textOnColor(r.color) }}
               >
                 {r.name[0]}
               </span>

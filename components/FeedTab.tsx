@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, ExerciseType, calcPace, formatDuration } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
+import { getEmployeeColor, textOnColor } from '@/lib/colors'
 import { getDeviceId } from '@/lib/device'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
@@ -221,8 +221,8 @@ export default function FeedTab() {
           return (
             <li key={log.id} className="flex gap-3 py-5">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white"
-                style={{ backgroundColor: getEmployeeColor(log.employee) }}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold"
+                style={{ backgroundColor: getEmployeeColor(log.employee), color: textOnColor(getEmployeeColor(log.employee)) }}
                 aria-hidden="true"
               >
                 {log.employee?.name?.[0] ?? '?'}

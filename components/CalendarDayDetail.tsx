@@ -5,7 +5,7 @@
 import { Icon } from '@/lib/ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getEmployeeColor } from '@/lib/colors'
+import { getEmployeeColor, textOnColor } from '@/lib/colors'
 import { formatDuration } from '@/types/database'
 import type { DaySummary } from './MiniCalendar'
 
@@ -143,8 +143,8 @@ export default function CalendarDayDetail({
           {groups.map((g) => (
             <li key={g.name + g.color} className="flex gap-3 py-3">
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ backgroundColor: g.color }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: g.color, color: textOnColor(g.color) }}
               >
                 {g.name[0]}
               </span>
