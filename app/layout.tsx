@@ -6,22 +6,24 @@ const PRETENDARD = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/di
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sgrh-health.vercel.app'),
-  title: '직원 운동 관리',
-  description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+  title: '움트다',
+  description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
+  applicationName: '움트다',
+  appleWebApp: { title: '움트다' },
   // 카카오톡·세계로톡 등에 링크를 붙였을 때 보이는 미리보기 이미지
   openGraph: {
     type: 'website',
     url: '/',
-    siteName: '세계로병원 직원 운동 관리',
-    title: '직원 운동 관리 시스템',
-    description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+    siteName: '움트다 · 세계로병원 직원 건강 프로젝트',
+    title: '움트다',
+    description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
     locale: 'ko_KR',
-    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: '직원 운동 관리 시스템' }],
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: '움트다 — 세계로병원 직원 건강 프로젝트' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '직원 운동 관리 시스템',
-    description: '우리 모두의 건강한 일상을 위한 직원 전용 운동 기록 플랫폼',
+    title: '움트다',
+    description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
     images: ['/og.jpg'],
   },
 }

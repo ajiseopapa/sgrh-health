@@ -13,6 +13,7 @@ import IdentityModal from '@/components/IdentityModal'
 import { MeProvider, useMe } from '@/lib/me'
 import { DialogProvider } from '@/lib/dialog'
 import { Icon } from '@/lib/ui'
+import SproutIcon from '@/components/SproutIcon'
 
 // 직원 화면은 네 개만. 관리 기능은 위쪽 '관리'에서 따로 엽니다.
 export type TabKey = 'home' | 'record' | 'challenge' | 'feed'
@@ -74,9 +75,13 @@ function AppShell() {
     <>
       <div className="flex min-h-screen flex-col bg-paper pb-24">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-paper/95 px-5 pb-2 pt-3 backdrop-blur">
-        <p className="text-[17px] font-extrabold tracking-[-0.02em] text-ink-900">
-          직원 운동<span className="ml-0.5 inline-block h-2 w-2 rounded-full bg-brand-300 align-middle ring-1 ring-ink-900" aria-hidden="true" />
-        </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <SproutIcon size={30} className="shrink-0" />
+          <div className="min-w-0 leading-tight">
+            <p className="text-[18px] font-extrabold tracking-[-0.02em] text-ink-900">움트다</p>
+            <p className="truncate text-[11px] font-semibold text-ink-500">세계로병원 직원 건강 프로젝트</p>
+          </div>
+        </div>
         <div className="-mr-2 flex items-center">
           {isAdmin && (
             <button onClick={handleLogout} className="mr-1 min-h-[44px] px-2 text-[13px] font-semibold text-ink-500">

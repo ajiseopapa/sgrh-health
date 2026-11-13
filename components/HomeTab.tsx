@@ -37,7 +37,8 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
     <div>
       {/* 오늘 — 연두 색 면으로 가장 먼저 눈에 들어오게 */}
       <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900">
-        <p className="text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
+        <p className="text-[13px] font-semibold text-ink-700">오늘의 움직임이 내일의 성장으로</p>
+        <p className="mt-2 text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
         <h1 className="mt-1 text-[34px] font-black leading-[1.05] tracking-[-0.04em]">오늘의 운동</h1>
 
         <div className="mt-6 min-h-[92px]">
