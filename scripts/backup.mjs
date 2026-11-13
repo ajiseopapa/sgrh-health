@@ -32,6 +32,13 @@ export const TABLES = [
   'challenges',
   'challenge_participants',
   'employee_badges',
+  // v2.2 (026 실행 전 DB에서는 테이블 없음 → 건너뜀)
+  'game_settings',
+  'game_purchases',
+  'game_equipment',
+  'game_profiles',
+  'garden_unlocks',
+  'personal_goal_history',
 ]
 
 export function loadEnv(file) {
