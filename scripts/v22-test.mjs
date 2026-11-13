@@ -369,6 +369,8 @@ async function p2() {
   const prof = (k, body) => dev[k].call('/api/me/game/profile', { method: 'PUT', body })
   r = await nobody.call(`/api/game/feed?ids=${E.G003},${E.G004}`)
   check('고르기 전에는 이모지 없음', r.ok && Object.keys(r.emojis ?? {}).length === 0)
+  r = await prof('G004', { nameEmoji: '😎' })
+  check('표정 이모지 저장', r.ok && r.nameEmoji === '😎')
   r = await prof('G004', { nameEmoji: '🐢' })
   check('목록에 있는 이모지 저장', r.ok && r.nameEmoji === '🐢')
   r = await dev.G004.call('/api/me/game')
