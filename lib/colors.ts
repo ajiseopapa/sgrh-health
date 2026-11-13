@@ -1,3 +1,10 @@
+// ── 공통 디자인 토큰(JS에서 색 값이 필요한 곳: 차트 등) — tailwind.config.ts 와 같은 값 ──
+export const TOKENS = {
+  ink900: '#202D29',     // 기본 글자·진한 막대
+  ink200: '#C9CCC5',     // 흐린 막대·축선
+  highlight: '#D8F36A',  // 강조(형광 라임) = tailwind brand-300
+} as const
+
 // 직원 ID로부터 항상 같은 색상을 만들어내는 해시 함수.
 // 캘린더 점, 랭킹 보드, 피드 아바타에서 한 사람당 같은 색이 일관되게 보입니다.
 export const PALETTE = [

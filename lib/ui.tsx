@@ -79,12 +79,13 @@ export function Stat({ value, unit, label, accent = false, size = 'lg' }: {
 }
 
 // ── 진행 막대 (포인트 색 1개) ──
-export function Progress({ value, max, label }: { value: number; max: number; label: string }) {
+export function Progress({ value, max, label, tone = 'ink' }: { value: number; max: number; label: string; tone?: 'ink' | 'highlight' }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0
   return (
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}
       className="h-2.5 w-full overflow-hidden rounded-full bg-ink-100">
-      <div className="h-full rounded-full bg-ink-900 transition-[width] duration-300" style={{ width: `${pct}%` }} />
+      {/* highlight: 형광 라임은 배경과 명암 차이가 작아 진한 테두리로 경계를 보이게 함(홈 오늘 막대와 같은 방식) */}
+      <div className={`h-full rounded-full transition-[width] duration-300 ${tone === 'highlight' ? 'bg-brand-300 ring-1 ring-inset ring-ink-900' : 'bg-ink-900'}`} style={{ width: `${pct}%` }} />
     </div>
   )
 }

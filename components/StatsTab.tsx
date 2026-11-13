@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, calcPace, isRunningType, getPaceMode } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
+import { getEmployeeColor, TOKENS } from '@/lib/colors'
 import { getMonthRange, toDateKey, calcStreak } from '@/lib/dateUtils'
 import { Empty, Loading, Progress } from '@/lib/ui'
 
@@ -244,6 +244,7 @@ export default function StatsTab() {
   for (const l of last8wLogs) weekdayCount[new Date(l.log_date).getDay()]++
   const weekdayData = WEEKDAY_LABELS.map((label, i) => ({ label, count: weekdayCount[i] }))
   const busiestIdx = weekdayCount.indexOf(Math.max(...weekdayCount))
+  const weekdayMax = Math.max(...weekdayCount)
   const busiestLabel = WEEKDAY_LABELS[busiestIdx]
 
   // ══════════════════════════════════════════
@@ -343,7 +344,7 @@ export default function StatsTab() {
           <H3>팀 누적 목표</H3>
           <span className="text-[13px] font-bold tabular-nums text-ink-700">{total.toLocaleString()} / {msNext.toLocaleString()}회</span>
         </div>
-        <Progress value={total} max={msNext} label="팀 누적 목표 진행" />
+        <Progress value={total} max={msNext} label="팀 누적 목표 진행" tone="highlight" />
         <p className="mt-2 text-[13px] text-ink-500">다음 목표까지 {msNext - total}회 남았어요.</p>
       </div>
 
@@ -388,7 +389,10 @@ export default function StatsTab() {
             <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
             <Bar dataKey="count" radius={[3, 3, 0, 0]}>
               {weekdayData.map((d, i) => (
-                <Cell key={d.label} fill={i === busiestIdx ? '#202D29' : '#C9CCC5'} />
+                // 최고값과 같은 요일은 모두 강조(동점 포함). 라임은 배경과 명암 차이가 작아 진한 테두리를 둠
+                weekdayMax > 0 && d.count === weekdayMax
+                  ? <Cell key={d.label} fill={TOKENS.highlight} stroke={TOKENS.ink900} strokeWidth={1.5} />
+                  : <Cell key={d.label} fill={TOKENS.ink200} />
               ))}
             </Bar>
           </BarChart>
