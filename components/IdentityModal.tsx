@@ -131,7 +131,7 @@ export default function IdentityModal() {
                       className="w-full px-3 py-2.5 text-left text-sm text-ink-800 transition hover:bg-brand-50"
                     >
                       {e.name}
-                      <span className="ml-1 text-xs text-ink-300">#{e.employee_number}</span>
+                      <span className="ml-1 text-xs text-ink-400">#{e.employee_number}</span>
                     </button>
                   </li>
                 ))}
@@ -176,7 +176,7 @@ export default function IdentityModal() {
           )}
         </div>
         {step === 'pin' && (
-          <p className="text-center text-[11px] text-ink-300">PIN을 모르면 관리자에게 초기화를 요청해주세요.</p>
+          <p className="text-center text-[11px] text-ink-400">PIN을 모르면 관리자에게 초기화를 요청해주세요.</p>
         )}
       </div>
     </div>

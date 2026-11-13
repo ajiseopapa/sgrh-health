@@ -83,8 +83,8 @@ export function Progress({ value, max, label }: { value: number; max: number; la
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0
   return (
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}
-      className="h-2 w-full overflow-hidden rounded-full bg-ink-100">
-      <div className="h-full rounded-full bg-brand-600 transition-[width] duration-300" style={{ width: `${pct}%` }} />
+      className="h-2.5 w-full overflow-hidden rounded-full bg-ink-100">
+      <div className="h-full rounded-full bg-ink-900 transition-[width] duration-300" style={{ width: `${pct}%` }} />
     </div>
   )
 }

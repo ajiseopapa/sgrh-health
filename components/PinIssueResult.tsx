@@ -56,7 +56,7 @@ export default function PinIssueResult({ issued, onClose }: { issued: IssuedPin[
         {issued.map((p) => (
           <li key={p.employeeId} className="flex items-center justify-between px-4 py-2.5">
             <span className="text-sm text-ink-800">
-              {p.name} <span className="text-xs text-ink-300">#{p.employeeNumber}</span>
+              {p.name} <span className="text-xs text-ink-400">#{p.employeeNumber}</span>
             </span>
             <span className="font-mono text-base font-bold tracking-widest text-ink-900">{p.pin}</span>
           </li>

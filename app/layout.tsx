@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   // 확대 허용 (접근성: 글씨를 키워 보는 직원을 막지 않음)
-  themeColor: '#F4F0E8',
+  themeColor: '#F6F4EE',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

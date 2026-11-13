@@ -18,8 +18,8 @@ body {
 body {
   -webkit-tap-highlight-color: transparent;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #f4f0e8;
-  color: #1b1916;
+  background-color: #f6f4ee;
+  color: #202d29;
   font-feature-settings: 'tnum' 0;
   word-break: keep-all;
 }
@@ -31,7 +31,7 @@ input[type='date'] {
 
 /* 키보드로 이동할 때만 보이는 초점 표시 */
 :focus-visible {
-  outline: 2px solid #1d6a48;
+  outline: 2px solid #202d29;
   outline-offset: 2px;
 }
 
@@ -75,6 +75,11 @@ input[type='date'] {
   }
   .chip[aria-pressed='true'],
   .chip[aria-checked='true'] {
-    @apply border-ink-900 bg-ink-900 text-paper;
+    @apply border-ink-900 bg-brand-300 text-ink-900;
+  }
+
+  /* 형광펜 강조: 숫자·핵심 단어 밑에 연두 띠 */
+  .mark {
+    background: linear-gradient(transparent 58%, #d8f36a 58%, #d8f36a 92%, transparent 92%);
   }
 }

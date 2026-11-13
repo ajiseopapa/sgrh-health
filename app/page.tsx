@@ -64,7 +64,7 @@ function AppShell() {
       <button onClick={onClick} aria-label={label}
         className="relative flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50">
         <Icon name={icon} size={21} />
-        {dot && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-600" aria-hidden="true" />}
+        {dot && <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-brand-300 ring-2 ring-ink-900" aria-hidden="true" />}
         {dot && <span className="sr-only">(새 소식)</span>}
       </button>
     )
@@ -75,7 +75,7 @@ function AppShell() {
       <div className="flex min-h-screen flex-col bg-paper pb-24">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-paper/95 px-5 pb-2 pt-3 backdrop-blur">
         <p className="text-[17px] font-extrabold tracking-[-0.02em] text-ink-900">
-          직원 운동<span className="text-brand-600">.</span>
+          직원 운동<span className="ml-0.5 inline-block h-2 w-2 rounded-full bg-brand-300 align-middle ring-1 ring-ink-900" aria-hidden="true" />
         </p>
         <div className="-mr-2 flex items-center">
           {isAdmin && (
@@ -106,9 +106,10 @@ function AppShell() {
               className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors ${
                 on ? 'text-ink-900' : 'text-ink-400'
               }`}>
-              <Icon name={t.icon} size={22} />
+              <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${on ? 'bg-brand-300' : ''}`}>
+                <Icon name={t.icon} size={22} />
+              </span>
               <span aria-hidden="true">{t.label}</span>
-              <span className={`h-[3px] w-5 rounded-full ${on ? 'bg-brand-600' : 'bg-transparent'}`} aria-hidden="true" />
             </button>
           )
         })}

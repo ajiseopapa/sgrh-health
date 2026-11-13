@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useMe } from '@/lib/me'
 import { koreanDate, useEngagement } from '@/lib/engagement'
-import { Loading, NeedLogin, Notice, PageHead, Progress, Section, fmtMinutes } from '@/lib/ui'
+import { Icon, Loading, NeedLogin, Notice, Progress, Section, fmtMinutes } from '@/lib/ui'
 import MiniCalendar from './MiniCalendar'
 
 function seoulToday() {
@@ -31,34 +31,49 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
   const todayRow = data?.week.days.find((d) => d.date === today)
   const maxMin = Math.max(30, ...(data?.week.days.map((d) => d.minutes) ?? [0]))
 
+  const todayDone = !!(data && todayRow && todayRow.sessions > 0)
+
   return (
     <div>
-      <PageHead title="오늘의 운동" sub={koreanDate(today)} />
+      {/* 오늘 — 연두 색 면으로 가장 먼저 눈에 들어오게 */}
+      <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900">
+        <p className="text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
+        <h1 className="mt-1 text-[34px] font-black leading-[1.05] tracking-[-0.04em]">오늘의 운동</h1>
 
-      {/* 오늘 */}
-      <div className="pb-6">
-        {loading ? (
-          <Loading lines={2} />
-        ) : data && todayRow && todayRow.sessions > 0 ? (
-          <p className="text-[22px] font-bold leading-snug tracking-[-0.02em] text-ink-900">
-            {me?.name}님은 오늘{' '}
-            <span className="num text-brand-600">{todayRow.sessions}회</span>
-            {todayRow.minutes > 0 && <>, <span className="num text-brand-600">{fmtMinutes(todayRow.minutes)}</span></>} 운동했어요.
-          </p>
-        ) : (
-          <p className="text-[22px] font-bold leading-snug tracking-[-0.02em] text-ink-900">
-            {me ? `${me.name}님, 오늘 기록은 아직이에요.` : '오늘 운동하셨나요?'}
-          </p>
-        )}
-        <p className="mt-2 text-[14px] text-ink-500">
-          {teamToday === null ? ' ' : teamToday > 0 ? `오늘 동료 ${teamToday}명이 운동을 기록했어요.` : '오늘 첫 기록을 남겨 보세요.'}
+        <div className="mt-6 min-h-[92px]">
+          {loading ? (
+            <Loading lines={2} />
+          ) : todayDone ? (
+            <>
+              <p className="flex items-end gap-4">
+                <span className="num text-[72px] leading-[0.85]">{todayRow!.sessions}<span className="ml-1 text-[22px] font-black tracking-normal">회</span></span>
+                {todayRow!.minutes > 0 && (
+                  <span className="num pb-1 text-[34px] leading-none">{todayRow!.minutes}<span className="ml-0.5 text-[18px] font-black tracking-normal">분</span></span>
+                )}
+              </p>
+              <p className="mt-3 text-[16px] font-bold">{me?.name}님, 오늘도 해냈어요.</p>
+            </>
+          ) : (
+            <>
+              <p className="num text-[72px] leading-[0.85]">0<span className="ml-1 text-[22px] font-black tracking-normal">회</span></p>
+              <p className="mt-3 text-[16px] font-bold">{me ? `${me.name}님, 오늘 첫 기록을 남겨 볼까요?` : '오늘 운동하셨나요?'}</p>
+            </>
+          )}
+        </div>
+
+        <p className="mt-1 text-[14px] font-semibold text-ink-700">
+          {teamToday === null ? '\u00a0' : teamToday > 0 ? `지금까지 동료 ${teamToday}명이 운동했어요` : '아직 아무도 기록하지 않았어요'}
         </p>
-        <button type="button" onClick={onRecord} className="btn-primary mt-5">운동 기록하기</button>
-      </div>
+        <button type="button" onClick={onRecord}
+          className="mt-5 flex min-h-[52px] w-full items-center justify-between rounded-lg bg-ink-900 px-5 text-[16px] font-bold text-paper active:bg-ink-700">
+          운동 기록하기
+          <Icon name="chevron-right" size={20} />
+        </button>
+      </section>
 
       {/* 이번 주 */}
-      <Section title="이번 주 기록"
-        action={data && <span className="text-[13px] tabular-nums text-ink-500">{data.week.start.slice(5).replace('-', '.')} – {data.week.end.slice(5).replace('-', '.')}</span>}>
+      <Section title="이번 주" className="border-t-0"
+        action={data && <span className="text-[13px] font-semibold tabular-nums text-ink-500">{data.week.start.slice(5).replace('-', '.')} – {data.week.end.slice(5).replace('-', '.')}</span>}>
         {needLogin ? (
           <NeedLogin text="본인 확인을 하면 이번 주 내 기록과 목표가 여기에 보여요." onLogin={() => requireMe()} />
         ) : loading ? (
@@ -67,21 +82,25 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
           <Notice tone="error">{error}</Notice>
         ) : data ? (
           <>
-            <div className="grid grid-cols-3 gap-4">
-              <WeekStat value={data.week.sessions} unit="회" label="운동" />
-              <WeekStat value={data.week.minutes} unit="분" label="인정 시간" />
-              <WeekStat value={data.streak.current} unit="일" label="연속 운동" />
+            <div className="flex items-end justify-between gap-4">
+              <p className="num text-[56px] leading-[0.9] text-ink-900">
+                {data.week.sessions}<span className="ml-1 text-[18px] font-black tracking-normal text-ink-500">회</span>
+              </p>
+              <p className="pb-1 text-right text-[15px] font-bold text-ink-700">
+                인정 시간<br /><span className="num text-[24px] text-ink-900">{fmtMinutes(data.week.minutes)}</span>
+              </p>
             </div>
 
-            {/* 요일별 막대 (인정 시간 기준, 시간 없는 기록은 얇게 표시) */}
-            <div className="mt-6 flex h-[92px] items-end gap-2" aria-hidden="true">
+            {/* 요일별 막대: 운동한 날은 차콜, 오늘은 연두 */}
+            <div className="mt-9 flex h-[110px] items-end gap-2" aria-hidden="true">
               {data.week.days.map((d, i) => {
-                const h = d.minutes > 0 ? Math.max(8, Math.round((d.minutes / maxMin) * 64)) : d.sessions > 0 ? 6 : 2
+                const h = d.minutes > 0 ? Math.max(14, Math.round((d.minutes / maxMin) * 84)) : d.sessions > 0 ? 10 : 4
                 const isToday = d.date === today
                 return (
-                  <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
-                    <div className={`w-full rounded-sm ${d.sessions > 0 ? 'bg-brand-600' : 'bg-ink-100'}`} style={{ height: h }} />
-                    <span className={`text-[12px] ${isToday ? 'font-extrabold text-ink-900' : 'font-semibold text-ink-500'}`}>{DOW[i]}</span>
+                  <div key={d.date} className="flex flex-1 flex-col items-center gap-2">
+                    {d.minutes > 0 && <span className="text-[11px] font-bold tabular-nums text-ink-600">{d.minutes}</span>}
+                    <div className={`w-full rounded-md ${d.sessions > 0 ? (isToday ? 'bg-brand-300 ring-2 ring-ink-900' : 'bg-ink-900') : 'bg-ink-100'}`} style={{ height: h }} />
+                    <span className={`text-[13px] ${isToday ? 'font-black text-ink-900' : 'font-semibold text-ink-500'}`}>{DOW[i]}</span>
                   </div>
                 )
               })}
@@ -91,15 +110,15 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
             </p>
 
             {/* 목표 */}
-            <div className="mt-6">
+            <div className="mt-7">
               {data.goal ? (
                 <>
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <p className="text-[14px] font-bold text-ink-900">
-                      이번 주 목표 {data.goal.target}{data.goal.kind === 'sessions' ? '회' : '분'}
+                  <div className="mb-2.5 flex items-baseline justify-between">
+                    <p className="text-[15px] font-bold text-ink-900">
+                      목표 {data.goal.target}{data.goal.kind === 'sessions' ? '회' : '분'}
                     </p>
-                    <p className="text-[14px] font-bold tabular-nums text-brand-600">
-                      {data.goal.value >= data.goal.target ? '달성' : `${Math.round((data.goal.value / data.goal.target) * 100)}%`}
+                    <p className="num text-[22px] text-ink-900">
+                      {data.goal.value >= data.goal.target ? <span className="mark">달성!</span> : `${Math.round((data.goal.value / data.goal.target) * 100)}%`}
                     </p>
                   </div>
                   <Progress value={data.goal.value} max={data.goal.target} label="이번 주 목표 달성률" />
@@ -110,6 +129,16 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
                 </button>
               )}
             </div>
+
+            {/* 연속 운동: 차콜 면으로 리듬을 줌 */}
+            {data.streak.current > 0 && (
+              <div className="mt-7 flex items-center justify-between rounded-lg bg-ink-900 px-5 py-4 text-paper">
+                <p className="text-[15px] font-bold">연속 운동</p>
+                <p className="num text-[36px] leading-none text-brand-300">
+                  {data.streak.current}<span className="ml-1 text-[16px] font-black tracking-normal text-paper">일째</span>
+                </p>
+              </div>
+            )}
           </>
         ) : null}
       </Section>
@@ -122,13 +151,3 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
   )
 }
 
-function WeekStat({ value, unit, label }: { value: number; unit: string; label: string }) {
-  return (
-    <div>
-      <p className="num text-[32px] leading-none text-ink-900">
-        {value}<span className="ml-0.5 text-[14px] font-bold tracking-normal text-ink-500">{unit}</span>
-      </p>
-      <p className="mt-1.5 text-[13px] text-ink-500">{label}</p>
-    </div>
-  )
-}

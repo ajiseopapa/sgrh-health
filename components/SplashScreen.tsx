@@ -16,7 +16,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-brand-50 transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-paper transition-opacity duration-300 ${
         fadingOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -45,7 +45,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         .splash-dino-shadow {
           width: 118px;
           height: 14px;
-          background: #B9DDC5;
+          background: #C9CCC5;
           border-radius: 50%;
           margin-top: -6px;
           animation: splash-shadow 0.62s ease-in-out infinite;
@@ -54,7 +54,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #1F9B7D;
+          background: #202D29;
           display: inline-block;
           margin: 0 2px;
           animation: splash-dot 1s ease-in-out infinite;
@@ -63,7 +63,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
       <img className="splash-dino-img" src="/dino-runner.png" alt="달리는 초록 공룡" />
       <div className="splash-dino-shadow" />
       <div className="mt-4 flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-brand-700">로딩 중</span>
+        <span className="text-sm font-semibold text-ink-900">로딩 중</span>
         <span className="splash-dot" style={{ animationDelay: '0s' }} />
         <span className="splash-dot" style={{ animationDelay: '0.15s' }} />
         <span className="splash-dot" style={{ animationDelay: '0.3s' }} />

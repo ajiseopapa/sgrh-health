@@ -104,7 +104,7 @@ export default function ExerciseTypeManager() {
           </div>
         </label>
 
-        <p className="text-xs text-ink-300">왼쪽 아이콘을 눌러 운동에 어울리는 이모지를 골라보세요.</p>
+        <p className="text-xs text-ink-400">왼쪽 아이콘을 눌러 운동에 어울리는 이모지를 골라보세요.</p>
 
         <button onClick={handleAdd} disabled={submitting} className="btn-primary">
           {submitting ? '등록 중...' : '등록'}

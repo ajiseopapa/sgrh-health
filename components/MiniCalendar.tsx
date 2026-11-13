@@ -102,17 +102,17 @@ export function levelOf(p: number, headcount: number | null): number {
 const LEVEL_STYLE: Record<number, string> = {
   0: 'text-ink-600',
   [-1]: 'bg-ink-100 text-ink-800',
-  1: 'bg-brand-100 text-brand-900',
-  2: 'bg-brand-200 text-brand-900',
-  3: 'bg-brand-500 text-white',
-  4: 'bg-brand-700 text-white',
+  1: 'bg-brand-100 text-ink-900',
+  2: 'bg-brand-200 text-ink-900',
+  3: 'bg-brand-300 text-ink-900',
+  4: 'bg-ink-900 text-brand-300',
 }
 
 const LEGEND_SWATCH: Record<number, string> = {
   1: 'bg-brand-100',
   2: 'bg-brand-200',
-  3: 'bg-brand-500',
-  4: 'bg-brand-700',
+  3: 'bg-brand-300',
+  4: 'bg-ink-900',
 }
 
 const LEGEND = [

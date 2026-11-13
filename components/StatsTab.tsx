@@ -321,7 +321,7 @@ export default function StatsTab() {
   const H3 = ({ children }: { children: React.ReactNode }) => (
     <h3 className="mb-3 text-[14px] font-bold text-ink-900">{children}</h3>
   )
-  const AXIS = { fontSize: 12, fill: '#665F54' }
+  const AXIS = { fontSize: 12, fill: '#5E6A64' }
 
   return (
     <div className="space-y-8">
@@ -383,12 +383,12 @@ export default function StatsTab() {
         <H3>요일별 운동 (최근 8주)</H3>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={weekdayData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="label" tick={AXIS} axisLine={{ stroke: '#CFC7B8' }} tickLine={false} />
+            <XAxis dataKey="label" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} />
             <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #CFC7B8', background: '#FBF9F4', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EFEAE0' }} />
+            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
             <Bar dataKey="count" radius={[3, 3, 0, 0]}>
               {weekdayData.map((d, i) => (
-                <Cell key={d.label} fill={i === busiestIdx ? '#1D6A48' : '#CFC7B8'} />
+                <Cell key={d.label} fill={i === busiestIdx ? '#202D29' : '#C9CCC5'} />
               ))}
             </Bar>
           </BarChart>
@@ -403,9 +403,9 @@ export default function StatsTab() {
         <H3>종목별 운동 횟수 (사람별, 최근 8주)</H3>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#CFC7B8' }} tickLine={false} />
+            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} />
             <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
-            <Tooltip content={(props) => <CustomTooltip {...props as Parameters<typeof CustomTooltip>[0]} />} cursor={{ fill: '#EFEAE0' }} />
+            <Tooltip content={(props) => <CustomTooltip {...props as Parameters<typeof CustomTooltip>[0]} />} cursor={{ fill: '#EEECE5' }} />
             {employees.map((emp) => (
               <Bar
                 key={emp.name}
