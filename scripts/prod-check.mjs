@@ -74,7 +74,9 @@ for (const [path, method] of [
   [`/api/admin/suggestions/${FAKE}`, 'DELETE'],
 ]) {
   r = await http(path, { method, body: method === 'GET' ? undefined : { mode: 'missing' } })
-  check(`관리자 권한 없이 ${method} ${path} 차단`, r.status === 401, `status ${r.status}`)
+  // 건의 API는 폐지(028)되어 누구에게나 410
+  const okStatus = path.includes('/suggestions/') ? [401, 410] : [401]
+  check(`관리자 권한 없이 ${method} ${path} 차단`, okStatus.includes(r.status), `status ${r.status}`)
 }
 r = await http('/api/auth/login', { method: 'POST', body: { employeeId: FAKE, pin: '000000' } })
 check('없는 직원 로그인 거부', r.status === 400 || r.status === 429, `status ${r.status}`)
