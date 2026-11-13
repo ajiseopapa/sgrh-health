@@ -13,6 +13,23 @@ import { Empty, Loading, Progress } from '@/lib/ui'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
+/** 순위 왕관(사물 아이콘) — 1위 황금, 2위 은, 3위 동 */
+const CROWN = {
+  1: { fill: '#F2C94C', shade: '#D4A72C', name: '금' },
+  2: { fill: '#BCC3C0', shade: '#8E9692', name: '은' },
+  3: { fill: '#D9935A', shade: '#B0713E', name: '동' },
+} as const
+function Crown({ rank }: { rank: 1 | 2 | 3 | number }) {
+  const c = CROWN[rank as 1 | 2 | 3]
+  return (
+    <svg width={20} height={16} viewBox="0 0 20 16" role="img" aria-label={`${rank}위 ${c.name}왕관`} className="shrink-0">
+      <path d="M2 5 L6 9 L10 2 L14 9 L18 5 L16.5 13 H3.5 Z" fill={c.fill} stroke="#202D29" strokeWidth={1.4} strokeLinejoin="round" />
+      <rect x={3.5} y={12} width={13} height={2.6} rx={0.6} fill={c.shade} stroke="#202D29" strokeWidth={1.2} />
+      <circle cx={10} cy={2.2} r={1.3} fill={c.fill} stroke="#202D29" strokeWidth={1} />
+    </svg>
+  )
+}
+
 const STATS_LOOKBACK_DAYS = 371 // 개인 신기록/마일스톤 계산을 위한 조회 범위 (53주)
 const SEOUL_BUSAN_KM = 325
 const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
@@ -363,12 +380,15 @@ export default function StatsTab() {
 
       {/* 개인 순위 */}
       <div>
-        <H3>개인 순위 (최근 8주)</H3>
+        <H3>개인 순위 (최근 8주 · 10위까지)</H3>
         <ol className="divide-y divide-line border-y border-line">
-          {ranking.map((e, i) => (
+          {ranking.slice(0, 10).map((e, i) => (
             <li key={e.name} className="flex items-center gap-4 py-3">
               <span className={`num w-7 text-[20px] ${i === 0 ? 'text-brand-600' : 'text-ink-400'}`}>{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink-900">{e.name}</span>
+              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                {i < 3 && <Crown rank={i + 1} />}
+                <span className="truncate text-[15px] font-bold text-ink-900">{e.name}</span>
+              </span>
               {e.streak >= 2 && <span className="text-[13px] text-ink-500">{e.streak}일 연속</span>}
               <span className="num w-14 text-right text-[17px] text-ink-900">{e.count}<span className="ml-0.5 text-[12px] font-bold text-ink-500">회</span></span>
             </li>
