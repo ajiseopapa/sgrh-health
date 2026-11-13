@@ -13,28 +13,6 @@ import { Empty, Loading, Progress } from '@/lib/ui'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
-// 스택 바 차트에서 "맨 위 세그먼트"에만 둥근 상단을 그려주는 커스텀 shape.
-// recharts의 Bar radius prop은 세그먼트별로 다르게 줄 수 없어서 직접 그림.
-function StackedBarShape(props: {
-  x?: number; y?: number; width?: number; height?: number; fill?: string; isTop?: boolean
-}) {
-  const { x = 0, y = 0, width = 0, height = 0, fill, isTop } = props
-  if (height <= 0 || width <= 0) return null
-  if (!isTop) {
-    return <rect x={x} y={y} width={width} height={height} fill={fill} />
-  }
-  const r = Math.min(6, width / 2, height)
-  const d = `
-    M${x},${y + height}
-    L${x},${y + r}
-    Q${x},${y} ${x + r},${y}
-    L${x + width - r},${y}
-    Q${x + width},${y} ${x + width},${y + r}
-    L${x + width},${y + height}
-    Z
-  `
-  return <path d={d} fill={fill} />
-}
 const STATS_LOOKBACK_DAYS = 371 // 개인 신기록/마일스톤 계산을 위한 조회 범위 (53주)
 const SEOUL_BUSAN_KM = 325
 const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
@@ -248,33 +226,16 @@ export default function StatsTab() {
   const busiestLabel = WEEKDAY_LABELS[busiestIdx]
 
   // ══════════════════════════════════════════
-  // 기존: 종목별 × 사람별 스택 바 (최근 8주)
+  // 종목별 운동 횟수 (최근 8주) — 단색 막대, 가장 많은 종목만 라임 강조(요일별과 같은 방식)
   // ══════════════════════════════════════════
-  const typeMap = new Map<string, Record<string, number>>()
+  const typeCount = new Map<string, number>()
   for (const l of last8wLogs) {
     const typeName = l.exercise_type?.name ?? '기타'
-    const empName = l.employee?.name ?? '?'
-    if (!typeMap.has(typeName)) typeMap.set(typeName, {})
-    const row = typeMap.get(typeName)!
-    row[empName] = (row[empName] ?? 0) + 1
+    typeCount.set(typeName, (typeCount.get(typeName) ?? 0) + 1)
   }
-  const typeData = Array.from(typeMap.entries())
-    .map(([name, counts]) => ({ name, ...counts }))
-    .sort((a, b) => {
-      const sum = (o: Record<string, unknown>) =>
-        employees.reduce((s, e) => s + ((o[e.name] as number) ?? 0), 0)
-      return sum(b) - sum(a)
-    })
-
-  // 스택 바에서 종목(행)마다 실제로 값이 있는 "맨 위" 직원을 찾는다.
-  // employees 배열 순서 = 스택 쌓이는 순서(마지막이 맨 위)이므로 뒤에서부터 탐색.
-  function topEmployeeOf(row: Record<string, unknown>): string | null {
-    for (let i = employees.length - 1; i >= 0; i--) {
-      const name = employees[i].name
-      if (((row[name] as number) ?? 0) > 0) return name
-    }
-    return null
-  }
+  const typeData = Array.from(typeCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+  const typeMax = typeData.length ? typeData[0].count : 0
+  const topTypes = typeData.filter((t) => t.count === typeMax).map((t) => t.name)
 
   // ── 직원 랭킹 (스트릭 뱃지 포함) ──
   const rankMap = new Map<string, { name: string; count: number; color: string; streak: number }>()
@@ -292,32 +253,6 @@ export default function StatsTab() {
     if (b.count !== a.count) return b.count - a.count
     return b.streak - a.streak
   })
-
-  // ── 커스텀 툴팁 ──
-  function CustomTooltip({ active, payload, label }: {
-    active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string
-  }) {
-    if (!active || !payload?.length) return null
-    const totalV = payload.reduce((s, p) => s + (p.value ?? 0), 0)
-    return (
-      <div className="min-w-[130px] rounded-lg border border-ink-200 bg-sheet p-3 text-[13px] shadow-raised">
-        <p className="mb-1.5 font-bold text-ink-800">{label}</p>
-        {payload.filter(p => p.value > 0).map(p => (
-          <div key={p.name} className="flex items-center justify-between gap-3 py-0.5">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.fill }} />
-              <span className="text-ink-600">{p.name}</span>
-            </div>
-            <span className="font-semibold text-ink-800">{p.value}회</span>
-          </div>
-        ))}
-        <div className="mt-1.5 border-t border-ink-100 pt-1.5 flex justify-between">
-          <span className="text-ink-400">합계</span>
-          <span className="font-bold text-ink-800">{totalV}회</span>
-        </div>
-      </div>
-    )
-  }
 
   const H3 = ({ children }: { children: React.ReactNode }) => (
     <h3 className="mb-3 text-[14px] font-bold text-ink-900">{children}</h3>
@@ -402,38 +337,28 @@ export default function StatsTab() {
         </p>
       </div>
 
-      {/* 종목별 × 사람별 (사람 색은 직원 구분용 데이터 색) */}
+      {/* 종목별 운동 횟수 — 단색 막대 */}
       <div>
-        <H3>종목별 운동 횟수 (사람별, 최근 8주)</H3>
-        <ResponsiveContainer width="100%" height={220}>
+        <H3>종목별 운동 횟수 (최근 8주)</H3>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} />
+            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} interval={0} />
             <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
-            <Tooltip content={(props) => <CustomTooltip {...props as Parameters<typeof CustomTooltip>[0]} />} cursor={{ fill: '#EEECE5' }} />
-            {employees.map((emp) => (
-              <Bar
-                key={emp.name}
-                dataKey={emp.name}
-                name={emp.name}
-                stackId="a"
-                fill={emp.color}
-                shape={(shapeProps: unknown) => {
-                  const p = shapeProps as { x: number; y: number; width: number; height: number; payload: Record<string, unknown> }
-                  const isTop = topEmployeeOf(p.payload) === emp.name
-                  return <StackedBarShape {...p} fill={emp.color} isTop={isTop} />
-                }}
-              />
-            ))}
+            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
+            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+              {typeData.map((t) =>
+                typeMax > 0 && t.count === typeMax
+                  ? <Cell key={t.name} fill={TOKENS.highlight} stroke={TOKENS.ink900} strokeWidth={1.5} />
+                  : <Cell key={t.name} fill={TOKENS.ink200} />,
+              )}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-          {employees.map((emp) => (
-            <div key={emp.name} className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: emp.color }} />
-              <span className="text-[13px] text-ink-600">{emp.name}</span>
-            </div>
-          ))}
-        </div>
+        {topTypes.length > 0 && (
+          <p className="mt-2 text-[13px] text-ink-600">
+            가장 많이 한 운동은 <span className="font-bold text-ink-900">{topTypes.join(', ')}</span>이에요.
+          </p>
+        )}
       </div>
 
       {/* 개인 순위 */}
