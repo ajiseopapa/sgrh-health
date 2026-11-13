@@ -426,7 +426,6 @@ async function p2() {
   } else {
     check('캐릭터 저장(여성형)', r.ok && r.character === 'f')
     r = await dev.G004.call('/api/me/game'); check('새로고침 뒤에도 유지', r.characterKey === 'f')
-    await dev.G004.call('/api/auth/logout', { method: 'POST' })
     r = await prof('G003', { character: 'm' })
     r = await dev.G003.call('/api/me/game'); check('직원별로 따로 저장', r.characterKey === 'm')
   }
