@@ -408,6 +408,34 @@ async function p2() {
   check('공개 키로 이모지 직접 쓰기 차단', !!anonUpd || after?.name_emoji !== '🐻')
   const { error: lenErr } = await db.from('game_profiles').update({ name_emoji: '가나다라마바사아자차' }).eq('employee_id', E.G004)
   check('DB도 너무 긴 값 거부(길이 제한)', lenErr?.code === '23514', lenErr?.code)
+
+  section('P2-7. 캐릭터 2종 고르기 (029 적용 여부에 따라)')
+  const { error: colErr } = await db.from('game_profiles').select('character').limit(1)
+  const has029 = !colErr
+  r = await dev.G004.call('/api/me/game')
+  check('고르기 전에는 캐릭터 없음(화면은 기본 캐릭터)', r.characterKey === null)
+  for (const bad of ['x', 'M', '', null, 1]) {
+    r = await prof('G004', { character: bad })
+    check(`잘못된 캐릭터 거부 (${JSON.stringify(bad)})`, r.status === 400)
+  }
+  r = await prof('G004', { character: 'f' })
+  if (!has029) {
+    check('029 전: 캐릭터 저장은 "준비 중"(503)으로 안전하게 거부', r.status === 503, `${r.status}`)
+    r = await dev.G004.call('/api/me/game')
+    check('029 전: 정원 조회는 정상(기존 칸만 읽음)', r.ok && r.characterKey === null && typeof r.sunlight?.balance === 'number')
+  } else {
+    check('캐릭터 저장(여성형)', r.ok && r.character === 'f')
+    r = await dev.G004.call('/api/me/game'); check('새로고침 뒤에도 유지', r.characterKey === 'f')
+    await dev.G004.call('/api/auth/logout', { method: 'POST' })
+    r = await prof('G003', { character: 'm' })
+    r = await dev.G003.call('/api/me/game'); check('직원별로 따로 저장', r.characterKey === 'm')
+  }
+  // 아이템 상점은 화면에서 숨겼지만 구매·장착 자료는 그대로
+  const { count: buys } = await db.from('game_purchases').select('item_key', { count: 'exact', head: true }).in('employee_id', [E.G003, E.G004])
+  const { count: eqs } = await db.from('game_equipment').select('slot', { count: 'exact', head: true }).in('employee_id', [E.G003, E.G004])
+  check('기존 아이템 구매·장착 자료 보존', (buys ?? 0) > 0 && (eqs ?? 0) >= 0, `구매 ${buys} · 장착 ${eqs}`)
+  r = await nobody.call(`/api/game/feed?ids=${E.G003},${E.G004}`)
+  check('피드: 캐릭터 공개를 끈 직원은 캐릭터 정보 없음', !r.looks?.[E.G003] && !r.looks?.[E.G004])
 }
 
 // ═════════ P3. 부서 공동 정원 ═════════

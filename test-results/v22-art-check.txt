@@ -1,0 +1,18 @@
+✅ 배지 11종 정의 — 11
+✅ 모든 배지 ID에 그림 매핑 — set()
+✅ 그림 파일 이름 중복 없음
+✅ sessions_1 → record-01.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ sessions_10 → record-10.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ sessions_30 → record-30.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ sessions_100 → record-100.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ streak_3 → streak-03.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ streak_7 → streak-07.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ streak_14 → streak-14.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ streak_30 → streak-30.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ goalweeks_1 → goal-01.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ goalweeks_4 → goal-04.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ goalweeks_12 → goal-12.png: 64×64 · 투명 배경 — (64, 64) RGBA
+✅ 캐릭터 char-m: 64×96 · 투명 배경 — (64, 96)
+✅ 캐릭터 char-f: 64×96 · 투명 배경 — (64, 96)
+
+결과: 16/16 통과

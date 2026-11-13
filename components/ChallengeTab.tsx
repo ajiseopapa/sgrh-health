@@ -1,11 +1,12 @@
 'use client'
 
 // 도전 — 목표 · 챌린지 · 배지 · 순위 · 정원 을 한 화면 안에서 나눠 봅니다(메뉴를 늘리지 않음)
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { Engagement, METRIC_LABEL, METRIC_UNIT, useEngagement } from '@/lib/engagement'
-import { Empty, Loading, NeedLogin, Notice, PageHead, Progress, Section, Segmented, fmtMinutes } from '@/lib/ui'
+import { Empty, Icon, Loading, NeedLogin, Notice, PageHead, Progress, Section, Segmented, fmtMinutes } from '@/lib/ui'
+import { BADGES, BadgeDef, badgeSrc, SERIES_LABEL, SERIES_UNIT } from '@/lib/badges'
 import StatsTab from './StatsTab'
 import GardenPanel from './GardenPanel'
 
@@ -226,27 +227,52 @@ function ChallengePanel({ eng, onJoined }: { eng: EngState; onJoined: () => void
 function BadgePanel({ eng }: { eng: EngState }) {
   return (
     <Gate eng={eng} text="본인 확인을 하면 내가 받은 배지와 다음 배지 조건을 볼 수 있어요.">
-      {(d) => (
-        <div>
-          <Section title={`받은 배지 ${d.badges.earned.length}개`} className="border-t-0">
-            {d.badges.earned.length === 0 ? (
-              <Empty title="아직 받은 배지가 없어요." desc="첫 운동을 기록하면 첫 배지를 받아요." />
-            ) : (
-              <ul className="grid grid-cols-3 gap-x-3 gap-y-5">
-                {d.badges.earned.map((b) => (
-                  <li key={b.key}>
-                    <Seal text={b.key.split('_')[1]} unit={b.series === 'sessions' ? '회' : b.series === 'streak' ? '일' : '주'} />
-                    <p className="mt-2 text-[14px] font-bold leading-tight text-ink-900">{b.label}</p>
-                    <p className="mt-0.5 text-[12px] tabular-nums text-ink-500">{b.awarded_at.slice(0, 10).replace(/-/g, '.')}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-          <Section title="다음 배지">
-            <ul className="space-y-5">
-              {d.badges.next.map((n) => (
-                <li key={n.series}>
+      {(d) => <BadgeBody d={d} />}
+    </Gate>
+  )
+}
+
+type BadgeView = BadgeDef & { earnedAt: string | null; current: number }
+
+function BadgeBody({ d }: { d: Engagement }) {
+  const [open, setOpen] = useState<BadgeView | null>(null)
+  const trigger = useRef<HTMLButtonElement | null>(null) // 시트를 닫으면 누른 배지로 초점을 돌려줌
+  const earnedAt = new Map(d.badges.earned.map((b) => [b.key, b.awarded_at]))
+  const current = Object.fromEntries(d.badges.next.map((n) => [n.series, n.current])) as Record<BadgeDef['series'], number>
+  const all: BadgeView[] = BADGES.map((b) => ({ ...b, earnedAt: earnedAt.get(b.key) ?? null, current: current[b.series] ?? 0 }))
+  const list = [...all.filter((b) => b.earnedAt), ...all.filter((b) => !b.earnedAt)] // 받은 배지 먼저
+  const got = all.filter((b) => b.earnedAt).length
+  return (
+    <div>
+      <Section title="나의 배지" className="border-t-0" action={<span className="text-[13px] font-bold tabular-nums text-ink-700">획득한 배지 {got} / {BADGES.length}</span>}>
+        <ul className="grid grid-cols-3 gap-x-2 gap-y-4">
+          {list.map((b) => (
+            <li key={b.key}>
+              <button type="button" onClick={(e) => { trigger.current = e.currentTarget; setOpen(b) }}
+                aria-label={`${b.label} — ${b.earnedAt ? `${fmtDate(b.earnedAt)} 획득` : `잠김, ${b.condition}`}. 자세히 보기`}
+                className="flex w-full flex-col items-center rounded-xl px-1 py-2 text-center active:bg-ink-900/5">
+                <BadgeArt b={b} />
+                <span className="mt-1.5 break-keep text-[14px] font-bold leading-tight text-ink-900">{b.label}</span>
+                {b.earnedAt ? (
+                  <span className="mt-0.5 text-[12px] tabular-nums text-ink-500">{fmtDate(b.earnedAt)}</span>
+                ) : (
+                  <span className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-semibold text-ink-500">
+                    <Icon name="lock" size={12} /> 잠김 · {Math.min(b.current, b.threshold)}/{b.threshold}{SERIES_UNIT[b.series]}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Section>
+      <Section title="다음 배지">
+        <ul className="space-y-5">
+          {d.badges.next.map((n) => {
+            const nb = n.next ? BADGES.find((b) => b.key === n.next!.key) : null
+            return (
+              <li key={n.series} className="flex items-center gap-3">
+                {nb && <BadgeArt b={{ ...nb, earnedAt: null, current: n.current }} size={48} />}
+                <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-baseline justify-between gap-3">
                     <p className="text-[15px] font-bold text-ink-900">
                       {n.next ? n.next.label : `${n.seriesLabel} 배지 모두 받음`}
@@ -255,24 +281,68 @@ function BadgePanel({ eng }: { eng: EngState }) {
                     {n.next && <p className="shrink-0 text-[14px] font-bold tabular-nums text-ink-700">{Math.min(n.current, n.next.threshold)}/{n.next.threshold}</p>}
                   </div>
                   {n.next && <Progress value={n.current} max={n.next.threshold} label={`${n.next.label} 진행`} />}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 text-[13px] leading-relaxed text-ink-500">
-              배지는 지금 남아 있는 기록으로 판정해요. 기록을 지워 조건이 깨지면 배지도 빠져요.
-            </p>
-          </Section>
-        </div>
-      )}
-    </Gate>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="mt-6 text-[13px] leading-relaxed text-ink-500">
+          배지는 지금 남아 있는 기록으로 판정해요. 기록을 지워 조건이 깨지면 배지도 빠져요.
+        </p>
+      </Section>
+      {open && <BadgeSheet b={open} onClose={() => { setOpen(null); trigger.current?.focus() }} />}
+    </div>
   )
 }
 
-/** 배지 표시: 이모지 대신 숫자를 새긴 도장 모양 */
-function Seal({ text, unit }: { text: string; unit: string }) {
+const fmtDate = (iso: string) => iso.slice(0, 10).replace(/-/g, '.')
+
+/** 배지 그림. 받은 배지는 원본 색, 못 받은 배지는 흑백·반투명(+ 글자로 '잠김' 표시는 바깥에서). 그림을 못 불러오면 숫자 도장 */
+function BadgeArt({ b, size = 64 }: { b: BadgeView; size?: number }) {
+  const [broken, setBroken] = useState(false)
+  if (broken) return <div style={{ opacity: b.earnedAt ? 1 : 0.45 }}><Seal text={String(b.threshold)} unit={SERIES_UNIT[b.series]} size={size} /></div>
   return (
-    <div className="flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full border-2 border-ink-900 text-ink-900" aria-hidden="true">
-      <span className="num text-[24px] leading-none">{text}</span>
+    <img src={badgeSrc(b.key)} alt="" aria-hidden="true" width={size} height={size} onError={() => setBroken(true)}
+      style={{ imageRendering: 'pixelated', width: size, height: size, filter: b.earnedAt ? undefined : 'grayscale(1)', opacity: b.earnedAt ? 1 : 0.45 }} />
+  )
+}
+
+/** 배지 자세히(가벼운 바텀시트) — 달성 조건과 획득일 */
+function BadgeSheet({ b, onClose }: { b: BadgeView; onClose: () => void }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-labelledby="badge-sheet-title" className="w-full max-w-md rounded-t-2xl bg-paper px-5 pb-8 pt-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-end">
+          <button type="button" onClick={onClose} aria-label="닫기" autoFocus className="-mr-2 flex h-11 w-11 items-center justify-center text-[24px] leading-none text-ink-500">×</button>
+        </div>
+        <div className="flex flex-col items-center text-center">
+          <BadgeArt b={b} size={128} />
+          <h2 id="badge-sheet-title" className="mt-3 text-[20px] font-extrabold text-ink-900">{b.label}</h2>
+          <p className="mt-1 text-[14px] text-ink-600">{SERIES_LABEL[b.series]} · {b.condition}</p>
+          {b.earnedAt ? (
+            <p className="mt-3 text-[15px] font-bold text-brand-600">{fmtDate(b.earnedAt)}에 받았어요</p>
+          ) : (
+            <div className="mt-3 w-full max-w-[260px]">
+              <p className="mb-2 inline-flex items-center gap-1 text-[14px] font-bold text-ink-700"><Icon name="lock" size={14} /> 아직 받지 않았어요 · {Math.min(b.current, b.threshold)}/{b.threshold}{SERIES_UNIT[b.series]}</p>
+              <Progress value={b.current} max={b.threshold} label={`${b.label} 진행`} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** 배지 그림을 못 불러올 때: 숫자를 새긴 도장 모양 */
+function Seal({ text, unit, size = 72 }: { text: string; unit: string; size?: number }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-full border-2 border-ink-900 text-ink-900" style={{ width: size, height: size }} aria-hidden="true">
+      <span className="num text-[22px] leading-none">{text}</span>
       <span className="mt-0.5 text-[11px] font-bold">{unit}</span>
     </div>
   )

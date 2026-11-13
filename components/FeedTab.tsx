@@ -11,12 +11,11 @@ import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
-import { SHOW_CHARACTER, TREE_STAGES } from '@/lib/game'
+import { characterOf, SHOW_ITEM_SHOP } from '@/lib/game'
 import { ProfileAvatar } from './Profile'
 
-// 피드에 나무·캐릭터를 켠 직원만 이름 옆에 작게(v2.2). 잔액은 서버가 내보내지 않음
-const TREE_EMOJI = ['🌱', '🌿', '🌳', '🌲']
-type Look = { stage: number; items: string[] }
+// 피드에 캐릭터 공개를 켠 직원만 이름 옆에 작은 캐릭터(v2.2). 잔액은 서버가 내보내지 않음
+type Look = { stage: number; items: string[]; character: string | null }
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -250,9 +249,11 @@ export default function FeedTab() {
                   <span className="flex min-w-0 items-baseline gap-1.5">
                     <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
                     {looks[log.employee_id] && (
-                      <span className="text-[14px] leading-none" title={TREE_STAGES[looks[log.employee_id].stage - 1]?.name}
-                        aria-label={`나무 ${TREE_STAGES[looks[log.employee_id].stage - 1]?.name ?? ''}`}>
-                        {TREE_EMOJI[looks[log.employee_id].stage - 1]}{SHOW_CHARACTER ? looks[log.employee_id].items.join('') : ''}
+                      // 캐릭터 공개를 켠 직원만. 개인 나무 표시는 PM 결정으로 제거
+                      <span className="flex items-end gap-0.5 self-center" title={`${characterOf(looks[log.employee_id].character).name} 캐릭터`}>
+                        <img src={characterOf(looks[log.employee_id].character).src} alt={`${characterOf(looks[log.employee_id].character).name} 캐릭터`}
+                          width={16} height={24} style={{ imageRendering: 'pixelated', width: 16, height: 24 }} />
+                        {SHOW_ITEM_SHOP && <span className="text-[14px] leading-none" aria-hidden="true">{looks[log.employee_id].items.join('')}</span>}
                       </span>
                     )}
                   </span>

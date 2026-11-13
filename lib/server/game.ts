@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  computeRewards, decorFor, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
+  computeRewards, decorFor, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -48,7 +48,8 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     earnedFor(db, employeeId, today),
     db.from('game_purchases').select('item_key, price, purchased_at').eq('employee_id', employeeId).order('purchased_at'),
     db.from('game_equipment').select('slot, item_key').eq('employee_id', employeeId),
-    db.from('game_profiles').select('show_in_feed, name_emoji').eq('employee_id', employeeId).maybeSingle(),
+    // '*' 로 읽어 029(character 칸) 적용 전 DB 에서도 오류 없이 동작
+    db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle(),
   ])
   const purchases = (buys ?? []) as Purchase[]
   const spent = purchases.reduce((s, p) => s + p.price, 0)
@@ -75,6 +76,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     character: { owned: purchases.map((p) => p.item_key), equipped },
     showInFeed: prof?.show_in_feed ?? false,
     nameEmoji: (prof?.name_emoji as string | null) ?? null,
+    characterKey: isCharacterKey(prof?.character) ? prof.character : null, // null = 아직 안 고름(기본 캐릭터)
   }
 }
 
@@ -110,8 +112,9 @@ export async function setEquipment(db: SupabaseClient, employeeId: string, slot:
 // ── 피드 표시(본인이 켠 직원만) ──
 export async function feedLooks(db: SupabaseClient, ids: string[], today = kstToday()) {
   if (!ids.length) return {}
-  const { data: profs } = await db.from('game_profiles').select('employee_id').in('employee_id', ids).eq('show_in_feed', true)
+  const { data: profs } = await db.from('game_profiles').select('*').in('employee_id', ids).eq('show_in_feed', true)
   const on = (profs ?? []).map((p) => p.employee_id as string)
+  const charOf = new Map((profs ?? []).map((p) => [p.employee_id as string, isCharacterKey(p.character) ? p.character : null]))
   if (!on.length) return {}
   const launch = await launchDate(db)
   const [logs, { data: equip }] = await Promise.all([
@@ -122,10 +125,10 @@ export async function feedLooks(db: SupabaseClient, ids: string[], today = kstTo
   ])
   const days = new Map<string, Set<string>>()
   for (const l of logs) days.set(l.employee_id, (days.get(l.employee_id) ?? new Set()).add(l.log_date))
-  const out: Record<string, { stage: number; items: string[] }> = {}
+  const out: Record<string, { stage: number; items: string[]; character: string | null }> = {}
   for (const id of on) {
     const items = (equip ?? []).filter((e) => e.employee_id === id).map((e) => itemByKey(e.item_key)?.emoji).filter(Boolean) as string[]
-    out[id] = { stage: treeStage(days.get(id)?.size ?? 0).stage, items }
+    out[id] = { stage: treeStage(days.get(id)?.size ?? 0).stage, items, character: charOf.get(id) ?? null }
   }
   return out
 }

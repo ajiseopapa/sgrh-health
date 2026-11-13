@@ -154,21 +154,10 @@ export function achievedWeeks(goals: GoalRow[], credits: DayCredit[], today: str
 }
 
 // ── 배지 ──
-export interface BadgeDef { key: string; series: 'sessions' | 'streak' | 'goalweeks'; threshold: number; label: string; condition: string }
-export const BADGES: BadgeDef[] = [
-  { key: 'sessions_1', series: 'sessions', threshold: 1, label: '첫 기록', condition: '운동 기록 1회' },
-  { key: 'sessions_10', series: 'sessions', threshold: 10, label: '열 번째', condition: '누적 운동 기록 10회' },
-  { key: 'sessions_30', series: 'sessions', threshold: 30, label: '서른 번', condition: '누적 운동 기록 30회' },
-  { key: 'sessions_100', series: 'sessions', threshold: 100, label: '백 번', condition: '누적 운동 기록 100회' },
-  { key: 'streak_3', series: 'streak', threshold: 3, label: '3일 연속', condition: '3일 연속 운동' },
-  { key: 'streak_7', series: 'streak', threshold: 7, label: '일주일 연속', condition: '7일 연속 운동' },
-  { key: 'streak_14', series: 'streak', threshold: 14, label: '2주 연속', condition: '14일 연속 운동' },
-  { key: 'streak_30', series: 'streak', threshold: 30, label: '한 달 연속', condition: '30일 연속 운동' },
-  { key: 'goalweeks_1', series: 'goalweeks', threshold: 1, label: '목표 달성', condition: '주간 목표 1회 달성' },
-  { key: 'goalweeks_4', series: 'goalweeks', threshold: 4, label: '목표 4주', condition: '주간 목표 4회 달성' },
-  { key: 'goalweeks_12', series: 'goalweeks', threshold: 12, label: '목표 12주', condition: '주간 목표 12회 달성' },
-]
-export const SERIES_LABEL = { sessions: '누적 기록', streak: '연속 운동', goalweeks: '목표 달성' } as const
+// 정의는 화면과 같이 쓰는 lib/badges.ts 에 있음(내용 그대로 옮김)
+import { BADGES, SERIES_LABEL } from '../badges'
+export { BADGES, SERIES_LABEL }
+export type { BadgeDef } from '../badges'
 
 export interface BadgeStats { sessions: number; longestStreak: number; goalWeeks: number }
 export function earnedKeys(s: BadgeStats): string[] {

@@ -40,8 +40,22 @@ export const ITEMS: Item[] = [
   { key: 'shoes_hike', slot: 'shoes', name: '등산화', emoji: '🥾', price: 50 },
 ]
 export const SLOT_LABEL: Record<Slot, string> = { hat: '모자', top: '상의', shoes: '운동화' }
-/** 캐릭터(아이템 해금·장착) 화면 노출. 11-13 TK 결정으로 숨김 — 디자이너 그림이 오면 true. 서버 기능·DB는 그대로 둠 */
-export const SHOW_CHARACTER = false
+/** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
+export const SHOW_ITEM_SHOP = false
+
+/** 픽셀 캐릭터 2종(본인이 고름, 성별·인사정보와 연결하지 않음). 고르지 않으면 DEFAULT_CHARACTER */
+export const CHARACTERS = [
+  { key: 'm', name: '남성형', src: '/game/v22/characters/char-m.png' },
+  { key: 'f', name: '여성형', src: '/game/v22/characters/char-f.png' },
+] as const
+export type CharacterKey = (typeof CHARACTERS)[number]['key']
+export const DEFAULT_CHARACTER: CharacterKey = 'm'
+export function isCharacterKey(v: unknown): v is CharacterKey {
+  return typeof v === 'string' && CHARACTERS.some((c) => c.key === v)
+}
+export function characterOf(key: string | null | undefined) {
+  return CHARACTERS.find((c) => c.key === key) ?? CHARACTERS.find((c) => c.key === DEFAULT_CHARACTER)!
+}
 
 /** 피드 이름 앞 이모지 — 본인이 고름(정해진 목록만, 서버가 확인). 사람 모양 이모지는 피부색 차이가 없는 것만 */
 export const NAME_EMOJIS = [

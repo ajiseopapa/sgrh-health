@@ -1,11 +1,11 @@
 'use client'
 
-// 도전 › 정원 — 나의 나무 · 햇빛 · 내 캐릭터 · 우리 부서 정원
+// 도전 › 정원 — 나의 캐릭터 · 보유 햇빛 · 우리 부서 정원 (개인 나무 화면은 PM 결정으로 제거, 계산·데이터는 보존)
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { DEFAULT_LOOK, ITEMS, SHOW_CHARACTER, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -16,6 +16,7 @@ interface Game {
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
   character: { owned: string[]; equipped: Record<Slot, string | null> }
   showInFeed: boolean
+  characterKey: CharacterKey | null
   goalBasis: { kind: 'sessions' | 'minutes'; target: number; value: number } | null
 }
 interface Garden {
@@ -39,18 +40,66 @@ export default function GardenPanel() {
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text={SHOW_CHARACTER ? '본인 확인을 하면 나의 나무와 캐릭터, 우리 부서 정원을 볼 수 있어요.' : '본인 확인을 하면 나의 나무와 우리 부서 정원을 볼 수 있어요.'} onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 캐릭터와 햇빛, 우리 부서 정원을 볼 수 있어요."  onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
   return (
     <div>
-      <TreeSection game={game} />
+      <MyCharacterSection game={game} onChange={setGame} />
       <SunSection game={game} />
-      {SHOW_CHARACTER && <CharacterSection game={game} onChange={setGame} />}
+      {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
       <GardenSection garden={garden} />
-      <FeedToggle game={game} onChange={(v) => setGame({ ...game, showInFeed: v })} />
     </div>
+  )
+}
+
+// ── 나의 캐릭터 (픽셀 2종 중 고르기) ──
+/** 픽셀 캐릭터 그림. 64×96 원본을 정수배로만 키우고 줄여 픽셀이 뭉개지지 않게 함 */
+export function PixelCharacter({ charKey, scale = 2, className = '' }: { charKey: string | null; scale?: number; className?: string }) {
+  const c = characterOf(charKey)
+  return (
+    <img src={c.src} alt={`${c.name} 캐릭터`} width={64 * scale} height={96 * scale}
+      className={`shrink-0 ${className}`} style={{ imageRendering: 'pixelated', width: 64 * scale, height: 96 * scale }} />
+  )
+}
+
+function MyCharacterSection({ game, onChange }: { game: Game; onChange: (g: Game) => void }) {
+  const [saving, setSaving] = useState<CharacterKey | null>(null)
+  const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
+  const current = game.characterKey ?? DEFAULT_CHARACTER
+  async function pick(k: CharacterKey) {
+    if (saving || k === game.characterKey) return
+    setSaving(k); setMsg(null)
+    const r = await api('/api/me/game/profile', { method: 'PUT', body: { character: k } })
+    setSaving(null)
+    if (r.ok) { onChange({ ...game, characterKey: k }); setMsg({ tone: 'success', text: `${characterOf(k).name} 캐릭터로 바꿨어요.` }) }
+    else setMsg({ tone: 'error', text: r.message || '저장하지 못했어요.' })
+  }
+  return (
+    <section className="py-6">
+      <p className="text-[14px] font-bold text-ink-700">나의 캐릭터</p>
+      <div className="mt-3 flex items-end gap-5">
+        <PixelCharacter charKey={current} scale={2} />
+        <div className="min-w-0 flex-1 pb-1">
+          <p className="text-[13px] leading-relaxed text-ink-500">마음에 드는 캐릭터를 고르세요. 언제든 바꿀 수 있어요.{game.characterKey ? '' : ' 아직 고르지 않아 기본 캐릭터로 보여요.'}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="캐릭터 고르기">
+            {CHARACTERS.map((c) => {
+              const on = current === c.key
+              return (
+                <button key={c.key} type="button" role="radio" aria-checked={on} disabled={!!saving} onClick={() => pick(c.key)}
+                  className={`flex min-h-[44px] flex-col items-center gap-1 rounded-xl border-2 px-2 py-2 disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`}>
+                  <PixelCharacter charKey={c.key} scale={0.5} />
+                  <span className="text-[13px] font-bold text-ink-900">{on ? '✓ ' : ''}{c.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+      <FeedToggle game={game} onChange={(v) => onChange({ ...game, showInFeed: v })} />
+    </section>
   )
 }
 
@@ -131,23 +180,21 @@ export function TreeArt({ stage, size = 112 }: { stage: number; size?: number })
 function SunSection({ game }: { game: Game }) {
   const [all, setAll] = useState(false)
   const s = game.sunlight
-  // 캐릭터를 숨긴 동안에는 햇빛 = 받은 햇빛 합계(쓴 내역·모자람 안내 없음)
-  const ledger = SHOW_CHARACTER ? game.ledger : game.ledger.filter((l) => l.points > 0)
-  const shown = SHOW_CHARACTER ? s.balance : s.earned
+  const ledger = game.ledger
   const rows = all ? ledger : ledger.slice(0, 5)
   return (
-    <Section title="햇빛">
+    <Section title="보유 햇빛">
       <div className="flex items-end justify-between gap-4">
         <p className="num text-[48px] leading-none text-ink-900">
-          {shown}<span className="ml-1 text-[18px] font-black tracking-normal text-ink-500">개</span>
+          {s.balance}<span className="ml-1 text-[18px] font-black tracking-normal text-ink-500">개</span>
         </p>
-        {SHOW_CHARACTER && <p className="pb-1 text-right text-[13px] leading-relaxed text-ink-500">
+        <p className="pb-1 text-right text-[13px] leading-relaxed text-ink-500">
           받은 햇빛 <span className="font-bold tabular-nums text-ink-900">{s.earned}</span><br />
           쓴 햇빛 <span className="font-bold tabular-nums text-ink-900">{s.spent}</span>
-        </p>}
+        </p>
       </div>
-      {SHOW_CHARACTER && s.shortfall > 0 && (
-        <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 줄었어요. 산 아이템은 그대로이고, {s.shortfall}개를 더 모으면 다시 살 수 있어요.</Notice></div>
+      {s.shortfall > 0 && (
+        <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 쓴 햇빛보다 {s.shortfall}개 적어요. 이미 받은 아이템은 그대로예요.</Notice></div>
       )}
       <ul className="mt-4 space-y-1 text-[13px] leading-relaxed text-ink-600">
         <li>운동한 날 +{SUN_DAY} (하루 여러 번 기록해도 1번)</li>
@@ -334,14 +381,14 @@ function FeedToggle({ game, onChange }: { game: Game; onChange: (v: boolean) => 
     if (r.ok) onChange(!game.showInFeed); else setErr(r.message || '저장하지 못했어요.')
   }
   return (
-    <Section>
+    <div className="mt-5 border-t border-line pt-4">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-[15px] font-bold text-ink-900">{SHOW_CHARACTER ? '피드에 내 나무·캐릭터 보이기' : '피드에 내 나무 보이기'}</p>
-          <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료 피드의 내 이름 옆에 작게 보여요. 햇빛 수는 보이지 않아요.</p>
+          <p className="text-[15px] font-bold text-ink-900">피드에 내 캐릭터 보이기</p>
+          <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료 피드의 내 이름 옆에 작은 캐릭터가 보여요. 햇빛 수는 보이지 않아요.</p>
         </div>
         <button type="button" role="switch" aria-checked={game.showInFeed} disabled={saving} onClick={toggle}
-          aria-label={SHOW_CHARACTER ? '피드에 내 나무와 캐릭터 보이기' : '피드에 내 나무 보이기'}
+          aria-label="피드에 내 캐릭터 보이기"
           className="flex h-[44px] w-[60px] shrink-0 items-center justify-center disabled:opacity-50">
           <span className={`relative block h-[32px] w-[56px] rounded-full border-2 border-ink-900 transition-colors ${game.showInFeed ? 'bg-brand-300' : 'bg-ink-100'}`}>
             <span className={`absolute top-[2px] h-[24px] w-[24px] rounded-full bg-ink-900 motion-safe:transition-[left] ${game.showInFeed ? 'left-[26px]' : 'left-[2px]'}`} />
@@ -349,6 +396,6 @@ function FeedToggle({ game, onChange }: { game: Game; onChange: (v: boolean) => 
         </button>
       </div>
       {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
-    </Section>
+    </div>
   )
 }
