@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { DEFAULT_LOOK, ITEMS, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { DEFAULT_LOOK, ITEMS, SHOW_CHARACTER, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -39,7 +39,7 @@ export default function GardenPanel() {
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 나무와 캐릭터, 우리 부서 정원을 볼 수 있어요." onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text={SHOW_CHARACTER ? '본인 확인을 하면 나의 나무와 캐릭터, 우리 부서 정원을 볼 수 있어요.' : '본인 확인을 하면 나의 나무와 우리 부서 정원을 볼 수 있어요.'} onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
@@ -47,7 +47,7 @@ export default function GardenPanel() {
     <div>
       <TreeSection game={game} />
       <SunSection game={game} />
-      <CharacterSection game={game} onChange={setGame} />
+      {SHOW_CHARACTER && <CharacterSection game={game} onChange={setGame} />}
       <GardenSection garden={garden} />
       <FeedToggle game={game} onChange={(v) => setGame({ ...game, showInFeed: v })} />
     </div>
@@ -131,19 +131,22 @@ export function TreeArt({ stage, size = 112 }: { stage: number; size?: number })
 function SunSection({ game }: { game: Game }) {
   const [all, setAll] = useState(false)
   const s = game.sunlight
-  const rows = all ? game.ledger : game.ledger.slice(0, 5)
+  // 캐릭터를 숨긴 동안에는 햇빛 = 받은 햇빛 합계(쓴 내역·모자람 안내 없음)
+  const ledger = SHOW_CHARACTER ? game.ledger : game.ledger.filter((l) => l.points > 0)
+  const shown = SHOW_CHARACTER ? s.balance : s.earned
+  const rows = all ? ledger : ledger.slice(0, 5)
   return (
     <Section title="햇빛">
       <div className="flex items-end justify-between gap-4">
         <p className="num text-[48px] leading-none text-ink-900">
-          {s.balance}<span className="ml-1 text-[18px] font-black tracking-normal text-ink-500">개</span>
+          {shown}<span className="ml-1 text-[18px] font-black tracking-normal text-ink-500">개</span>
         </p>
-        <p className="pb-1 text-right text-[13px] leading-relaxed text-ink-500">
+        {SHOW_CHARACTER && <p className="pb-1 text-right text-[13px] leading-relaxed text-ink-500">
           받은 햇빛 <span className="font-bold tabular-nums text-ink-900">{s.earned}</span><br />
           쓴 햇빛 <span className="font-bold tabular-nums text-ink-900">{s.spent}</span>
-        </p>
+        </p>}
       </div>
-      {s.shortfall > 0 && (
+      {SHOW_CHARACTER && s.shortfall > 0 && (
         <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 줄었어요. 산 아이템은 그대로이고, {s.shortfall}개를 더 모으면 다시 살 수 있어요.</Notice></div>
       )}
       <ul className="mt-4 space-y-1 text-[13px] leading-relaxed text-ink-600">
@@ -160,7 +163,7 @@ function SunSection({ game }: { game: Game }) {
           <span className="text-ink-500">주간 목표를 정하면 달성한 주에 햇빛 {SUN_GOAL}개를 더 받아요.</span>
         )}
       </p>
-      {game.ledger.length > 0 && (
+      {ledger.length > 0 && (
         <>
           <ul className="mt-4 divide-y divide-line border-t border-line">
             {rows.map((l) => (
@@ -170,9 +173,9 @@ function SunSection({ game }: { game: Game }) {
               </li>
             ))}
           </ul>
-          {game.ledger.length > 5 && (
+          {ledger.length > 5 && (
             <button type="button" onClick={() => setAll(!all)} className="pill-action -ml-2.5 text-ink-900 underline">
-              {all ? '접기' : `내역 모두 보기 (${game.ledger.length})`}
+              {all ? '접기' : `내역 모두 보기 (${ledger.length})`}
             </button>
           )}
         </>
@@ -334,11 +337,11 @@ function FeedToggle({ game, onChange }: { game: Game; onChange: (v: boolean) => 
     <Section>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-[15px] font-bold text-ink-900">피드에 내 나무·캐릭터 보이기</p>
+          <p className="text-[15px] font-bold text-ink-900">{SHOW_CHARACTER ? '피드에 내 나무·캐릭터 보이기' : '피드에 내 나무 보이기'}</p>
           <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료 피드의 내 이름 옆에 작게 보여요. 햇빛 수는 보이지 않아요.</p>
         </div>
         <button type="button" role="switch" aria-checked={game.showInFeed} disabled={saving} onClick={toggle}
-          aria-label="피드에 내 나무와 캐릭터 보이기"
+          aria-label={SHOW_CHARACTER ? '피드에 내 나무와 캐릭터 보이기' : '피드에 내 나무 보이기'}
           className="flex h-[44px] w-[60px] shrink-0 items-center justify-center disabled:opacity-50">
           <span className={`relative block h-[32px] w-[56px] rounded-full border-2 border-ink-900 transition-colors ${game.showInFeed ? 'bg-brand-300' : 'bg-ink-100'}`}>
             <span className={`absolute top-[2px] h-[24px] w-[24px] rounded-full bg-ink-900 motion-safe:transition-[left] ${game.showInFeed ? 'left-[26px]' : 'left-[2px]'}`} />

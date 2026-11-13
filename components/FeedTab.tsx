@@ -11,7 +11,7 @@ import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
-import { TREE_STAGES } from '@/lib/game'
+import { SHOW_CHARACTER, TREE_STAGES } from '@/lib/game'
 
 // 피드에 나무·캐릭터를 켠 직원만 이름 옆에 작게(v2.2). 잔액은 서버가 내보내지 않음
 const TREE_EMOJI = ['🌱', '🌿', '🌳', '🌲']
@@ -245,7 +245,7 @@ export default function FeedTab() {
                     {looks[log.employee_id] && (
                       <span className="text-[14px] leading-none" title={TREE_STAGES[looks[log.employee_id].stage - 1]?.name}
                         aria-label={`나무 ${TREE_STAGES[looks[log.employee_id].stage - 1]?.name ?? ''}`}>
-                        {TREE_EMOJI[looks[log.employee_id].stage - 1]}{looks[log.employee_id].items.join('')}
+                        {TREE_EMOJI[looks[log.employee_id].stage - 1]}{SHOW_CHARACTER ? looks[log.employee_id].items.join('') : ''}
                       </span>
                     )}
                   </span>

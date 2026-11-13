@@ -40,6 +40,9 @@ export const ITEMS: Item[] = [
   { key: 'shoes_hike', slot: 'shoes', name: '등산화', emoji: '🥾', price: 50 },
 ]
 export const SLOT_LABEL: Record<Slot, string> = { hat: '모자', top: '상의', shoes: '운동화' }
+/** 캐릭터(아이템 해금·장착) 화면 노출. 11-13 TK 결정으로 숨김 — 디자이너 그림이 오면 true. 서버 기능·DB는 그대로 둠 */
+export const SHOW_CHARACTER = false
+
 export const DEFAULT_LOOK = { head: '🙂', top: '👕' } // 기본 캐릭터 1종(아이템 없을 때)
 export function itemByKey(key: string | null | undefined): Item | null {
   return ITEMS.find((i) => i.key === key) ?? null
