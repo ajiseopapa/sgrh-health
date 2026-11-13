@@ -221,7 +221,7 @@ export default function FeedTab() {
           return (
             <li key={log.id} className="flex gap-3 py-5">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[19px] font-bold leading-none"
                 style={{ backgroundColor: getEmployeeColor(log.employee), color: textOnColor(getEmployeeColor(log.employee)) }}
                 aria-hidden="true"
               >

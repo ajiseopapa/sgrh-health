@@ -143,7 +143,7 @@ export default function CalendarDayDetail({
           {groups.map((g) => (
             <li key={g.name + g.color} className="flex gap-3 py-3">
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[19px] font-bold leading-none"
                 style={{ backgroundColor: g.color, color: textOnColor(g.color) }}
               >
                 {g.name[0]}
