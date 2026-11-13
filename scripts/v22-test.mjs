@@ -184,8 +184,26 @@ async function p1() {
   await db.from('exercise_logs').insert(rows.slice(4, 5))
   r = await game('G006')
   check('5일 → 2단계 어린 나무', r.tree?.stage === 2, r.tree?.name)
-  // 오늘까지 더 넣을 날이 부족하면 단계 경계는 계산 함수로 확인(아래)
   check('운동을 쉬어도(최근 기록 없음) 단계 유지', r.tree?.stage === 2)
+  // 3·4단계: 이 부분만 도입일을 40일 전으로 당겨 G006에 날짜를 더 채움
+  const far = add(TODAY, -40)
+  await db.from('game_settings').update({ launch_date: far }).eq('id', 1)
+  await db.from('exercise_logs').delete().eq('employee_id', E.G006)
+  const longRows = Array.from({ length: 30 }, (_, i) => ({ employee_id: E.G006, exercise_type_id: typeId, log_date: add(far, i), duration_seconds: 600, memo: '시험v22' }))
+  await db.from('exercise_logs').insert(longRows.slice(0, 14))
+  r = await game('G006')
+  check('14일 → 2단계', r.tree?.stage === 2, r.tree?.name)
+  await db.from('exercise_logs').insert(longRows.slice(14, 15))
+  r = await game('G006')
+  check('15일 → 3단계 나무', r.tree?.stage === 3, r.tree?.name)
+  await db.from('exercise_logs').insert(longRows.slice(15, 29))
+  r = await game('G006')
+  check('29일 → 3단계', r.tree?.stage === 3 && r.tree?.next?.remaining === 1, `${r.tree?.name} ${r.tree?.next?.remaining}`)
+  await db.from('exercise_logs').insert(longRows.slice(29, 30))
+  r = await game('G006')
+  check('30일 → 4단계 큰 나무, 다음 단계 없음', r.tree?.stage === 4 && r.tree?.next === null, r.tree?.name)
+  await db.from('game_settings').update({ launch_date: LAUNCH }).eq('id', 1)
+  await db.from('exercise_logs').delete().eq('employee_id', E.G006)
 
   section('P1-6. 접근 차단 (본인만)')
   r = await nobody.call('/api/me/game')
@@ -372,7 +390,23 @@ async function p3() {
   r = await garden('G001')
   check('퇴사 전 기여는 그대로 남음(기여 수 유지)', r.week?.contributions === aNow, `${r.week?.contributions}`)
 
-  section('P3-6. 부서 없는 직원')
+  section('P3-6. 지난주 해금 · 인원 기준 달(그 주 월요일이 속한 달)')
+  {
+    const D = await mkDept('시험v22-정원D')
+    // 지난주 월요일이 속한 달에만 인원 2명 입력 → 지난주 목표 2일
+    await db.from('department_headcounts').insert({ department_id: D, year_month: LAUNCH.slice(0, 7), headcount: 2, source: '시험' })
+    await assign(E.G004, D, '2026-10-01')
+    await assign(E.G003, D, '2026-10-01')
+    await db.from('exercise_logs').delete().in('employee_id', [E.G003, E.G004])
+    await addLog(E.G004, LAUNCH); await addLog(E.G003, add(LAUNCH, 6))
+    r = await dev.G004.call('/api/me/garden')
+    check('지난주(월요일 달 인원 2명) 목표 달성 → 장식 1개, 주 중간 달이 바뀌어도 유지', r.decorations?.length === 1 && r.decorations[0].week === LAUNCH, `${r.decorations?.length} ${LAUNCH}~${add(LAUNCH, 6)}`)
+    const sameMonth = MON.slice(0, 7) === LAUNCH.slice(0, 7)
+    check('이번 주 목표는 이번 주 월요일 달 인원 기준', sameMonth ? r.week?.goal === 2 : r.week?.goal === null && r.week?.status === 'no_headcount', `${r.week?.goal}`)
+    await db.from('employee_departments').delete().in('employee_id', [E.G003, E.G004])
+  }
+
+  section('P3-7. 부서 없는 직원')
   r = await dev.G004.call('/api/me/garden')
   check('부서 없는 직원은 "부서 없음" 안내(오류 아님)', r.ok && r.department === null)
 }

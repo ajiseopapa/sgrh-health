@@ -172,8 +172,8 @@ export async function gardenWeeks(db: SupabaseClient, today = kstToday()) {
   for (const d of depts ?? []) {
     for (let w = firstWeek; w <= thisWeek; w = addDays(w, 7)) {
       const a = acc.get(`${d.id}|${w}`)
-      const end = addDays(w, 6) < today ? addDays(w, 6) : today
-      const headcount = head.get(`${d.id}|${end.slice(0, 7)}`) ?? null
+      // 인원 기준 달은 그 주 월요일이 속한 달로 고정(주 중간에 달이 바뀌어도 목표가 흔들리지 않게)
+      const headcount = head.get(`${d.id}|${w.slice(0, 7)}`) ?? null
       const participants = a?.people.size ?? 0
       const status: GardenStatus = !headcount ? 'no_headcount' : participants > headcount ? 'check_needed' : 'ok'
       weeks.push({
@@ -188,11 +188,13 @@ export async function gardenWeeks(db: SupabaseClient, today = kstToday()) {
 /** 정원 해금 기록을 현재 기록 기준으로 맞춥니다(달성 주는 추가, 기록 삭제로 깨진 주는 회수). 부서·주마다 1번(기본키). */
 export async function syncGardenUnlocks(db: SupabaseClient, weeks: GardenWeek[]) {
   const want = weeks.filter((w) => w.goal !== null && w.contributions >= w.goal)
-  const { data: have } = await db.from('garden_unlocks').select('department_id, week_start')
-  const haveSet = new Set((have ?? []).map((h) => `${h.department_id}|${h.week_start}`))
+  const have = await readAllRows<{ department_id: string; week_start: string }>(
+    () => db.from('garden_unlocks').select('department_id, week_start'), ['department_id', 'week_start']
+  )
+  const haveSet = new Set(have.map((h) => `${h.department_id}|${h.week_start}`))
   const wantSet = new Set(want.map((w) => `${w.departmentId}|${w.week}`))
   const add = want.filter((w) => !haveSet.has(`${w.departmentId}|${w.week}`))
-  const remove = (have ?? []).filter((h) => !wantSet.has(`${h.department_id}|${h.week_start}`))
+  const remove = have.filter((h) => !wantSet.has(`${h.department_id}|${h.week_start}`))
   if (add.length) {
     const { error } = await db.from('garden_unlocks').upsert(
       add.map((w) => ({ department_id: w.departmentId, week_start: w.week, goal: w.goal! })),
@@ -201,19 +203,24 @@ export async function syncGardenUnlocks(db: SupabaseClient, weeks: GardenWeek[])
     if (error) throw new Error('GARDEN_SYNC_FAILED')
   }
   for (const r of remove) await db.from('garden_unlocks').delete().eq('department_id', r.department_id).eq('week_start', r.week_start)
-  const { data: now } = await db.from('garden_unlocks').select('department_id, week_start, unlocked_at').order('week_start')
-  return now ?? []
+  return { added: add.length, removed: remove.length }
+}
+
+async function unlocksOf(db: SupabaseClient, departmentId: string) {
+  const { data, error } = await db.from('garden_unlocks').select('week_start, unlocked_at').eq('department_id', departmentId).order('week_start')
+  if (error) throw new Error('GARDEN_READ_FAILED')
+  return data ?? []
 }
 
 /** 내 부서 정원(본인 기준). 다른 직원 이름·미참여자는 내보내지 않고 숫자만. */
 export async function myGarden(db: SupabaseClient, employeeId: string, today = kstToday()) {
   const g = await gardenWeeks(db, today)
-  const unlocks = await syncGardenUnlocks(db, g.weeks)
+  await syncGardenUnlocks(db, g.weeks)
   const deptId = g.deptOf(employeeId, today)
   if (!deptId) return { today, department: null }
   const dept = g.departments.find((d) => d.id === deptId)!
   const cur = g.weeks.find((w) => w.departmentId === deptId && w.week === g.thisWeek)!
-  const mine = unlocks.filter((u) => u.department_id === deptId)
+  const mine = await unlocksOf(db, deptId)
   return {
     today,
     department: { id: dept.id, name: dept.name },
