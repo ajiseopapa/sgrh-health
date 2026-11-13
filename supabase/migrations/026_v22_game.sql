@@ -56,11 +56,30 @@ create table if not exists public.garden_unlocks (
   primary key (department_id, week_start)
 );
 
+-- 5-1) 주간 목표 변경 이력 (PM 최종 보완 11-13)
+--   v2.1 personal_goals 는 같은 주 안에서 바꾸면 덮어쓰므로, 바꿀 때마다 한 줄씩 남깁니다.
+--   게임 보상 판정 = 그 주가 시작될 때(월요일 0시, 한국 시간) 적용 중이던 목표.
+--   그 주에 처음 정했다면 그 주에 처음 정한 목표. 주중 변경은 다음 주부터 게임에 반영.
+--   (v2.1 목표·달성률 화면은 personal_goals 그대로 — 바뀌지 않음)
+create table if not exists public.personal_goal_history (
+  id          uuid primary key default gen_random_uuid(),
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  kind        text not null check (kind in ('sessions', 'minutes')),
+  target      integer not null check (target between 1 and 2100),
+  changed_at  timestamptz not null default now()
+);
+create index if not exists personal_goal_history_emp_idx on public.personal_goal_history(employee_id, changed_at);
+-- 이미 있는 목표(024 이후 정한 것)는 그 주 월요일 0시에 정한 것으로 한 줄씩 옮겨 둡니다(이력이 없는 직원만, 다시 실행해도 중복 없음)
+insert into public.personal_goal_history (employee_id, kind, target, changed_at)
+select p.employee_id, p.kind, p.target, (p.effective_from::timestamp at time zone 'Asia/Seoul')
+from public.personal_goals p
+where not exists (select 1 from public.personal_goal_history h where h.employee_id = p.employee_id);
+
 -- 6) 접근: 서버만
 do $$
 declare t text;
 begin
-  foreach t in array array['game_settings', 'game_purchases', 'game_equipment', 'game_profiles', 'garden_unlocks'] loop
+  foreach t in array array['game_settings', 'game_purchases', 'game_equipment', 'game_profiles', 'garden_unlocks', 'personal_goal_history'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on table public.%I from anon, authenticated', t);
   end loop;
@@ -97,17 +116,17 @@ $$;
 revoke all on function public.game_purchase(uuid, text, integer, integer) from public, anon, authenticated;
 grant execute on function public.game_purchase(uuid, text, integer, integer) to service_role;
 
--- ── 확인 쿼리: 새 테이블 5개 RLS on·정책 0·공개 권한 없음, 구매 함수 공개 실행 불가 ──
+-- ── 확인 쿼리: 새 테이블 6개 RLS on·정책 0·공개 권한 없음, 구매 함수 공개 실행 불가 ──
 select
   (select count(*) from pg_class where relnamespace = 'public'::regnamespace and relrowsecurity
-     and relname in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks')) as rls_tables,
+     and relname in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks','personal_goal_history')) as rls_tables,
   (select count(*) from pg_policies where schemaname = 'public'
-     and tablename in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks')) as policies,
+     and tablename in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks','personal_goal_history')) as policies,
   (select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee in ('anon','authenticated')
-     and table_name in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks')) as public_grants,
+     and table_name in ('game_settings','game_purchases','game_equipment','game_profiles','garden_unlocks','personal_goal_history')) as public_grants,
   has_function_privilege('anon', 'public.game_purchase(uuid, text, integer, integer)', 'execute') as anon_can_buy,
   (select launch_date from public.game_settings where id = 1) as launch_date;
 
 -- ── 되돌리기 (구매·장착·정원 해금 기록이 사라짐에 주의. 운동 기록은 영향 없음) ──
 -- drop function if exists public.game_purchase(uuid, text, integer, integer);
--- drop table if exists public.garden_unlocks, public.game_profiles, public.game_equipment, public.game_purchases, public.game_settings;
+-- drop table if exists public.personal_goal_history, public.garden_unlocks, public.game_profiles, public.game_equipment, public.game_purchases, public.game_settings;

@@ -166,13 +166,75 @@ async function p1() {
   check('목표를 두 번 바꿔도 이번 주 목표 보상은 1번 (30)', r.sunlight?.earned === 30 && r.ledger?.filter((l) => l.key.startsWith('goal:')).length === 1, `${r.sunlight?.earned}`)
   await dev.G002.call('/api/me/goal', { method: 'PUT', body: { kind: 'sessions', target: 5 } })
   r = await game('G002')
-  check('목표를 못 미치게 올리면 목표 보상 회수 (10)', r.sunlight?.earned === 10, `${r.sunlight?.earned}`)
+  check('주중에 목표를 올려도 이미 받은 보상은 회수하지 않음 (30)', r.sunlight?.earned === 30, `${r.sunlight?.earned}`)
+  const eng2 = await dev.G002.call('/api/me/engagement')
+  check('v2.1 목표 화면은 바꾼 목표(5회) 그대로 표시', eng2.goal?.target === 5, `${eng2.goal?.target}`)
   await dev.G002.call('/api/me/goal', { method: 'PUT', body: { kind: 'sessions', target: 2 } })
   r = await game('G002')
-  check('다시 낮추면 1번만 다시 받음 (30)', r.sunlight?.earned === 30, `${r.sunlight?.earned}`)
+  check('다시 낮춰도 중복 없음 (30)', r.sunlight?.earned === 30, `${r.sunlight?.earned}`)
   await dev.G002.call(`/api/logs/${g2}`, { method: 'DELETE' })
   r = await game('G002')
   check('기록 삭제로 목표 미달 → 목표 보상 회수 (10)', r.sunlight?.earned === 10, `${r.sunlight?.earned}`)
+
+  section('P1-4b. 주중 목표 변경 → 게임 보상은 그 주 시작 목표 기준')
+  {
+    const MON0 = `${MON}T00:00:00+09:00`
+    const at = (ms) => new Date(Date.parse(MON0) + ms).toISOString()
+    const setHist = async (rows) => {
+      await db.from('personal_goal_history').delete().eq('employee_id', E.G007)
+      if (rows.length) await db.from('personal_goal_history').insert(rows.map(([kind, target, changed_at]) => ({ employee_id: E.G007, kind, target, changed_at })))
+    }
+    await db.from('exercise_logs').delete().eq('employee_id', E.G007)
+    // 지난 일요일 23:59:59 에 3회 → 이번 주 시작 목표 3회. 주중(지금)에 1회로 낮춤
+    await setHist([['sessions', 3, at(-1000)]])
+    r = await dev.G007.call('/api/me/goal', { method: 'PUT', body: { kind: 'sessions', target: 1 } })
+    const { count: hc } = await db.from('personal_goal_history').select('id', { count: 'exact', head: true }).eq('employee_id', E.G007)
+    check('목표를 바꿀 때마다 서버가 변경 이력 1줄 기록', r.ok && hc === 2, `${hc}줄`)
+    const t1 = await addLog(E.G007, TODAY)
+    r = await game('G007')
+    check('낮춘 목표(1회)를 채워도 그 주 보상 없음 — 기준은 주 시작 목표 3회 (10)', r.sunlight?.earned === 10 && r.goalBasis?.target === 3, `${r.sunlight?.earned} 기준 ${r.goalBasis?.target}`)
+    const e7 = await dev.G007.call('/api/me/engagement')
+    check('v2.1 달성률 화면은 낮춘 목표 1/1 그대로 표시', e7.goal?.target === 1 && e7.goal?.value === 1)
+    const t2 = await addLog(E.G007, TODAY); const t3 = await addLog(E.G007, TODAY)
+    r = await game('G007')
+    check('주 시작 목표 3회를 채우면 +20 (30)', r.sunlight?.earned === 30 && r.ledger?.filter((l) => l.key === `goal:${MON}`).length === 1, `${r.sunlight?.earned}`)
+    for (const body of [{ kind: 'sessions', target: 6 }, { kind: 'minutes', target: 30 }, { kind: 'sessions', target: 1 }, { kind: 'sessions', target: 9 }, { kind: 'sessions', target: 2 }]) {
+      await dev.G007.call('/api/me/goal', { method: 'PUT', body })
+    }
+    r = await game('G007')
+    check('반복 변경 5번(올리기·내리기·종류 변경) 뒤에도 기준 3회·보상 1번 그대로 (30)', r.sunlight?.earned === 30 && r.goalBasis?.target === 3 && r.ledger?.filter((l) => l.key.startsWith('goal:')).length === 1, `${r.sunlight?.earned}`)
+    // 기록 수정·삭제는 다시 계산
+    await dev.G007.call(`/api/logs/${t3}`, { method: 'DELETE' })
+    r = await game('G007')
+    check('기록 삭제로 기준 미달(2/3) → 목표 보상 회수 (10)', r.sunlight?.earned === 10, `${r.sunlight?.earned}`)
+    const back = await addLog(E.G007, TODAY)
+    r = await game('G007')
+    check('다시 채우면 1번만 (30)', r.sunlight?.earned === 30)
+    const pe = await dev.G007.call(`/api/logs/${back}`, { method: 'PATCH', body: { exerciseTypeId: typeId, logDate: add(MON, -1), durationSeconds: 1800, distanceKm: null, memo: '시험v22' } })
+    r = await game('G007')
+    check('기록 날짜를 지난주로 수정 → 이번 주 2회로 미달, 회수 (지난주 1일 +10 → 20)', pe.ok && !r.ledger?.some((l) => l.key === `goal:${MON}`) && r.sunlight?.earned === 20, `${r.sunlight?.earned}`)
+    void t1; void t2
+
+    section('P1-4c. 경계 시각 · 다음 주 적용')
+    await db.from('exercise_logs').delete().eq('employee_id', E.G007)
+    // 월요일 0시 정각 변경 = 그 주 안의 변경. 그 전 목표가 없으면 그 주 첫 변경(4회)이 기준
+    await setHist([['sessions', 4, at(0)], ['sessions', 1, at(3600 * 1000)]])
+    r = await game('G007')
+    check('월 0시 정각에 처음 정한 목표(4회)가 그 주 기준, 1시간 뒤 낮춘 1회는 무시', r.goalBasis?.target === 4, `${r.goalBasis?.target}`)
+    await setHist([['sessions', 5, at(-1000)], ['sessions', 4, at(0)]])
+    r = await game('G007')
+    check('일요일 23:59:59 목표(5회)가 있으면 월 0시 정각 변경(4회)보다 우선', r.goalBasis?.target === 5, `${r.goalBasis?.target}`)
+    // 지난주: 주 시작 전 5회, 지난주 수요일에 1회로 낮춤 → 지난주 기준 5회, 이번 주 기준 1회
+    const lastMon0 = Date.parse(MON0) - 7 * 86400000
+    await setHist([['sessions', 5, new Date(lastMon0 - 3600 * 1000).toISOString()], ['sessions', 1, new Date(lastMon0 + 2 * 86400000).toISOString()]])
+    await addLog(E.G007, add(MON, -5)) // 지난주 수요일 1회
+    await addLog(E.G007, TODAY)
+    r = await game('G007')
+    check('지난주는 변경 전 목표(5회)로 판정 → 1회라 보상 없음', !r.ledger?.some((l) => l.key === `goal:${add(MON, -7)}`))
+    check('낮춘 목표(1회)는 다음 주(이번 주)부터 적용 → 이번 주 +20', r.goalBasis?.target === 1 && r.ledger?.some((l) => l.key === `goal:${MON}`), `기준 ${r.goalBasis?.target}`)
+    await db.from('exercise_logs').delete().eq('employee_id', E.G007)
+    await db.from('personal_goal_history').delete().eq('employee_id', E.G007)
+  }
 
   section('P1-5. 나무 4단계 (누적 활동일, 쉬어도 그대로)')
   // G006: 도입일부터 이어서 N일 (오늘까지 가능한 날만)
@@ -210,7 +272,7 @@ async function p1() {
   check('로그인 없이 내 햇빛 조회 거부', r.status === 401)
   r = await dev.G002.call(`/api/me/game?employeeId=${E.G001}`)
   check('다른 직원 ID를 붙여도 본인(G002) 현황만', r.ok && r.sunlight?.earned === 10)
-  for (const t of ['game_settings', 'game_purchases', 'game_equipment', 'game_profiles', 'garden_unlocks']) {
+  for (const t of ['game_settings', 'game_purchases', 'game_equipment', 'game_profiles', 'garden_unlocks', 'personal_goal_history']) {
     const { data, error } = await anon.from(t).select('*').limit(1)
     check(`공개 키로 ${t} 읽기 차단`, !!error || (data ?? []).length === 0, error?.code ?? '')
   }

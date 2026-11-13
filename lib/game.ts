@@ -4,6 +4,8 @@
 //  · 운동한 날(하루 첫 기록)마다 10 — 하루에 여러 번 기록해도 1번
 //  · 한 주(월~일)에 운동한 날이 3일 이상이면 20 — 주마다 1번
 //  · 그 주의 개인 목표를 달성하면 20 — 주마다 1번(목표를 바꿔도 키가 같은 주라 중복 없음)
+//    판정 목표 = 그 주가 시작될 때(월 0시) 적용 중이던 목표. 그 주에 처음 정했다면 처음 정한 목표.
+//    주중에 낮추거나 높여도 그 주 판정은 그대로 → 낮춰서 받기·높여서 회수·중복 모두 없음. 다음 주부터 새 목표.
 //  · 도입일 이전 기록은 세지 않음(소급 없음). 도입일이 낀 주는 도입일부터 센 기록으로 판정.
 //  · 받은 햇빛은 저장하지 않고 기록에서 계산 → 기록 수정·삭제 시 자동 재계산.
 
@@ -57,18 +59,37 @@ function weekStart(date: string): string {
 }
 
 export interface DayInput { date: string; sessions: number; seconds: number }
-export interface GoalInput { kind: 'sessions' | 'minutes'; target: number; effective_from: string }
+export interface GoalInput { kind: 'sessions' | 'minutes'; target: number }
+export interface GoalChange { kind: 'sessions' | 'minutes'; target: number; changed_at: string }
+
+/** 한국 시간 그 날 0시의 시각(ms) */
+export function kstMidnight(date: string): number {
+  return Date.parse(`${date}T00:00:00+09:00`)
+}
+/** 게임 보상 판정용 그 주 목표: 월 0시 이전 마지막 변경, 없으면 그 주 안의 첫 변경 */
+export function gameGoalForWeek(history: GoalChange[], week: string): GoalInput | null {
+  const start = kstMidnight(week)
+  const end = start + 7 * 86400000
+  let before: GoalChange | null = null
+  let firstIn: GoalChange | null = null
+  for (const h of history) {
+    const t = Date.parse(h.changed_at)
+    if (t < start) { if (!before || t >= Date.parse(before.changed_at)) before = h }
+    else if (t < end) { if (!firstIn || t < Date.parse(firstIn.changed_at)) firstIn = h }
+  }
+  const g = before ?? firstIn
+  return g ? { kind: g.kind, target: g.target } : null
+}
 
 /**
  * 받은 햇빛 목록. days = 한 직원의 날짜별 묶음(하루 300분 상한 적용된 인정 시간).
- * goalForWeek 는 그 주에 적용되는 목표(v2.1 규칙 그대로).
+ * goalHistory = 목표 변경 이력(게임 판정은 그 주 시작 목표 기준, gameGoalForWeek).
  */
 export function computeRewards(
   days: DayInput[],
-  goals: GoalInput[],
+  goalHistory: GoalChange[],
   launchDate: string,
-  today: string,
-  goalForWeek: (goals: GoalInput[], week: string) => GoalInput | null
+  today: string
 ): Reward[] {
   const counted = days.filter((d) => d.date >= launchDate && d.date <= today)
   const out: Reward[] = []
@@ -86,7 +107,7 @@ export function computeRewards(
       const third = list.map((d) => d.date).sort()[WEEK3_DAYS - 1]
       out.push({ key: `week3:${w}`, kind: 'week3', date: third, points: SUN_WEEK3, label: '주 3일 운동' })
     }
-    const g = goalForWeek(goals, w)
+    const g = gameGoalForWeek(goalHistory, w)
     if (g) {
       const value = g.kind === 'sessions'
         ? list.reduce((s, d) => s + d.sessions, 0)

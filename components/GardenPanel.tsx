@@ -16,6 +16,7 @@ interface Game {
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
   character: { owned: string[]; equipped: Record<Slot, string | null> }
   showInFeed: boolean
+  goalBasis: { kind: 'sessions' | 'minutes'; target: number; value: number } | null
 }
 interface Garden {
   department: { id: string; name: string } | null
@@ -150,6 +151,15 @@ function SunSection({ game }: { game: Game }) {
         <li>한 주에 3일 운동 +{SUN_WEEK3} · 주간 목표 달성 +{SUN_GOAL}</li>
         <li>{game.launchDate.slice(5).replace('-', '.')} 이후 기록부터 셉니다. 기록을 고치거나 지우면 다시 계산해요.</li>
       </ul>
+      <p className="mt-3 text-[13px] leading-relaxed text-ink-600">
+        {game.goalBasis ? (
+          <>이번 주 목표 보상 기준 <span className="font-bold text-ink-900">주 {game.goalBasis.target}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
+            {' '}· 지금 <span className="font-bold tabular-nums text-ink-900">{game.goalBasis.value}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
+            <br /><span className="text-ink-500">주중에 목표를 바꾸면 햇빛 보상은 다음 주부터 새 목표로 셉니다.</span></>
+        ) : (
+          <span className="text-ink-500">주간 목표를 정하면 달성한 주에 햇빛 {SUN_GOAL}개를 더 받아요.</span>
+        )}
+      </p>
       {game.ledger.length > 0 && (
         <>
           <ul className="mt-4 divide-y divide-line border-t border-line">

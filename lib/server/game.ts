@@ -3,10 +3,10 @@
 // 저장하는 것: 구매(쓴 햇빛), 장착, 피드 표시 여부, 정원 해금 기록.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  addDays, dailyCredits, goalForWeek, GoalRow, kstToday, loadLogs, readAllRows, weekStart,
+  addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  computeRewards, decorFor, GARDEN_DAYS_PER_PERSON, ITEMS, itemByKey, Reward, Slot, treeStage,
+  computeRewards, decorFor, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, ITEMS, itemByKey, Reward, Slot, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -18,20 +18,26 @@ export async function launchDate(db: SupabaseClient): Promise<string> {
 /** 한 직원이 받은 햇빛 목록과 도입일 이후 운동한 날 수 */
 export async function earnedFor(db: SupabaseClient, employeeId: string, today = kstToday()) {
   const launch = await launchDate(db)
-  const [logs, { data: goalRows }] = await Promise.all([
+  const [logs, history] = await Promise.all([
     loadLogs(db, { employeeId, from: launch, to: today }),
-    db.from('personal_goals').select('kind, target, effective_from').eq('employee_id', employeeId).order('effective_from'),
+    readAllRows<GoalChange>(() => db.from('personal_goal_history').select('id, kind, target, changed_at').eq('employee_id', employeeId), ['changed_at', 'id']),
   ])
   const credits = dailyCredits(logs)
   const rewards = computeRewards(
     credits.map((c) => ({ date: c.date, sessions: c.sessions, seconds: c.seconds })),
-    (goalRows ?? []) as GoalRow[],
+    history,
     launch,
-    today,
-    (g, w) => goalForWeek(g as GoalRow[], w)
+    today
   )
   const earned = rewards.reduce((s, r) => s + r.points, 0)
-  return { launch, rewards, earned, activeDays: credits.filter((c) => c.date >= launch && c.date <= today).length }
+  const thisWeek = weekStart(today)
+  const wk = credits.filter((c) => c.date >= thisWeek && c.date >= launch && c.date <= today)
+  const basis = gameGoalForWeek(history, thisWeek)
+  const goalBasis = basis ? {
+    ...basis,
+    value: basis.kind === 'sessions' ? wk.reduce((s, c) => s + c.sessions, 0) : Math.floor(wk.reduce((s, c) => s + c.seconds, 0) / 60),
+  } : null
+  return { launch, rewards, earned, goalBasis, activeDays: credits.filter((c) => c.date >= launch && c.date <= today).length }
 }
 
 export interface Purchase { item_key: string; price: number; purchased_at: string }
@@ -65,6 +71,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     sunlight: { earned: e.earned, spent, balance, shortfall },
     ledger,
     tree: treeStage(e.activeDays),
+    goalBasis: e.goalBasis, // 이번 주 목표 보상 판정 기준(주 시작 목표)
     character: { owned: purchases.map((p) => p.item_key), equipped },
     showInFeed: prof?.show_in_feed ?? false,
   }
