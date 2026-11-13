@@ -8,7 +8,6 @@ import ChallengeTab from '@/components/ChallengeTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
-import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
 import IdentityModal from '@/components/IdentityModal'
 import { MeProvider, useMe } from '@/lib/me'
 import { DialogProvider } from '@/lib/dialog'
@@ -41,10 +40,8 @@ function AppShell() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showAnnouncements, setShowAnnouncements] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const hasUnreadAnnouncements = useHasUnreadAnnouncements()
-  const hasNewSuggestions = useHasNewSuggestions(isAdmin)
 
   function handleSettingsClick() {
     if (isAdmin) {
@@ -84,12 +81,11 @@ function AppShell() {
         </div>
         <div className="-mr-2 flex items-center">
           {isAdmin && (
-            <button onClick={handleLogout} className="mr-1 min-h-[44px] px-2 text-[13px] font-semibold text-ink-500">
+            <button onClick={handleLogout} className="mr-1 min-h-[44px] whitespace-nowrap px-2 text-[13px] font-semibold text-ink-500">
               관리자 로그아웃
             </button>
           )}
           <HeadButton label="공지" icon="bell" dot={hasUnreadAnnouncements} onClick={() => setShowAnnouncements(true)} />
-          <HeadButton label="건의함" icon="chat" dot={hasNewSuggestions} onClick={() => setShowSuggestions(true)} />
           <HeadButton label={isAdmin ? '관리 설정' : '관리자'} icon="gear" onClick={handleSettingsClick} />
         </div>
       </header>
@@ -135,14 +131,6 @@ function AppShell() {
         <AnnouncementsModal
           isOpen={showAnnouncements}
           onClose={() => setShowAnnouncements(false)}
-          isAdmin={isAdmin}
-        />
-      )}
-
-      {showSuggestions && (
-        <SuggestionModal
-          isOpen={showSuggestions}
-          onClose={() => setShowSuggestions(false)}
           isAdmin={isAdmin}
         />
       )}

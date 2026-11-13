@@ -4,7 +4,7 @@ import { kstToday } from '@/lib/server/engagement'
 
 export const dynamic = 'force-dynamic'
 
-// 본인 확인·건의함의 이름 목록 — 재직 중인 직원만, 화면에 필요한 칸만.
+// 본인 확인의 이름 목록 — 재직 중인 직원만, 화면에 필요한 칸만.
 // 퇴사일(left_at)은 공개 키로 읽을 수 없게 막았으므로(025), 퇴사자 거르기는 서버에서 합니다.
 export const GET = handle(async () => {
   const today = kstToday()

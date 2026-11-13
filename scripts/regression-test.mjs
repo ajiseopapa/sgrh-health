@@ -1,6 +1,6 @@
 // 기존 기능 회귀 시험 — 019(쓰기 차단) 이후에도 화면이 쓰는 경로가 모두 동작하는지
 // 사용법: node scripts/regression-test.mjs <서버 주소> <env 파일>
-// ⚠️ 시험 DB 전용. 시험용 공지·종목·직원·건의를 만들었다 지웁니다.
+// ⚠️ 시험 DB 전용. 시험용 공지·종목·직원을 만들었다 지웁니다. 건의하기는 폐지(028) → 닫혔는지만 확인.
 import { createClient } from '@supabase/supabase-js'
 import { loadEnv } from './backup.mjs'
 
@@ -27,18 +27,23 @@ async function call(path, method = 'GET', body) {
   return { status: res.status, ...(await res.json().catch(() => ({}))) }
 }
 
-// ── 화면이 브라우저에서 바로 읽는 것들 (홈·통계·피드·기록·달력·공지·건의함) ──
-for (const [t, sel] of [['employees', 'id, name, employee_number, color, created_at'], ['exercise_types', '*'], ['exercise_logs', '*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)'], ['log_reactions', '*'], ['announcements', '*'], ['suggestions', '*']]) {
+// ── 화면이 브라우저에서 바로 읽는 것들 (홈·통계·피드·기록·달력·공지) ──
+for (const [t, sel] of [['employees', 'id, name, employee_number, color, created_at'], ['exercise_types', '*'], ['exercise_logs', '*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)'], ['log_reactions', '*'], ['announcements', '*']]) {
   const { error } = await anon.from(t).select(sel).limit(5)
   check(`읽기: ${t}`, !error, error?.message ?? '')
 }
 const { count } = await anon.from('exercise_logs').select('*', { count: 'exact', head: true })
 check('통계 탭 전체 건수 조회', typeof count === 'number', `${count}건`)
 
-// ── 건의 작성 (019 이후에도 브라우저에서 허용) ──
+// ── 건의하기 폐지(028): 공개 키로 작성·읽기 모두 막힘, 기존 자료는 보존 ──
+const { count: sugBefore } = await service.from('suggestions').select('id', { count: 'exact', head: true })
 const { error: sErr } = await anon.from('suggestions').insert({ employee_id: null, employee_name: null, title: '회귀시험', content: '회귀시험 건의' })
-check('건의 작성(브라우저 직접)', !sErr, sErr?.message ?? '')
-const { data: sug } = await service.from('suggestions').select('id').eq('title', '회귀시험').limit(1).single()
+check('건의 작성(공개 키) 차단', !!sErr, sErr?.code ?? '막히지 않음')
+const { data: sRead, error: sReadErr } = await anon.from('suggestions').select('*').limit(5)
+check('건의 목록 읽기(공개 키) 차단', !!sReadErr || (sRead ?? []).length === 0, sReadErr?.code ?? `${sRead?.length}건 보임`)
+const { count: sugAfter } = await service.from('suggestions').select('id', { count: 'exact', head: true })
+check('기존 건의 자료 보존(서버에서는 그대로 보임)', (sugBefore ?? 0) > 0 && sugAfter === sugBefore, `${sugBefore} → ${sugAfter}건`)
+const { data: anySug } = await service.from('suggestions').select('id').limit(1).single()
 
 // ── 관리자 기능 (서버 API) ──
 let r = await call('/api/verify-admin', 'POST', { password: env.ADMIN_PASSWORD })
@@ -51,11 +56,10 @@ const { data: ann } = await anon.from('announcements').select('id').eq('title', 
 r = await call(`/api/admin/announcements/${ann.id}`, 'PATCH', { title: '회귀시험 공지', content: '수정' }); check('공지 수정', r.ok === true)
 r = await call(`/api/admin/announcements/${ann.id}`, 'DELETE'); check('공지 삭제', r.ok === true)
 
-r = await call(`/api/admin/suggestions/${sug.id}`, 'PATCH', { markRead: true }); check('건의 확인 처리', r.ok === true)
-r = await call(`/api/admin/suggestions/${sug.id}`, 'PATCH', { reply: '답변' }); check('건의 답변', r.ok === true)
-const { data: sug2 } = await anon.from('suggestions').select('status').eq('id', sug.id).single()
-check('건의 상태 → 답변완료', sug2.status === 'answered')
-r = await call(`/api/admin/suggestions/${sug.id}`, 'DELETE'); check('건의 삭제', r.ok === true)
+r = await call(`/api/admin/suggestions/${anySug.id}`, 'PATCH', { markRead: true }); check('관리자 건의 확인 처리 API 종료(410)', r.status === 410)
+r = await call(`/api/admin/suggestions/${anySug.id}`, 'DELETE'); check('관리자 건의 삭제 API 종료(410)', r.status === 410)
+const { count: sugAfter2 } = await service.from('suggestions').select('id', { count: 'exact', head: true })
+check('관리자 요청 뒤에도 건의 자료 그대로', sugAfter2 === sugBefore, `${sugAfter2}건`)
 
 r = await call('/api/admin/exercise-types', 'POST', { name: '회귀시험종목', icon: '🧪', trackDistance: true }); check('종목 등록', r.ok === true)
 const { data: et } = await anon.from('exercise_types').select('id, track_distance').eq('name', '회귀시험종목').single()
@@ -76,7 +80,7 @@ r = await call(`/api/admin/employees/${empId}`, 'DELETE'); check('직원 삭제'
 
 await service.from('audit_logs').select('id', { count: 'exact', head: true })
 const { count: auditCount } = await service.from('audit_logs').select('id', { count: 'exact', head: true }).in('table_name', ['announcements', 'exercise_types', 'employees', 'suggestions'])
-check('관리 동작 감사 로그 기록', (auditCount ?? 0) >= 9, `${auditCount}건`)
+check('관리 동작 감사 로그 기록', (auditCount ?? 0) >= 7, `${auditCount}건`)
 
 await call('/api/admin/logout', 'POST')
 console.log(`\n결과: ${results.filter(Boolean).length}/${results.length} 통과`)
