@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { DEFAULT_LOOK, ITEMS, NAME_EMOJIS, SHOW_CHARACTER, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { DEFAULT_LOOK, ITEMS, SHOW_CHARACTER, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -16,7 +16,6 @@ interface Game {
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
   character: { owned: string[]; equipped: Record<Slot, string | null> }
   showInFeed: boolean
-  nameEmoji: string | null
   goalBasis: { kind: 'sessions' | 'minutes'; target: number; value: number } | null
 }
 interface Garden {
@@ -50,7 +49,6 @@ export default function GardenPanel() {
       <SunSection game={game} />
       {SHOW_CHARACTER && <CharacterSection game={game} onChange={setGame} />}
       <GardenSection garden={garden} />
-      <NameEmojiSection game={game} onChange={(v) => setGame({ ...game, nameEmoji: v })} />
       <FeedToggle game={game} onChange={(v) => setGame({ ...game, showInFeed: v })} />
     </div>
   )
@@ -321,37 +319,6 @@ function GardenSection({ garden }: { garden: Garden | null }) {
         <li>한 사람은 하루 1번만 기여해요(하루 여러 번 기록해도 1일).</li>
         <li>공동 목표는 이번 달 부서 인원 수만큼 운동한 날이 모이는 것이에요. 누가 참여했는지는 보이지 않아요.</li>
       </ul>
-    </Section>
-  )
-}
-
-// ── 피드 이름 앞 이모지 ──
-function NameEmojiSection({ game, onChange }: { game: Game; onChange: (v: string | null) => void }) {
-  const [saving, setSaving] = useState<string | null>(null)
-  const [err, setErr] = useState('')
-  async function pick(v: string | null) {
-    if (saving || v === game.nameEmoji) return
-    setSaving(v ?? 'none'); setErr('')
-    const r = await api('/api/me/game/profile', { method: 'PUT', body: { nameEmoji: v } })
-    setSaving(null)
-    if (r.ok) onChange(v); else setErr(r.message || '저장하지 못했어요.')
-  }
-  const btn = (on: boolean) =>
-    `flex h-[44px] items-center justify-center rounded-xl border-2 leading-none disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-white'}`
-  return (
-    <Section title="이름 앞 이모지">
-      <p className="-mt-1 text-[13px] text-ink-500">고르면 피드에서 내 이름 앞에 보여요.</p>
-      <div className="mt-3 grid grid-cols-6 gap-2" role="radiogroup" aria-label="이름 앞 이모지">
-        {NAME_EMOJIS.map((e) => (
-          <button key={e} type="button" role="radio" aria-checked={game.nameEmoji === e} aria-label={e}
-            disabled={!!saving} onClick={() => pick(e)} className={`text-[22px] ${btn(game.nameEmoji === e)}`}>{e}</button>
-        ))}
-      </div>
-      <button type="button" role="radio" aria-checked={game.nameEmoji === null} disabled={!!saving} onClick={() => pick(null)}
-        className={`mt-2 w-full text-[14px] font-bold text-ink-900 ${btn(game.nameEmoji === null)}`}>
-        이모지 없음
-      </button>
-      {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
     </Section>
   )
 }

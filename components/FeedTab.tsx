@@ -12,6 +12,7 @@ import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
 import { SHOW_CHARACTER, TREE_STAGES } from '@/lib/game'
+import { ProfileAvatar } from './Profile'
 
 // 피드에 나무·캐릭터를 켠 직원만 이름 옆에 작게(v2.2). 잔액은 서버가 내보내지 않음
 const TREE_EMOJI = ['🌱', '🌿', '🌳', '🌲']
@@ -232,6 +233,10 @@ export default function FeedTab() {
 
           return (
             <li key={log.id} className="flex gap-3 py-5">
+              {/* 프로필 이모지를 고른 직원은 홈과 같은 프로필 원형, 아니면 기존 이름 첫 글자 원형 */}
+              {emojis[log.employee_id] ? (
+                <ProfileAvatar emoji={emojis[log.employee_id]} size={40} />
+              ) : (
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[19px] font-bold leading-none"
                 style={{ backgroundColor: getEmployeeColor(log.employee), color: textOnColor(getEmployeeColor(log.employee)) }}
@@ -239,13 +244,11 @@ export default function FeedTab() {
               >
                 {log.employee?.name?.[0] ?? '?'}
               </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="flex min-w-0 items-baseline gap-1.5">
-                    <span className="text-[15px] font-bold text-ink-900">
-                      {emojis[log.employee_id] && <span className="mr-1 font-normal" aria-hidden="true">{emojis[log.employee_id]}</span>}
-                      {log.employee?.name}
-                    </span>
+                    <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
                     {looks[log.employee_id] && (
                       <span className="text-[14px] leading-none" title={TREE_STAGES[looks[log.employee_id].stage - 1]?.name}
                         aria-label={`나무 ${TREE_STAGES[looks[log.employee_id].stage - 1]?.name ?? ''}`}>
