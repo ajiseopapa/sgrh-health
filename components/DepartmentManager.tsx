@@ -9,10 +9,12 @@ import { Empty, Loading, Notice } from '@/lib/ui'
 interface Head { year_month: string; headcount: number; source: string | null; updated_at: string }
 interface Dept { id: string; name: string; sort_order: number; members: number; headcount: Head | null; headcounts: Head[] }
 interface Mismatch { id: string; name: string; participants: number; headcount: number | null }
+interface GardenNotice { departmentId: string; name: string; status: 'no_headcount' | 'check_needed'; participants: number; headcount: number | null }
 
 export default function DepartmentManager() {
   const [list, setList] = useState<Dept[] | null>(null)
   const [mismatches, setMismatches] = useState<Mismatch[]>([])
+  const [gardenNotices, setGardenNotices] = useState<GardenNotice[]>([])
   const [failed, setFailed] = useState(false) // 불러오기 실패(권한 등) — 빈 목록 문구를 띄우지 않음
   const [ym, setYm] = useState('')
   const [name, setName] = useState('')
@@ -29,6 +31,8 @@ export default function DepartmentManager() {
     setList(r.data.departments)
     setMismatches(r.data.mismatches ?? [])
     setYm((v) => v || r.data.yearMonth)
+    const g = await api<{ notices: GardenNotice[] }>('/api/admin/garden')
+    setGardenNotices(g.ok ? g.data.notices ?? [] : [])
   }
   useEffect(() => { load() }, [])
 
@@ -95,6 +99,17 @@ export default function DepartmentManager() {
               ))}
             </ul>
             <p className="mt-1 text-[13px] text-ink-500">직원 화면에는 참여율 대신 &lsquo;인원 확인 필요&rsquo;로 보여요. 인사팀 인원이나 직원 소속을 확인해 주세요.</p>
+          </div>
+        )}
+        {gardenNotices.length > 0 && (
+          <div className="mb-4 border-l-2 border-ink-300 pl-3">
+            <p className="text-[14px] font-bold text-ink-900">이번 주 부서 정원 목표를 못 정한 부서 {gardenNotices.length}개</p>
+            <ul className="mt-1 space-y-0.5 text-[13px] text-ink-700">
+              {gardenNotices.map((n) => (
+                <li key={n.departmentId}>{n.name}: {n.status === 'no_headcount' ? '이번 달 인사팀 인원 정보 없음' : `참여 ${n.participants}명 > 인사팀 인원 ${n.headcount}명`}</li>
+              ))}
+            </ul>
+            <p className="mt-1 text-[13px] text-ink-500">공동 목표는 인사팀 인원이 있고 맞을 때만 자동으로 정해져요(인원 × 1일). 직원 화면에는 &lsquo;목표를 정하지 않았어요&rsquo;로 보여요.</p>
           </div>
         )}
         {msg && <div className="mb-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}

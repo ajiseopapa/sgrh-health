@@ -29,6 +29,12 @@ input[type='date'] {
   -webkit-appearance: none;
 }
 
+/* v2.2 나무가 살짝 흔들림(움직임 줄이기 설정이면 motion-safe 로 꺼짐) */
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg); }
+}
+
 /* 키보드로 이동할 때만 보이는 초점 표시 */
 :focus-visible {
   outline: 2px solid #202d29;

@@ -1,14 +1,15 @@
 'use client'
 
-// 도전 — 목표 · 챌린지 · 배지 · 순위 를 한 화면 안에서 나눠 봅니다(메뉴를 늘리지 않음)
+// 도전 — 목표 · 챌린지 · 배지 · 순위 · 정원 을 한 화면 안에서 나눠 봅니다(메뉴를 늘리지 않음)
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { Engagement, METRIC_LABEL, METRIC_UNIT, useEngagement } from '@/lib/engagement'
 import { Empty, Loading, NeedLogin, Notice, PageHead, Progress, Section, Segmented, fmtMinutes } from '@/lib/ui'
 import StatsTab from './StatsTab'
+import GardenPanel from './GardenPanel'
 
-type Panel = 'goal' | 'challenge' | 'badge' | 'rank'
+type Panel = 'goal' | 'challenge' | 'badge' | 'rank' | 'garden'
 
 export default function ChallengeTab() {
   const [panel, setPanel] = useState<Panel>('goal')
@@ -23,12 +24,14 @@ export default function ChallengeTab() {
         { value: 'challenge', label: '챌린지' },
         { value: 'badge', label: '배지' },
         { value: 'rank', label: '순위' },
+        { value: 'garden', label: '정원' },
       ]} />
       <div className="pt-2">
         {panel === 'goal' && <GoalPanel eng={eng} onSaved={() => setRefresh((k) => k + 1)} />}
         {panel === 'challenge' && <ChallengePanel eng={eng} onJoined={() => setRefresh((k) => k + 1)} />}
         {panel === 'badge' && <BadgePanel eng={eng} />}
         {panel === 'rank' && <RankPanel />}
+        {panel === 'garden' && <GardenPanel />}
       </div>
     </div>
   )

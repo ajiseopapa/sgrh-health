@@ -11,6 +11,11 @@ import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
+import { TREE_STAGES } from '@/lib/game'
+
+// 피드에 나무·캐릭터를 켠 직원만 이름 옆에 작게(v2.2). 잔액은 서버가 내보내지 않음
+const TREE_EMOJI = ['🌱', '🌿', '🌳', '🌲']
+type Look = { stage: number; items: string[] }
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -38,6 +43,7 @@ export default function FeedTab() {
   // ── 서로 칭찬하기 (익명, 기기 기준) ──
   // 키: `${기록 id}|${이모지}` → 응원 수, 이 기기가 눌렀는지. 다른 기기의 식별값은 받지 않습니다.
   const [cheers, setCheers] = useState<Record<string, CheerState>>({})
+  const [looks, setLooks] = useState<Record<string, Look>>({})
   // 버튼별로 "마지막으로 누른 상태"와 "보내는 중"을 기억 → 연타해도 요청이 겹치지 않고 마지막 상태로 끝남
   const wanted = useRef(new Map<string, boolean>())
   const sending = useRef(new Set<string>())
@@ -61,6 +67,11 @@ export default function FeedTab() {
 
     await loadCheers(logList.map((l) => l.id))
     setLoading(false)
+    const ids = [...new Set(logList.map((l) => l.employee_id))].slice(0, 100)
+    if (ids.length) {
+      const lr = await api<{ looks: Record<string, Look> }>(`/api/game/feed?ids=${ids.join(',')}`)
+      if (lr.ok) setLooks(lr.data.looks ?? {})
+    }
   }
 
   async function loadCheers(logIds: string[]) {
@@ -229,7 +240,15 @@ export default function FeedTab() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
+                  <span className="flex min-w-0 items-baseline gap-1.5">
+                    <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
+                    {looks[log.employee_id] && (
+                      <span className="text-[14px] leading-none" title={TREE_STAGES[looks[log.employee_id].stage - 1]?.name}
+                        aria-label={`나무 ${TREE_STAGES[looks[log.employee_id].stage - 1]?.name ?? ''}`}>
+                        {TREE_EMOJI[looks[log.employee_id].stage - 1]}{looks[log.employee_id].items.join('')}
+                      </span>
+                    )}
+                  </span>
                   {!isEditing && <span className="shrink-0 text-[13px] tabular-nums text-ink-500">{log.log_date.slice(5).replace('-', '.')}</span>}
                 </div>
 
