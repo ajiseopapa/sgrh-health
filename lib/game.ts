@@ -43,6 +43,16 @@ export const SLOT_LABEL: Record<Slot, string> = { hat: '모자', top: '상의', 
 /** 캐릭터(아이템 해금·장착) 화면 노출. 11-13 TK 결정으로 숨김 — 디자이너 그림이 오면 true. 서버 기능·DB는 그대로 둠 */
 export const SHOW_CHARACTER = false
 
+/** 피드 이름 앞 이모지 — 본인이 고름(정해진 목록만, 서버가 확인). 사람 모양 이모지는 피부색 차이가 없는 것만 */
+export const NAME_EMOJIS = [
+  '🏃', '🚶', '🚴', '🏊', '🧘', '🏋️', '⚽', '🏸',
+  '🎾', '⛰️', '🌱', '🌳', '🔥', '💪', '⭐', '☀️',
+  '🌈', '🍀', '🐢', '🐰', '🐻', '🐯', '🦊', '🐳',
+] as const
+export function isNameEmoji(v: unknown): v is string {
+  return typeof v === 'string' && (NAME_EMOJIS as readonly string[]).includes(v)
+}
+
 export const DEFAULT_LOOK = { head: '🙂', top: '👕' } // 기본 캐릭터 1종(아이템 없을 때)
 export function itemByKey(key: string | null | undefined): Item | null {
   return ITEMS.find((i) => i.key === key) ?? null

@@ -44,6 +44,7 @@ export default function FeedTab() {
   // 키: `${기록 id}|${이모지}` → 응원 수, 이 기기가 눌렀는지. 다른 기기의 식별값은 받지 않습니다.
   const [cheers, setCheers] = useState<Record<string, CheerState>>({})
   const [looks, setLooks] = useState<Record<string, Look>>({})
+  const [emojis, setEmojis] = useState<Record<string, string>>({})
   // 버튼별로 "마지막으로 누른 상태"와 "보내는 중"을 기억 → 연타해도 요청이 겹치지 않고 마지막 상태로 끝남
   const wanted = useRef(new Map<string, boolean>())
   const sending = useRef(new Set<string>())
@@ -69,8 +70,8 @@ export default function FeedTab() {
     setLoading(false)
     const ids = [...new Set(logList.map((l) => l.employee_id))].slice(0, 100)
     if (ids.length) {
-      const lr = await api<{ looks: Record<string, Look> }>(`/api/game/feed?ids=${ids.join(',')}`)
-      if (lr.ok) setLooks(lr.data.looks ?? {})
+      const lr = await api<{ looks: Record<string, Look>; emojis?: Record<string, string> }>(`/api/game/feed?ids=${ids.join(',')}`)
+      if (lr.ok) { setLooks(lr.data.looks ?? {}); setEmojis(lr.data.emojis ?? {}) }
     }
   }
 
@@ -241,7 +242,10 @@ export default function FeedTab() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="flex min-w-0 items-baseline gap-1.5">
-                    <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
+                    <span className="text-[15px] font-bold text-ink-900">
+                      {emojis[log.employee_id] && <span className="mr-1 font-normal" aria-hidden="true">{emojis[log.employee_id]}</span>}
+                      {log.employee?.name}
+                    </span>
                     {looks[log.employee_id] && (
                       <span className="text-[14px] leading-none" title={TREE_STAGES[looks[log.employee_id].stage - 1]?.name}
                         aria-label={`나무 ${TREE_STAGES[looks[log.employee_id].stage - 1]?.name ?? ''}`}>
