@@ -5,6 +5,7 @@
 // (직원별 색상 정보 자체는 삭제하지 않았고, 피드·랭킹 등에서는 그대로 씁니다)
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import InfoTip from './InfoTip'
 import { getCalendarCells } from '@/lib/dateUtils'
 import DayDetail from './CalendarDayDetail'
 import { Icon } from '@/lib/ui'
@@ -105,14 +106,14 @@ const LEVEL_STYLE: Record<number, string> = {
   1: 'bg-brand-100 text-ink-900',
   2: 'bg-brand-200 text-ink-900',
   3: 'bg-brand-300 text-ink-900',
-  4: 'bg-ink-900 text-brand-300',
+  4: 'bg-ink-500 text-brand-300',
 }
 
 const LEGEND_SWATCH: Record<number, string> = {
   1: 'bg-brand-100',
   2: 'bg-brand-200',
   3: 'bg-brand-300',
-  4: 'bg-ink-900',
+  4: 'bg-ink-500',
 }
 
 const LEGEND = [
@@ -251,7 +252,8 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
         </div>
 
         {/* 범례 */}
-        <div className="mt-4 space-y-1.5">
+        <InfoTip label="달력 보는 법" className="mt-3">
+          <div className="space-y-1.5">
           {headcount ? (
             <>
               <p className="text-[12px] font-semibold text-ink-700">
@@ -272,7 +274,8 @@ function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: numb
             </p>
           )}
           <p className="text-[12px] text-ink-500">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
-        </div>
+          </div>
+        </InfoTip>
         {error && <p role="alert" className="mt-2 text-[14px] font-semibold text-red-700">{error}</p>}
       </div>
 
