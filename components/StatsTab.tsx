@@ -304,12 +304,20 @@ export default function StatsTab() {
       {highlights.length > 0 && (
         <div>
           <H3>이번 달 하이라이트</H3>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-line pt-4">
-            {highlights.map((h) => (
-              <div key={h.label}>
-                <dt className="text-[13px] text-ink-500">{h.label}</dt>
-                <dd className="mt-0.5 truncate text-[16px] font-bold text-ink-900">{h.name}</dd>
-                <dd className="text-[13px] tabular-nums text-ink-600">{h.sub}</dd>
+          <dl className="mt-2 grid grid-cols-2 gap-2">
+            {highlights.map((h, i) => (
+              <div key={h.label} className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-sheet p-3">
+                <span
+                  aria-hidden
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[22px] leading-none ${i === 0 ? 'bg-brand-300' : 'bg-ink-50'}`}
+                >
+                  {h.icon}
+                </span>
+                <div className="min-w-0">
+                  <dt className="text-[12px] font-semibold text-ink-500">{h.label}</dt>
+                  <dd className="truncate text-[16px] font-bold leading-tight text-ink-900">{h.name}</dd>
+                  <dd className="truncate text-[13px] tabular-nums text-ink-600">{h.sub}</dd>
+                </div>
               </div>
             ))}
           </dl>

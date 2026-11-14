@@ -1,6 +1,7 @@
 'use client'
 
 // 도전 — 목표 · 챌린지 · 배지 · 순위 · 정원 을 한 화면 안에서 나눠 봅니다(메뉴를 늘리지 않음)
+import InfoTip from './InfoTip'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
@@ -133,10 +134,12 @@ function GoalBody({ d, onSaved }: { d: Engagement; onSaved: () => void }) {
           </div>
         ) : null}
         {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-        <ul className="mt-5 space-y-1.5 text-[13px] leading-relaxed text-ink-500">
-          <li>목표는 나만 볼 수 있어요. 바꾸면 이번 주(월요일)부터 새 목표로 계산해요.</li>
-          <li>운동 시간은 하루 300분까지만 인정해요. 시간이 없는 예전 기록은 횟수로만 셉니다.</li>
-        </ul>
+        <InfoTip label="목표 계산 기준" className="mt-4">
+          <ul className="space-y-1">
+            <li>목표는 나만 볼 수 있어요. 바꾸면 이번 주(월요일)부터 새 목표로 계산해요.</li>
+            <li>운동 시간은 하루 300분까지만 인정해요. 시간이 없는 예전 기록은 횟수로만 셉니다.</li>
+          </ul>
+        </InfoTip>
       </Section>
     </div>
   )
@@ -216,9 +219,9 @@ function ChallengePanel({ eng, onJoined }: { eng: EngState; onJoined: () => void
           )
         })}
       </ul>
-      <p className="border-t border-line pt-4 text-[13px] leading-relaxed text-ink-500">
+      <InfoTip label="챌린지 인정 기준" className="border-t border-line pt-3">
         시작일 이후 기록만 인정해요. 늦게 참여해도 기간 안에 남긴 기록은 모두 들어가요.
-      </p>
+      </InfoTip>
     </div>
   )
 }
@@ -286,9 +289,9 @@ function BadgeBody({ d }: { d: Engagement }) {
             )
           })}
         </ul>
-        <p className="mt-6 text-[13px] leading-relaxed text-ink-500">
+        <InfoTip label="배지 판정 기준" className="mt-4">
           배지는 지금 남아 있는 기록으로 판정해요. 기록을 지워 조건이 깨지면 배지도 빠져요.
-        </p>
+        </InfoTip>
       </Section>
       {open && <BadgeSheet b={open} onClose={() => { setOpen(null); trigger.current?.focus() }} />}
     </div>
@@ -368,21 +371,29 @@ function RankPanel() {
   return (
     <div>
       <Section title="부서 순위" className="border-t-0">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <div role="radiogroup" aria-label="기간" className="flex gap-2">
-            {(['week', 'month'] as const).map((p) => (
-              <button key={p} type="button" role="radio" aria-checked={period === p} className="chip" onClick={() => setPeriod(p)}>
-                {p === 'week' ? '이번 주' : '이번 달'}
-              </button>
-            ))}
-          </div>
-          <div role="radiogroup" aria-label="순위 기준" className="flex gap-2">
-            {(['sessions', 'minutes'] as const).map((b) => (
-              <button key={b} type="button" role="radio" aria-checked={by === b} className="chip" onClick={() => setBy(b)}>
-                {b === 'sessions' ? '운동 횟수' : '인정 시간'}
-              </button>
-            ))}
-          </div>
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          {([
+            { label: '기간', value: period, set: (v: string) => setPeriod(v as 'week' | 'month'), opts: [['week', '이번 주'], ['month', '이번 달']] },
+            { label: '순위 기준', value: by, set: (v: string) => setBy(v as 'sessions' | 'minutes'), opts: [['sessions', '운동 횟수'], ['minutes', '인정 시간']] },
+          ] as const).map((g) => (
+            <div key={g.label} className="min-w-0">
+              <p className="mb-1.5 text-[12px] font-semibold text-ink-500">{g.label}</p>
+              <div role="radiogroup" aria-label={g.label} className="flex rounded-xl bg-ink-50 p-1">
+                {g.opts.map(([v, text]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    role="radio"
+                    aria-checked={g.value === v}
+                    onClick={() => g.set(v)}
+                    className={`min-h-[40px] flex-1 rounded-lg px-2 text-[14px] font-bold transition-colors ${g.value === v ? 'bg-brand-300 text-ink-900 shadow-sm' : 'text-ink-500'}`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         {err ? <Notice tone="error">{err}</Notice> : !r ? <Loading /> : rows.length === 0 ? (
@@ -409,10 +420,10 @@ function RankPanel() {
           </ol>
         )}
         {r && (
-          <p className="mt-4 text-[13px] leading-relaxed text-ink-500">
+          <InfoTip label="순위 계산 기준" className="mt-3">
             {md(r.from)}–{md(r.to)} 기록 기준. 인정 시간은 한 사람 하루 300분까지. 참여율은 인사팀이 확인한 {Number(r.yearMonth.slice(5))}월 부서 인원으로만 계산해요.
             {r.unassigned.participants > 0 && ` 부서가 정해지지 않은 직원 ${r.unassigned.participants}명의 기록은 순위에서 빠져요.`}
-          </p>
+          </InfoTip>
         )}
       </Section>
 

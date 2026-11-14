@@ -2,6 +2,7 @@
 
 // 도전 › 정원 — 나의 캐릭터 · 보유 햇빛 · 우리 부서 정원 (개인 나무 화면은 PM 결정으로 제거, 계산·데이터는 보존)
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
+import InfoTip from './InfoTip'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
@@ -196,20 +197,22 @@ function SunSection({ game }: { game: Game }) {
       {s.shortfall > 0 && (
         <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 쓴 햇빛보다 {s.shortfall}개 적어요. 이미 받은 아이템은 그대로예요.</Notice></div>
       )}
-      <ul className="mt-4 space-y-1 text-[13px] leading-relaxed text-ink-600">
-        <li>운동한 날 +{SUN_DAY} (하루 여러 번 기록해도 1번)</li>
-        <li>한 주에 3일 운동 +{SUN_WEEK3} · 주간 목표 달성 +{SUN_GOAL}</li>
-        <li>{game.launchDate.slice(5).replace('-', '.')} 이후 기록부터 셉니다. 기록을 고치거나 지우면 다시 계산해요.</li>
-      </ul>
-      <p className="mt-3 text-[13px] leading-relaxed text-ink-600">
-        {game.goalBasis ? (
-          <>이번 주 목표 보상 기준 <span className="font-bold text-ink-900">주 {game.goalBasis.target}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
-            {' '}· 지금 <span className="font-bold tabular-nums text-ink-900">{game.goalBasis.value}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
-            <br /><span className="text-ink-500">주중에 목표를 바꾸면 햇빛 보상은 다음 주부터 새 목표로 셉니다.</span></>
-        ) : (
-          <span className="text-ink-500">주간 목표를 정하면 달성한 주에 햇빛 {SUN_GOAL}개를 더 받아요.</span>
-        )}
-      </p>
+      {game.goalBasis && (
+        <p className="mt-3 text-[13px] leading-relaxed text-ink-600">
+          이번 주 목표 보상 기준 <span className="font-bold text-ink-900">주 {game.goalBasis.target}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
+          {' '}· 지금 <span className="font-bold tabular-nums text-ink-900">{game.goalBasis.value}{game.goalBasis.kind === 'sessions' ? '회' : '분'}</span>
+        </p>
+      )}
+      <InfoTip label="햇빛 받는 법" className="mt-2">
+        <ul className="space-y-1">
+          <li>운동한 날 +{SUN_DAY} (하루 여러 번 기록해도 1번)</li>
+          <li>한 주에 3일 운동 +{SUN_WEEK3} · 주간 목표 달성 +{SUN_GOAL}</li>
+          <li>{game.launchDate.slice(5).replace('-', '.')} 이후 기록부터 셉니다. 기록을 고치거나 지우면 다시 계산해요.</li>
+          <li>{game.goalBasis
+            ? '주중에 목표를 바꾸면 햇빛 보상은 다음 주부터 새 목표로 셉니다.'
+            : `주간 목표를 정하면 달성한 주에 햇빛 ${SUN_GOAL}개를 더 받아요.`}</li>
+        </ul>
+      </InfoTip>
       {ledger.length > 0 && (
         <>
           <ul className="mt-4 divide-y divide-line border-t border-line">
@@ -362,10 +365,12 @@ function GardenSection({ garden }: { garden: Garden | null }) {
           })}
         </div>
       </div>
-      <ul className="mt-4 space-y-1 text-[13px] leading-relaxed text-ink-500">
-        <li>한 사람은 하루 1번만 기여해요(하루 여러 번 기록해도 1일).</li>
-        <li>공동 목표는 이번 달 부서 인원 수만큼 운동한 날이 모이는 것이에요. 누가 참여했는지는 보이지 않아요.</li>
-      </ul>
+      <InfoTip label="정원이 자라는 법" className="mt-3">
+        <ul className="space-y-1">
+          <li>한 사람은 하루 1번만 기여해요(하루 여러 번 기록해도 1일).</li>
+          <li>공동 목표는 이번 달 부서 인원 수만큼 운동한 날이 모이는 것이에요. 누가 참여했는지는 보이지 않아요.</li>
+        </ul>
+      </InfoTip>
     </Section>
   )
 }
