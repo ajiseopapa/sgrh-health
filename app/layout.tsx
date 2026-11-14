@@ -43,8 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href={PRETENDARD} />
       </head>
       <body className="bg-paper font-sans text-ink-900 antialiased">
-        {/* 휴대폰 폭 기준. 태블릿·PC에서는 가운데 한 줄로 보이고 양옆은 같은 바탕 */}
-        <div className="mx-auto min-h-screen max-w-[480px] bg-paper">{children}</div>
+        {/* 휴대폰 폭 기준. 태블릿은 가운데 한 줄, PC(1024px 이상)는 왼쪽 메뉴 + 넓은 본문 */}
+        <div className="mx-auto min-h-screen max-w-[480px] bg-paper lg:max-w-none">{children}</div>
       </body>
     </html>
   )

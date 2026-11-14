@@ -89,11 +89,11 @@ export default function AnnouncementsModal({ isOpen, onClose, isAdmin }: Props) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center"
       onClick={onClose}
     >
       <div
-        className="bg-paper rounded-t-xl w-full max-w-md flex flex-col"
+        className="bg-paper rounded-t-xl lg:rounded-xl w-full max-w-md flex flex-col"
         style={{ maxHeight: '82vh' }}
         onClick={e => e.stopPropagation()}
       >

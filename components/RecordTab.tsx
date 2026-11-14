@@ -64,11 +64,12 @@ export default function RecordTab() {
     <div>
       <PageHead title="기록" />
 
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10">
       <div className="pb-8">
         <ExerciseLogForm exerciseTypes={types} onSuccess={() => setRefresh((k) => k + 1)} />
       </div>
 
-      <Section title="내 기록">
+      <Section title="내 기록" className="lg:border-t-0 lg:pt-0">
         {!me || mustChangePin ? (
           <NeedLogin text="본인 확인을 하면 내가 남긴 기록만 모아서 볼 수 있어요." onLogin={() => requireMe()} />
         ) : (
@@ -115,6 +116,7 @@ export default function RecordTab() {
           </>
         )}
       </Section>
+      </div>
     </div>
   )
 }

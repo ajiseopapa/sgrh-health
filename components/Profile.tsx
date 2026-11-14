@@ -47,9 +47,9 @@ export function ProfileSheet({ open, current, onClose, onSaved }: {
     `flex h-[44px] items-center justify-center rounded-xl border-2 leading-none disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-labelledby="profile-sheet-title"
-        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-2xl bg-paper" onClick={(e) => e.stopPropagation()}>
+        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-2xl bg-paper lg:rounded-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 pb-2 pt-4">
           <h2 id="profile-sheet-title" className="text-[17px] font-extrabold text-ink-900">프로필 이모지</h2>
           <button type="button" onClick={onClose} aria-label="닫기"

@@ -35,9 +35,9 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
   const todayDone = !!(data && todayRow && todayRow.sessions > 0)
 
   return (
-    <div>
+    <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:pt-2">
       {/* 오늘 — 연두 색 면으로 가장 먼저 눈에 들어오게 */}
-      <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900">
+      <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900 lg:mx-0 lg:rounded-2xl lg:p-8">
         {me && <div className="mb-3"><HomeProfile name={me.name} /></div>}
         <p className="text-[13px] font-semibold text-ink-700">오늘의 움직임이 내일의 성장으로</p>
         <p className="mt-2 text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
@@ -75,7 +75,7 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
       </section>
 
       {/* 이번 주 */}
-      <Section title="이번 주" className="border-t-0"
+      <Section title="이번 주" className="border-t-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-2"
         action={data && <span className="text-[13px] font-semibold tabular-nums text-ink-500">{data.week.start.slice(5).replace('-', '.')} – {data.week.end.slice(5).replace('-', '.')}</span>}>
         {needLogin ? (
           <NeedLogin text="본인 확인을 하면 이번 주 내 기록과 목표가 여기에 보여요." onLogin={() => requireMe()} />
@@ -147,7 +147,7 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
       </Section>
 
       {/* 달력 */}
-      <Section title="운동 달력">
+      <Section title="운동 달력" className="lg:border-t-0">
         <MiniCalendar refreshKey={0} />
       </Section>
     </div>

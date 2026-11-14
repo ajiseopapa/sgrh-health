@@ -28,7 +28,8 @@ export default function ChallengeTab() {
         { value: 'rank', label: '순위' },
         { value: 'garden', label: '정원' },
       ]} />
-      <div className="pt-2">
+      {/* PC: 순위(통계)만 넓게, 나머지는 읽기 좋은 폭 */}
+      <div className={`pt-2 ${panel === 'rank' ? '' : 'lg:max-w-[680px]'}`}>
         {panel === 'goal' && <GoalPanel eng={eng} onSaved={() => setRefresh((k) => k + 1)} />}
         {panel === 'challenge' && <ChallengePanel eng={eng} onJoined={() => setRefresh((k) => k + 1)} />}
         {panel === 'badge' && <BadgePanel eng={eng} />}
@@ -318,8 +319,8 @@ function BadgeSheet({ b, onClose }: { b: BadgeView; onClose: () => void }) {
     return () => window.removeEventListener('keydown', k)
   }, [onClose])
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-labelledby="badge-sheet-title" className="w-full max-w-md rounded-t-2xl bg-paper px-5 pb-8 pt-4" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-labelledby="badge-sheet-title" className="w-full max-w-md rounded-t-2xl bg-paper lg:rounded-2xl px-5 pb-8 pt-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <button type="button" onClick={onClose} aria-label="닫기" autoFocus className="-mr-2 flex h-11 w-11 items-center justify-center text-[24px] leading-none text-ink-500">×</button>
         </div>

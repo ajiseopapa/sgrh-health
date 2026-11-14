@@ -73,9 +73,9 @@ function AppShell() {
 
   return (
     <>
-      <div className="flex min-h-screen flex-col bg-paper pb-24">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-paper/95 px-5 pb-2 pt-3 backdrop-blur">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-h-screen flex-col bg-paper pb-24 lg:pb-12 lg:pl-60">
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-paper/95 px-5 pb-2 pt-3 backdrop-blur lg:justify-end lg:px-10">
+        <div className="flex min-w-0 items-center gap-2 lg:hidden">
           <SproutIcon size={30} className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="text-[18px] font-extrabold tracking-[-0.02em] text-ink-900">움트다</p>
@@ -94,24 +94,35 @@ function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 px-5">
+      <main className="flex-1 px-5 lg:px-10">
+        {/* PC: 홈·기록·도전은 넓게, 피드는 읽기 좋은 폭으로 */}
+        <div className={`lg:mx-auto ${tab === 'feed' ? 'lg:max-w-[680px]' : 'lg:max-w-[1040px]'}`}>
         {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => setTab('challenge')} />}
         {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
         {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}`} />}
         {tab === 'feed'      && <FeedTab      key={`feed-${refreshKey}`} />}
+        </div>
       </main>
 
       <nav aria-label="주 메뉴"
-        className="fixed bottom-0 left-0 right-0 z-20 mx-auto flex max-w-[480px] border-t border-line bg-paper/95 backdrop-blur"
+        className="fixed bottom-0 left-0 right-0 z-20 mx-auto flex max-w-[480px] border-t border-line bg-paper/95 backdrop-blur lg:right-auto lg:top-0 lg:mx-0 lg:w-60 lg:max-w-none lg:flex-col lg:gap-1 lg:border-r lg:border-t-0 lg:px-4 lg:py-5"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {/* PC 왼쪽 메뉴 맨 위 — 앱 이름 */}
+        <div className="mb-6 hidden items-center gap-2.5 px-2 lg:flex">
+          <SproutIcon size={34} className="shrink-0" />
+          <div className="min-w-0 leading-tight">
+            <p className="text-[20px] font-extrabold tracking-[-0.02em] text-ink-900">움트다</p>
+            <p className="truncate text-[11px] font-semibold text-ink-500">세계로병원 직원 건강 프로젝트</p>
+          </div>
+        </div>
         {TABS.map((t) => {
           const on = tab === t.key
           return (
             <button key={t.key} onClick={() => setTab(t.key)} aria-current={on ? 'page' : undefined} aria-label={t.label}
-              className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors ${
-                on ? 'text-ink-900' : 'text-ink-400'
+              className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors lg:min-h-[48px] lg:flex-none lg:flex-row lg:justify-start lg:gap-3 lg:rounded-xl lg:px-3 lg:text-[15px] ${
+                on ? 'text-ink-900 lg:bg-brand-300' : 'text-ink-400 lg:hover:bg-ink-50'
               }`}>
-              <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${on ? 'bg-brand-300' : ''}`}>
+              <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors lg:h-auto lg:w-auto lg:bg-transparent ${on ? 'bg-brand-300' : ''}`}>
                 <Icon name={t.icon} size={22} />
               </span>
               <span aria-hidden="true">{t.label}</span>

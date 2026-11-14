@@ -277,7 +277,7 @@ export default function StatsTab() {
   const AXIS = { fontSize: 12, fill: '#5E6A64' }
 
   return (
-    <div className="space-y-8">
+    <div className="[&>*]:mb-8 [&>*]:break-inside-avoid lg:columns-2 lg:gap-x-10">
       {/* 이번 달 팀 기록 */}
       <div>
         <p className="text-[13px] font-semibold text-ink-500">이번 달 팀 전체</p>
