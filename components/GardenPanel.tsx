@@ -1,6 +1,6 @@
 'use client'
 
-// 도전 › 정원 — 나의 캐릭터 · 보유 햇빛 · 우리 부서 정원 (개인 나무 화면은 PM 결정으로 제거, 계산·데이터는 보존)
+// 도전 › 정원 — 보유 햇빛 · 우리 부서 정원 (나의 캐릭터는 홈의 내 프로필 창으로 옮김) (개인 나무 화면은 PM 결정으로 제거, 계산·데이터는 보존)
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import InfoTip from './InfoTip'
 import { useCallback, useEffect, useState } from 'react'
@@ -41,13 +41,12 @@ export default function GardenPanel() {
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 캐릭터와 햇빛, 우리 부서 정원을 볼 수 있어요."  onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 내 햇빛과 우리 부서 정원을 볼 수 있어요."  onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
   return (
     <div>
-      <MyCharacterSection game={game} onChange={setGame} />
       <SunSection game={game} />
       {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
       <GardenSection garden={garden} />

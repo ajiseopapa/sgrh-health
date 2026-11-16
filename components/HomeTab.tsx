@@ -7,6 +7,7 @@ import { useMe } from '@/lib/me'
 import { koreanDate, useEngagement } from '@/lib/engagement'
 import { Icon, Loading, NeedLogin, Notice, Progress, Section, fmtMinutes } from '@/lib/ui'
 import MiniCalendar from './MiniCalendar'
+import ReminderSettings from './ReminderSettings'
 import { HomeProfile } from './Profile'
 
 function seoulToday() {
@@ -149,6 +150,11 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
       {/* 달력 */}
       <Section title="운동 달력" className="lg:border-t-0">
         <MiniCalendar refreshKey={0} />
+      </Section>
+
+      {/* 운동 알람 */}
+      <Section title="운동 알람" className="lg:col-start-1">
+        <ReminderSettings />
       </Section>
     </div>
   )

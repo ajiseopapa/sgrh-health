@@ -12,7 +12,7 @@ import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
 import { characterOf, SHOW_ITEM_SHOP } from '@/lib/game'
-import { ProfileAvatar } from './Profile'
+import { PeerSheet, ProfileAvatar } from './Profile'
 
 // 피드에 캐릭터 공개를 켠 직원만 이름 옆에 작은 캐릭터(v2.2). 잔액은 서버가 내보내지 않음
 type Look = { stage: number; items: string[]; character: string | null }
@@ -45,6 +45,7 @@ export default function FeedTab() {
   const [cheers, setCheers] = useState<Record<string, CheerState>>({})
   const [looks, setLooks] = useState<Record<string, Look>>({})
   const [emojis, setEmojis] = useState<Record<string, string>>({})
+  const [peer, setPeer] = useState<{ id: string; name: string } | null>(null) // 이름을 눌러 연 동료 프로필
   // 버튼별로 "마지막으로 누른 상태"와 "보내는 중"을 기억 → 연타해도 요청이 겹치지 않고 마지막 상태로 끝남
   const wanted = useRef(new Map<string, boolean>())
   const sending = useRef(new Set<string>())
@@ -214,6 +215,7 @@ export default function FeedTab() {
   return (
     <div>
       <PageHead title="피드" sub="동료들이 남긴 최근 운동이에요." />
+      <PeerSheet employeeId={peer?.id ?? null} name={peer?.name ?? ''} onClose={() => setPeer(null)} />
       <PeerSearch />
       {error && <div className="pb-3"><Notice tone="error">{error}</Notice></div>}
 
@@ -233,6 +235,8 @@ export default function FeedTab() {
           return (
             <li key={log.id} className="flex gap-3 py-5">
               {/* 프로필 이모지를 고른 직원은 홈과 같은 프로필 원형, 아니면 기존 이름 첫 글자 원형 */}
+              <button type="button" className="h-10 shrink-0 rounded-full" aria-label={`${log.employee?.name ?? ''} 프로필 보기`}
+                onClick={() => setPeer({ id: log.employee_id, name: log.employee?.name ?? '' })}>
               {emojis[log.employee_id] ? (
                 <ProfileAvatar emoji={emojis[log.employee_id]} size={40} />
               ) : (
@@ -244,10 +248,13 @@ export default function FeedTab() {
                 {log.employee?.name?.[0] ?? '?'}
               </div>
               )}
+              </button>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="flex min-w-0 items-baseline gap-1.5">
-                    <span className="text-[15px] font-bold text-ink-900">{log.employee?.name}</span>
+                    <button type="button" className="text-[15px] font-bold text-ink-900" onClick={() => setPeer({ id: log.employee_id, name: log.employee?.name ?? '' })}>
+                      {log.employee?.name}
+                    </button>
                     {looks[log.employee_id] && (
                       // 캐릭터 공개를 켠 직원만. 개인 나무 표시는 PM 결정으로 제거
                       <span className="flex items-end gap-0.5 self-center" title={`${characterOf(looks[log.employee_id].character).name} 캐릭터`}>

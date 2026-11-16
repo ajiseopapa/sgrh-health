@@ -77,6 +77,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     showInFeed: prof?.show_in_feed ?? false,
     nameEmoji: (prof?.name_emoji as string | null) ?? null,
     characterKey: isCharacterKey(prof?.character) ? prof.character : null, // null = 아직 안 고름(기본 캐릭터)
+    message: typeof prof?.status_message === 'string' ? prof.status_message : null, // 프로필 한마디(032 전 DB면 null)
   }
 }
 
@@ -131,6 +132,17 @@ export async function feedLooks(db: SupabaseClient, ids: string[], today = kstTo
     out[id] = { stage: treeStage(days.get(id)?.size ?? 0).stage, items, character: charOf.get(id) ?? null }
   }
   return out
+}
+
+/** 동료 프로필(피드에서 이름을 눌렀을 때) — 이모지·한마디, 캐릭터는 본인이 '보이기'를 켠 경우만 */
+export async function peerProfile(db: SupabaseClient, employeeId: string) {
+  const { data: p } = await db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle()
+  return {
+    emoji: isNameEmoji(p?.name_emoji) ? (p.name_emoji as string) : null,
+    showCharacter: p?.show_in_feed === true,
+    character: p?.show_in_feed === true && isCharacterKey(p?.character) ? (p.character as string) : null,
+    message: typeof p?.status_message === 'string' ? (p.status_message as string) : null,
+  }
 }
 
 /** 피드 이름 앞 이모지 — 고른 직원만. 나무 표시(show_in_feed)와는 따로 */
