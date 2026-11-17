@@ -1,12 +1,13 @@
 'use client'
 
-// 도전 › 정원 — 보유 햇빛 · 우리 부서 정원 (나의 캐릭터는 홈의 내 프로필 창으로 옮김) (개인 나무 화면은 PM 결정으로 제거, 계산·데이터는 보존)
+// 도전 › 정원 — 나의 나무 · 보유 햇빛 (나의 캐릭터는 홈의 내 프로필 창으로 옮김)
+// 부서 정원은 혼자 근무하는 부서가 있어 숨김(SHOW_DEPT_GARDEN, 11-17 TK 결정). 계산·데이터는 보존
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import InfoTip from './InfoTip'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, SHOW_DEPT_GARDEN, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -35,21 +36,22 @@ export default function GardenPanel() {
 
   const load = useCallback(async () => {
     if (!ready) return
-    const [g, d] = await Promise.all([api<Game>('/api/me/game'), api<Garden>('/api/me/garden')])
+    const [g, d] = await Promise.all([api<Game>('/api/me/game'), SHOW_DEPT_GARDEN ? api<Garden>('/api/me/garden') : null])
     if (g.ok) setGame(g.data); else setError(g.message || '불러오지 못했어요.')
-    if (d.ok) setGarden(d.data)
+    if (d?.ok) setGarden(d.data)
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 내 햇빛과 우리 부서 정원을 볼 수 있어요."  onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 나무와 햇빛을 볼 수 있어요."  onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
   return (
     <div>
+      <TreeSection game={game} />
       <SunSection game={game} />
       {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
-      <GardenSection garden={garden} />
+      {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
     </div>
   )
 }

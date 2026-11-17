@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { Empty, Loading, Notice } from '@/lib/ui'
+import { SHOW_DEPT_GARDEN } from '@/lib/game'
 
 interface Head { year_month: string; headcount: number; source: string | null; updated_at: string }
 interface Dept { id: string; name: string; sort_order: number; members: number; headcount: Head | null; headcounts: Head[] }
@@ -31,6 +32,7 @@ export default function DepartmentManager() {
     setList(r.data.departments)
     setMismatches(r.data.mismatches ?? [])
     setYm((v) => v || r.data.yearMonth)
+    if (!SHOW_DEPT_GARDEN) { setGardenNotices([]); return }
     const g = await api<{ notices: GardenNotice[] }>('/api/admin/garden')
     setGardenNotices(g.ok ? g.data.notices ?? [] : [])
   }

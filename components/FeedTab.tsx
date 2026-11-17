@@ -11,7 +11,6 @@ import { useDialog } from '@/lib/dialog'
 import CheerBar, { CheerState } from './CheerBar'
 import { Empty, Loading, Notice, PageHead } from '@/lib/ui'
 import PeerSearch from './PeerSearch'
-import { characterOf, SHOW_ITEM_SHOP } from '@/lib/game'
 import { PeerSheet, ProfileAvatar } from './Profile'
 
 // 피드에 캐릭터 공개를 켠 직원만 이름 옆에 작은 캐릭터(v2.2). 잔액은 서버가 내보내지 않음
@@ -43,7 +42,6 @@ export default function FeedTab() {
   // ── 서로 칭찬하기 (익명, 기기 기준) ──
   // 키: `${기록 id}|${이모지}` → 응원 수, 이 기기가 눌렀는지. 다른 기기의 식별값은 받지 않습니다.
   const [cheers, setCheers] = useState<Record<string, CheerState>>({})
-  const [looks, setLooks] = useState<Record<string, Look>>({})
   const [emojis, setEmojis] = useState<Record<string, string>>({})
   const [peer, setPeer] = useState<{ id: string; name: string } | null>(null) // 이름을 눌러 연 동료 프로필
   // 버튼별로 "마지막으로 누른 상태"와 "보내는 중"을 기억 → 연타해도 요청이 겹치지 않고 마지막 상태로 끝남
@@ -72,7 +70,7 @@ export default function FeedTab() {
     const ids = [...new Set(logList.map((l) => l.employee_id))].slice(0, 100)
     if (ids.length) {
       const lr = await api<{ looks: Record<string, Look>; emojis?: Record<string, string> }>(`/api/game/feed?ids=${ids.join(',')}`)
-      if (lr.ok) { setLooks(lr.data.looks ?? {}); setEmojis(lr.data.emojis ?? {}) }
+      if (lr.ok) setEmojis(lr.data.emojis ?? {})
     }
   }
 
@@ -255,14 +253,6 @@ export default function FeedTab() {
                     <button type="button" className="text-[15px] font-bold text-ink-900" onClick={() => setPeer({ id: log.employee_id, name: log.employee?.name ?? '' })}>
                       {log.employee?.name}
                     </button>
-                    {looks[log.employee_id] && (
-                      // 캐릭터 공개를 켠 직원만. 개인 나무 표시는 PM 결정으로 제거
-                      <span className="flex items-end gap-0.5 self-center" title={`${characterOf(looks[log.employee_id].character).name} 캐릭터`}>
-                        <img src={characterOf(looks[log.employee_id].character).src} alt={`${characterOf(looks[log.employee_id].character).name} 캐릭터`}
-                          width={16} height={24} style={{ imageRendering: 'pixelated', width: 16, height: 24 }} />
-                        {SHOW_ITEM_SHOP && <span className="text-[14px] leading-none" aria-hidden="true">{looks[log.employee_id].items.join('')}</span>}
-                      </span>
-                    )}
                   </span>
                   {!isEditing && <span className="shrink-0 text-[13px] tabular-nums text-ink-500">{log.log_date.slice(5).replace('-', '.')}</span>}
                 </div>
