@@ -134,49 +134,18 @@ function TreeSection({ game }: { game: Game }) {
   )
 }
 
-/** 나무 그림(사물이라 SVG). 단계마다 줄기·잎 덩어리가 늘어납니다. */
-export function TreeArt({ stage, size = 112 }: { stage: number; size?: number }) {
-  const leaf = ['#D8F36A', '#C6E44A', '#A9C82E']
+/**
+ * 나무 그림 — 픽셀 아트 4단계(public/game/v22/tree/stage-N.png, 24×24 격자를 4배로 그린 96px).
+ * 지금 파일은 개발자 임시 시안(scripts/make-tree-art.py). 디자이너 그림이 오면 같은 파일명으로 바꾸면 됩니다.
+ * size 는 24의 배수(48·72·96)로 주면 픽셀이 뭉개지지 않습니다.
+ */
+export function TreeArt({ stage, size = 96 }: { stage: number; size?: number }) {
+  const n = Math.min(Math.max(Math.round(stage) || 1, 1), TREE_STAGES.length)
   return (
-    <svg width={size} height={size} viewBox="0 0 120 120" role="img" aria-label={`${TREE_STAGES[stage - 1]?.name ?? ''} 그림`}
-      className="shrink-0 motion-safe:animate-[sway_4s_ease-in-out_infinite] origin-bottom">
-      <ellipse cx="60" cy="110" rx="40" ry="6" fill="#E2E1D9" />
-      {stage === 1 && (
-        <g>
-          <path d="M60 108 V84" stroke="#3C4743" strokeWidth="4" strokeLinecap="round" />
-          <path d="M60 90 C48 88 42 78 44 70 C54 72 60 80 60 90Z" fill={leaf[1]} stroke="#202D29" strokeWidth="2" />
-          <path d="M60 86 C72 84 78 74 76 66 C66 68 60 76 60 86Z" fill={leaf[0]} stroke="#202D29" strokeWidth="2" />
-        </g>
-      )}
-      {stage >= 2 && <path d={`M60 108 V${stage === 2 ? 66 : stage === 3 ? 56 : 50}`} stroke="#3C4743" strokeWidth={stage === 2 ? 6 : 9} strokeLinecap="round" />}
-      {stage === 2 && (
-        <g stroke="#202D29" strokeWidth="2">
-          <circle cx="60" cy="56" r="20" fill={leaf[1]} />
-          <circle cx="48" cy="66" r="12" fill={leaf[0]} />
-          <circle cx="72" cy="66" r="12" fill={leaf[0]} />
-        </g>
-      )}
-      {stage === 3 && (
-        <g stroke="#202D29" strokeWidth="2">
-          <circle cx="60" cy="40" r="24" fill={leaf[2]} />
-          <circle cx="40" cy="56" r="17" fill={leaf[1]} />
-          <circle cx="80" cy="56" r="17" fill={leaf[1]} />
-          <circle cx="60" cy="60" r="16" fill={leaf[0]} />
-        </g>
-      )}
-      {stage === 4 && (
-        <g stroke="#202D29" strokeWidth="2">
-          <circle cx="60" cy="32" r="26" fill={leaf[2]} />
-          <circle cx="34" cy="48" r="20" fill={leaf[1]} />
-          <circle cx="86" cy="48" r="20" fill={leaf[1]} />
-          <circle cx="46" cy="66" r="16" fill={leaf[0]} />
-          <circle cx="74" cy="66" r="16" fill={leaf[0]} />
-          <circle cx="52" cy="30" r="4" fill="#FF6B6B" />
-          <circle cx="76" cy="44" r="4" fill="#FF6B6B" />
-          <circle cx="40" cy="56" r="4" fill="#FF6B6B" />
-        </g>
-      )}
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`/game/v22/tree/stage-${n}.png`} alt={`${TREE_STAGES[n - 1].name} 그림`} width={size} height={size}
+      className="shrink-0 motion-safe:animate-[sway_4s_ease-in-out_infinite] origin-bottom"
+      style={{ imageRendering: 'pixelated', width: size, height: size }} />
   )
 }
 

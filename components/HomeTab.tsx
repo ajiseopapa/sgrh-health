@@ -60,8 +60,8 @@ export default function HomeTab({ onRecord, onChallenge, onTree }: { onRecord: (
           {tree && (
             <button type="button" onClick={onTree} aria-label={`나의 나무: ${tree.name}, 운동한 날 ${tree.activeDays}일. 자세히 보기`}
               className="-mb-1 -mr-1 flex shrink-0 flex-col items-center rounded-xl px-1 pt-1 active:bg-brand-400/40">
-              <TreeArt stage={tree.stage} size={84} />
-              <span className="-mt-1 text-[12px] font-bold text-ink-900">{tree.name} · <span className="tabular-nums">{tree.activeDays}일</span></span>
+              <TreeArt stage={tree.stage} size={72} />
+              <span className="mt-1 text-[12px] font-bold text-ink-900">{tree.name} · <span className="tabular-nums">{tree.activeDays}일</span></span>
               {tree.next && <span className="max-w-[120px] text-center text-[11px] font-semibold leading-snug text-ink-700">{tree.next.remaining}일 더 운동하면 {tree.next.name}</span>}
             </button>
           )}

@@ -80,7 +80,7 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
       <div className="mx-auto mt-4 grid max-w-[360px] grid-cols-3 gap-2 rounded-2xl bg-brand-50 p-3">
         {Array.from({ length: 9 }, (_, pos) => {
           if (pos === 4) {
-            return <div key="tree" className="flex aspect-square items-center justify-center"><TreeArt stage={t.stage} size={92} /></div>
+            return <div key="tree" className="flex aspect-square items-center justify-center"><TreeArt stage={t.stage} size={96} /></div>
           }
           const slot = pos < 4 ? pos : pos - 1
           const d = decorByKey(slots[slot])
