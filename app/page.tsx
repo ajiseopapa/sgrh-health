@@ -4,7 +4,7 @@ import { useState } from 'react'
 import HomeTab from '@/components/HomeTab'
 import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
-import ChallengeTab from '@/components/ChallengeTab'
+import ChallengeTab, { type Panel } from '@/components/ChallengeTab'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
@@ -38,6 +38,7 @@ export default function Page() {
 function AppShell() {
   const { isAdmin, refresh, adminLogout } = useMe()
   const [tab, setTab] = useState<TabKey>('home')
+  const [challengePanel, setChallengePanel] = useState<Panel>('goal')
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showAnnouncements, setShowAnnouncements] = useState(false)
@@ -97,9 +98,9 @@ function AppShell() {
       <main className="flex-1 px-5 lg:px-10">
         {/* PC: 홈·기록·도전은 넓게, 피드는 읽기 좋은 폭으로 */}
         <div className={`lg:mx-auto ${tab === 'feed' ? 'lg:max-w-[680px]' : 'lg:max-w-[1040px]'}`}>
-        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => setTab('challenge')} />}
+        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => { setChallengePanel('goal'); setTab('challenge') }} onTree={() => { setChallengePanel('garden'); setTab('challenge') }} />}
         {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
-        {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}`} />}
+        {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}-${challengePanel}`} initialPanel={challengePanel} />}
         {tab === 'feed'      && <FeedTab      key={`feed-${refreshKey}`} />}
         </div>
       </main>
@@ -118,7 +119,7 @@ function AppShell() {
         {TABS.map((t) => {
           const on = tab === t.key
           return (
-            <button key={t.key} onClick={() => setTab(t.key)} aria-current={on ? 'page' : undefined} aria-label={t.label}
+            <button key={t.key} onClick={() => { setChallengePanel('goal'); setTab(t.key) }} aria-current={on ? 'page' : undefined} aria-label={t.label}
               className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold transition-colors lg:min-h-[48px] lg:flex-none lg:flex-row lg:justify-start lg:gap-3 lg:rounded-xl lg:px-3 lg:text-[15px] ${
                 on ? 'text-ink-900 lg:bg-brand-300' : 'text-ink-400 lg:hover:bg-ink-50'
               }`}>

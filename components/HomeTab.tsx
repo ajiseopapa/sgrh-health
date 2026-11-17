@@ -9,17 +9,28 @@ import { Icon, Loading, NeedLogin, Notice, Progress, Section, fmtMinutes } from 
 import MiniCalendar from './MiniCalendar'
 import ReminderSettings from './ReminderSettings'
 import { HomeProfile } from './Profile'
+import { TreeArt } from './GardenPanel'
+import { api } from '@/lib/api'
 
 function seoulToday() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
 const DOW = ['월', '화', '수', '목', '금', '토', '일']
 
-export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => void; onChallenge: () => void }) {
+type Tree = { stage: number; name: string; activeDays: number; next: { name: string; remaining: number } | null }
+
+export default function HomeTab({ onRecord, onChallenge, onTree }: { onRecord: () => void; onChallenge: () => void; onTree: () => void }) {
   const { me, requireMe } = useMe()
   const { data, loading, error, needLogin } = useEngagement()
   const [teamToday, setTeamToday] = useState<number | null>(null)
   const today = data?.today ?? seoulToday()
+  const [tree, setTree] = useState<Tree | null>(null)
+
+  // 나의 나무 — 운동한 날이 쌓이면 자람(서버 계산). 본인 확인 전에는 안 보임
+  useEffect(() => {
+    if (!me) { setTree(null); return }
+    api<{ tree?: Tree }>('/api/me/game').then((r) => setTree(r.ok && r.data.tree ? r.data.tree : null))
+  }, [me])
 
   // 오늘 운동한 동료 수 (공개된 기록에서 사람 수만 셈)
   useEffect(() => {
@@ -40,9 +51,21 @@ export default function HomeTab({ onRecord, onChallenge }: { onRecord: () => voi
       {/* 오늘 — 연두 색 면으로 가장 먼저 눈에 들어오게 */}
       <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900 lg:mx-0 lg:rounded-2xl lg:p-8">
         {me && <div className="mb-3"><HomeProfile name={me.name} /></div>}
-        <p className="text-[13px] font-semibold text-ink-700">오늘의 움직임이 내일의 성장으로</p>
-        <p className="mt-2 text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
-        <h1 className="mt-1 text-[34px] font-black leading-[1.05] tracking-[-0.04em]">오늘의 운동</h1>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-semibold text-ink-700">오늘의 움직임이 내일의 성장으로</p>
+            <p className="mt-2 text-[14px] font-bold tabular-nums">{koreanDate(today)}</p>
+            <h1 className="mt-1 whitespace-nowrap text-[34px] font-black leading-[1.05] tracking-[-0.04em]">오늘의 운동</h1>
+          </div>
+          {tree && (
+            <button type="button" onClick={onTree} aria-label={`나의 나무: ${tree.name}, 운동한 날 ${tree.activeDays}일. 자세히 보기`}
+              className="-mb-1 -mr-1 flex shrink-0 flex-col items-center rounded-xl px-1 pt-1 active:bg-brand-400/40">
+              <TreeArt stage={tree.stage} size={84} />
+              <span className="-mt-1 text-[12px] font-bold text-ink-900">{tree.name} · <span className="tabular-nums">{tree.activeDays}일</span></span>
+              {tree.next && <span className="max-w-[120px] text-center text-[11px] font-semibold leading-snug text-ink-700">{tree.next.remaining}일 더 운동하면 {tree.next.name}</span>}
+            </button>
+          )}
+        </div>
 
         <div className="mt-6 min-h-[92px]">
           {loading ? (

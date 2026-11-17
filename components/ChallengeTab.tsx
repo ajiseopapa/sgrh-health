@@ -11,10 +11,10 @@ import { BADGES, BadgeDef, badgeSrc, SERIES_LABEL, SERIES_UNIT } from '@/lib/bad
 import StatsTab from './StatsTab'
 import GardenPanel from './GardenPanel'
 
-type Panel = 'goal' | 'challenge' | 'badge' | 'rank' | 'garden'
+export type Panel = 'goal' | 'challenge' | 'badge' | 'rank' | 'garden'
 
-export default function ChallengeTab() {
-  const [panel, setPanel] = useState<Panel>('goal')
+export default function ChallengeTab({ initialPanel = 'goal' }: { initialPanel?: Panel }) {
+  const [panel, setPanel] = useState<Panel>(initialPanel)
   const [refresh, setRefresh] = useState(0)
   const eng = useEngagement(refresh)
 
@@ -26,7 +26,7 @@ export default function ChallengeTab() {
         { value: 'challenge', label: '챌린지' },
         { value: 'badge', label: '배지' },
         { value: 'rank', label: '순위' },
-        { value: 'garden', label: '정원' },
+        { value: 'garden', label: '나무' },
       ]} />
       {/* PC: 순위(통계)만 넓게, 나머지는 읽기 좋은 폭 */}
       <div className={`pt-2 ${panel === 'rank' ? '' : 'lg:max-w-[680px]'}`}>
