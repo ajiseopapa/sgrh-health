@@ -9,7 +9,7 @@ import { Icon, Loading, NeedLogin, Notice, Progress, Section, fmtMinutes } from 
 import MiniCalendar from './MiniCalendar'
 import ReminderSettings from './ReminderSettings'
 import { HomeProfile } from './Profile'
-import { TreeArt } from './GardenPanel'
+import TreeArt from './TreeArt'
 import { api } from '@/lib/api'
 
 function seoulToday() {

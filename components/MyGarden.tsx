@@ -9,7 +9,7 @@ import { DECOR, Decor, decorByKey, GARDEN_SLOTS, TREE_STAGES } from '@/lib/game'
 import { Notice, Progress } from '@/lib/ui'
 import InfoTip from './InfoTip'
 import { Sheet } from './Profile'
-import { TreeArt } from './GardenPanel'
+import TreeArt from './TreeArt'
 
 export interface GardenGame {
   sunlight: { balance: number }

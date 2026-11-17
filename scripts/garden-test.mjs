@@ -1,4 +1,4 @@
-// 나의 정원 1단계(꾸미기) 시험 — 시험 DB 전용. 실행 전 dev 서버가 떠 있어야 합니다.
+// 나의 정원 1단계(꾸미기)·2단계(구경) 시험 — 시험 DB 전용. 실행 전 dev 서버가 떠 있어야 합니다.
 //   node scripts/garden-test.mjs [http://localhost:3576]
 // 시험 직원 S001(김도윤)로 로그인합니다. PIN 은 환경변수 GARDEN_TEST_PIN (시험 DB 전용 값).
 // 끝나면 이 시험이 만든 구매·배치를 지우지 않습니다(화면 확인용). 다시 돌리려면 시험 DB에서 S001 의 decor_ 구매를 지우세요.
@@ -96,7 +96,21 @@ console.log('— 남에게 영향 없음')
 const other = emps.find((e) => e.id !== s.id)
 const prof = await anon(`/api/game/profile?id=${other.id}`)
 check('다른 직원 프로필 조회 정상', prof.status === 200)
-check('공개 API 에 내 정원 정보가 섞여 나가지 않음', !JSON.stringify(await anon(`/api/game/profile?id=${s.id}`)).includes('decor_'))
+console.log('— 2단계: 정원 구경(공개를 켠 직원만)')
+const setPublic = (v) => me('/api/me/game/profile', { method: 'PUT', body: { showInFeed: v } })
+const wasPublic = (await game()).showInFeed
+await setPublic(false)
+let pv = (await anon(`/api/game/profile?id=${s.id}`)).profile
+check('공개 끔 → 정원 안 나감', pv.garden === null && !JSON.stringify(pv).includes('decor_'))
+await setPublic(true)
+pv = (await anon(`/api/game/profile?id=${s.id}`)).profile
+g = await game()
+check('공개 켬 → 정원 나감(칸 8개)', pv.garden?.slots?.length === 8)
+check('동료에게 보이는 배치 = 내 배치', JSON.stringify(pv.garden?.slots) === JSON.stringify(g.garden.slots))
+check('나무 단계 이름만(운동한 날 수 없음)', pv.garden?.stageName === g.tree.name && !('activeDays' in (pv.garden ?? {})))
+check('햇빛·가진 장식 목록·내역은 안 나감', !/sunlight|balance|owned|ledger|activeDays/.test(JSON.stringify(pv)))
+check('다른 직원(공개 끔)은 정원 없음', prof.profile?.showCharacter === true || prof.profile?.garden === null)
+await setPublic(wasPublic)
 
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패`)
 process.exit(fail ? 1 : 0)

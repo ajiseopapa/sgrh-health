@@ -5,9 +5,10 @@
 // 저장은 /api/me/game/profile 하나로: character · message · nameEmoji · showInFeed
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
-import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, NAME_EMOJIS } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, decorByKey, DEFAULT_CHARACTER, NAME_EMOJIS } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
 import SproutIcon from './SproutIcon'
+import TreeArt from './TreeArt'
 
 const MESSAGE_MAX = 40
 
@@ -156,10 +157,10 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
           {/* 캐릭터 공개 */}
           <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
             <div>
-              <p className="text-[15px] font-bold text-ink-900">동료에게 내 캐릭터 보이기</p>
-              <p className="mt-0.5 text-[13px] text-ink-500">켜면 피드의 내 이름 옆과 프로필 창에 캐릭터가 보여요.</p>
+              <p className="text-[15px] font-bold text-ink-900">동료에게 내 캐릭터·정원 보이기</p>
+              <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료가 피드에서 내 이름을 눌렀을 때 캐릭터와 정원이 보여요. 운동한 날 수와 햇빛은 보이지 않아요.</p>
             </div>
-            <button type="button" role="switch" aria-checked={p.showInFeed} disabled={busy} aria-label="동료에게 내 캐릭터 보이기"
+            <button type="button" role="switch" aria-checked={p.showInFeed} disabled={busy} aria-label="동료에게 내 캐릭터·정원 보이기"
               onClick={() => save({ showInFeed: !p.showInFeed }, (cur) => ({ ...cur, showInFeed: !cur.showInFeed }))}
               className="flex h-[44px] w-[60px] shrink-0 items-center justify-center disabled:opacity-50">
               <span className={`relative block h-[32px] w-[56px] rounded-full border-2 border-ink-900 transition-colors ${p.showInFeed ? 'bg-brand-300' : 'bg-ink-100'}`}>
@@ -175,9 +176,38 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
   )
 }
 
-interface Peer { emoji: string | null; showCharacter: boolean; character: string | null; message: string | null }
+interface Peer {
+  emoji: string | null; showCharacter: boolean; character: string | null; message: string | null
+  garden?: { stage: number; stageName: string; slots: (string | null)[] } | null
+}
 
-/** 동료 프로필 창 — 피드에서 이름·이모지를 눌렀을 때. 캐릭터(본인이 보이기를 켠 경우)와 한마디 */
+/** 동료 정원(구경만) — 가운데 나무 + 둘레 8칸. 누를 수 없음 */
+function PeerGarden({ name, garden }: { name: string; garden: NonNullable<Peer['garden']> }) {
+  const placed = garden.slots.filter(Boolean).length
+  return (
+    <div className="mt-5 w-full border-t border-line pt-4 text-left">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[15px] font-bold text-ink-900">{name}님의 정원</p>
+        <p className="text-[13px] font-semibold text-ink-500">{garden.stageName}</p>
+      </div>
+      <div className="mx-auto mt-3 grid max-w-[280px] grid-cols-3 gap-1.5 rounded-2xl bg-brand-50 p-2.5" role="img"
+        aria-label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`}>
+        {Array.from({ length: 9 }, (_, pos) => {
+          if (pos === 4) return <div key="tree" className="flex aspect-square items-center justify-center"><TreeArt stage={garden.stage} size={72} /></div>
+          const d = decorByKey(garden.slots[pos < 4 ? pos : pos - 1])
+          return (
+            <div key={pos} className={`flex aspect-square items-center justify-center rounded-xl text-[32px] leading-none ${d ? 'bg-paper' : 'bg-brand-100/70'}`}>
+              {d && <span aria-hidden="true">{d.emoji}</span>}
+            </div>
+          )
+        })}
+      </div>
+      {placed === 0 && <p className="mt-2 text-center text-[13px] text-ink-500">아직 장식을 놓지 않았어요.</p>}
+    </div>
+  )
+}
+
+/** 동료 프로필 창 — 피드에서 이름·이모지를 눌렀을 때. 캐릭터·정원(본인이 보이기를 켠 경우)과 한마디 */
 export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | null; name: string; onClose: () => void }) {
   const [peer, setPeer] = useState<Peer | null>(null)
   const [err, setErr] = useState('')
@@ -200,6 +230,7 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
           <p className={`mt-3 w-full break-words rounded-xl bg-ink-50 px-4 py-3 text-[15px] ${peer.message ? 'text-ink-900' : 'text-ink-500'}`}>
             {peer.message || '아직 한마디가 없어요.'}
           </p>
+          {peer.garden && <PeerGarden name={name} garden={peer.garden} />}
         </div>
       )}
     </Sheet>
