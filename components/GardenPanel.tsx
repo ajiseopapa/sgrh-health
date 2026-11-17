@@ -1,9 +1,10 @@
 'use client'
 
-// 도전 › 정원 — 나의 나무 · 보유 햇빛 (나의 캐릭터는 홈의 내 프로필 창으로 옮김)
+// 도전 › 정원 — 나의 정원(나무 + 장식 8칸, MyGarden.tsx) · 보유 햇빛 (나의 캐릭터는 홈의 내 프로필 창으로 옮김)
 // 부서 정원은 혼자 근무하는 부서가 있어 숨김(SHOW_DEPT_GARDEN, 11-17 TK 결정). 계산·데이터는 보존
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import InfoTip from './InfoTip'
+import MyGarden from './MyGarden'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
@@ -17,6 +18,7 @@ interface Game {
   ledger: { type: 'earn' | 'spend'; key: string; date: string; label: string; points: number }[]
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
   character: { owned: string[]; equipped: Record<Slot, string | null> }
+  garden?: { ready: boolean; owned: string[]; slots: (string | null)[] }
   showInFeed: boolean
   characterKey: CharacterKey | null
   goalBasis: { kind: 'sessions' | 'minutes'; target: number; value: number } | null
@@ -42,13 +44,13 @@ export default function GardenPanel() {
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 나무와 햇빛을 볼 수 있어요."  onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 정원과 햇빛을 볼 수 있어요."  onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
   return (
     <div>
-      <TreeSection game={game} />
+      <MyGarden game={game} onChange={setGame} />
       <SunSection game={game} />
       {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
       {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
@@ -105,7 +107,7 @@ function MyCharacterSection({ game, onChange }: { game: Game; onChange: (g: Game
   )
 }
 
-// ── 나의 나무 ──
+// ── 나의 나무 (정원 화면 MyGarden 으로 합쳐져 지금은 안 씀. 그림 TreeArt 만 홈·정원에서 사용) ──
 function TreeSection({ game }: { game: Game }) {
   const t = game.tree
   return (
@@ -183,7 +185,7 @@ function SunSection({ game }: { game: Game }) {
   const [all, setAll] = useState(false)
   const s = game.sunlight
   const ledger = game.ledger
-  const rows = all ? ledger : ledger.slice(0, 5)
+  const rows = all ? ledger : [] // 내역은 접어 두고, 눌렀을 때만 펼침
   return (
     <Section title="보유 햇빛">
       <div className="flex items-end justify-between gap-4">
@@ -196,7 +198,7 @@ function SunSection({ game }: { game: Game }) {
         </p>
       </div>
       {s.shortfall > 0 && (
-        <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 쓴 햇빛보다 {s.shortfall}개 적어요. 이미 받은 아이템은 그대로예요.</Notice></div>
+        <div className="mt-3"><Notice tone="info">기록이 고쳐져 받은 햇빛이 쓴 햇빛보다 {s.shortfall}개 적어요. 이미 받은 장식은 그대로예요.</Notice></div>
       )}
       {game.goalBasis && (
         <p className="mt-3 text-[13px] leading-relaxed text-ink-600">
@@ -224,11 +226,9 @@ function SunSection({ game }: { game: Game }) {
               </li>
             ))}
           </ul>
-          {ledger.length > 5 && (
-            <button type="button" onClick={() => setAll(!all)} className="pill-action -ml-2.5 text-ink-900 underline">
-              {all ? '접기' : `내역 모두 보기 (${ledger.length})`}
-            </button>
-          )}
+          <button type="button" onClick={() => setAll(!all)} className="pill-action -ml-2.5 text-ink-900 underline">
+            {all ? '내역 접기' : `햇빛 내역 보기 (${ledger.length})`}
+          </button>
         </>
       )}
     </Section>

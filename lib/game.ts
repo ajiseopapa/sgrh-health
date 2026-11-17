@@ -75,6 +75,25 @@ export function itemByKey(key: string | null | undefined): Item | null {
   return ITEMS.find((i) => i.key === key) ?? null
 }
 
+// ── 나의 정원: 나무 둘레 8칸에 장식을 놓습니다(11-17 TK 결정, 1단계 꾸미기). 모양만 바뀌고 효과 없음 ──
+//  · 햇빛으로 사면 내 것(환불 없음). 칸 사이로 옮기거나 빼 둘 수 있음. 같은 장식은 1개만.
+//  · 키는 game_purchases 검사(^[a-z]+_[a-z]+$)에 맞게 decor_xxx. 그림은 이모지로 시작(픽셀 그림은 디자이너 교체 예정).
+export const GARDEN_SLOTS = 8
+export interface Decor { key: string; name: string; emoji: string; price: number }
+export const DECOR: Decor[] = [
+  { key: 'decor_tulip', name: '튤립', emoji: '🌷', price: 30 },
+  { key: 'decor_wild', name: '들꽃', emoji: '🌼', price: 30 },
+  { key: 'decor_sunflower', name: '해바라기', emoji: '🌻', price: 40 },
+  { key: 'decor_pot', name: '화분', emoji: '🪴', price: 50 },
+  { key: 'decor_bench', name: '벤치', emoji: '🪑', price: 60 },
+  { key: 'decor_butterfly', name: '나비', emoji: '🦋', price: 70 },
+  { key: 'decor_lantern', name: '정원 등', emoji: '🏮', price: 80 },
+  { key: 'decor_fountain', name: '분수', emoji: '⛲', price: 120 },
+]
+export function decorByKey(key: string | null | undefined): Decor | null {
+  return DECOR.find((d) => d.key === key) ?? null
+}
+
 // ── 보상 계산 ──
 export interface Reward { key: string; kind: 'day' | 'week3' | 'goal'; date: string; points: number; label: string }
 

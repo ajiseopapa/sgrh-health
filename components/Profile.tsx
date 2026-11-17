@@ -33,7 +33,7 @@ export function PixelCharacter({ charKey, scale = 2, className = '' }: { charKey
 }
 
 /** 창 껍데기 — 폰은 아래에서 올라오고, PC는 가운데 */
-function Sheet({ title, titleId, onClose, children }: { title: string; titleId: string; onClose: () => void; children: React.ReactNode }) {
+export function Sheet({ title, titleId, onClose, children }: { title: string; titleId: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)

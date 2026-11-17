@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  computeRewards, decorFor, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
+  computeRewards, decorByKey, decorFor, GARDEN_SLOTS, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -44,12 +44,14 @@ export interface Purchase { item_key: string; price: number; purchased_at: strin
 
 /** 내 게임 현황(본인만) */
 export async function myGame(db: SupabaseClient, employeeId: string, today = kstToday()) {
-  const [e, { data: buys }, { data: equip }, { data: prof }] = await Promise.all([
+  const [e, { data: buys }, { data: equip }, { data: prof }, placed] = await Promise.all([
     earnedFor(db, employeeId, today),
     db.from('game_purchases').select('item_key, price, purchased_at').eq('employee_id', employeeId).order('purchased_at'),
     db.from('game_equipment').select('slot, item_key').eq('employee_id', employeeId),
     // '*' 로 읽어 029(character 칸) 적용 전 DB 에서도 오류 없이 동작
     db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle(),
+    // 033(정원 배치 표) 적용 전 DB 에서는 오류가 나므로 아래에서 '준비 안 됨'으로 넘깁니다(홈 나무가 같이 죽지 않게)
+    db.from('garden_placements').select('slot, item_key').eq('employee_id', employeeId),
   ])
   const purchases = (buys ?? []) as Purchase[]
   const spent = purchases.reduce((s, p) => s + p.price, 0)
@@ -60,11 +62,20 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
 
   const ledger = [
     ...e.rewards.map((r: Reward) => ({ type: 'earn' as const, key: r.key, date: r.date, label: r.label, points: r.points })),
-    ...purchases.map((p) => ({ type: 'spend' as const, key: `buy:${p.item_key}`, date: kstToday(new Date(p.purchased_at)), label: `${itemByKey(p.item_key)?.name ?? p.item_key} 구매`, points: -p.price })),
+    ...purchases.map((p) => ({ type: 'spend' as const, key: `buy:${p.item_key}`, date: kstToday(new Date(p.purchased_at)), label: `${itemByKey(p.item_key)?.name ?? decorByKey(p.item_key)?.name ?? p.item_key} 구매`, points: -p.price })),
   ].sort((a, b) => (a.date === b.date ? (a.type === b.type ? a.key.localeCompare(b.key) : a.type === 'earn' ? -1 : 1) : a.date < b.date ? 1 : -1))
 
   const equipped: Record<Slot, string | null> = { hat: null, top: null, shoes: null }
   for (const r of equip ?? []) equipped[r.slot as Slot] = r.item_key
+
+  // 나의 정원: 가진 장식 + 칸별 배치(0~7). 목록에 없는 키는 내보내지 않음
+  const slots: (string | null)[] = Array.from({ length: GARDEN_SLOTS }, () => null)
+  for (const r of placed.data ?? []) if (r.slot >= 0 && r.slot < GARDEN_SLOTS && decorByKey(r.item_key)) slots[r.slot] = r.item_key
+  const garden = {
+    ready: !placed.error, // false = 033 미적용(꾸미기 준비 중)
+    owned: purchases.map((p) => p.item_key).filter((k) => !!decorByKey(k)),
+    slots,
+  }
 
   return {
     today,
@@ -73,7 +84,8 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     ledger,
     tree: treeStage(e.activeDays),
     goalBasis: e.goalBasis, // 이번 주 목표 보상 판정 기준(주 시작 목표)
-    character: { owned: purchases.map((p) => p.item_key), equipped },
+    character: { owned: purchases.map((p) => p.item_key).filter((k) => !!itemByKey(k)), equipped },
+    garden,
     showInFeed: prof?.show_in_feed ?? false,
     nameEmoji: (prof?.name_emoji as string | null) ?? null,
     characterKey: isCharacterKey(prof?.character) ? prof.character : null, // null = 아직 안 고름(기본 캐릭터)
@@ -82,12 +94,26 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
 }
 
 export async function purchaseItem(db: SupabaseClient, employeeId: string, itemKey: string) {
-  const item = itemByKey(itemKey)
+  const item = itemByKey(itemKey) ?? decorByKey(itemKey) // 캐릭터 아이템 또는 정원 장식
   if (!item) return { status: 'unknown_item' as const }
   const { earned } = await earnedFor(db, employeeId)
   const { data, error } = await db.rpc('game_purchase', { p_employee: employeeId, p_item: item.key, p_price: item.price, p_earned: earned })
   if (error) throw new Error('PURCHASE_FAILED')
   return data as { status: 'ok' | 'already_owned' | 'insufficient' | 'invalid'; balance?: number }
+}
+
+/** 정원 칸에 장식 놓기·옮기기·빼기(itemKey null = 그 칸 비우기). 가진 장식만 — DB 함수가 직원별 잠금 안에서 처리 */
+export async function placeDecor(db: SupabaseClient, employeeId: string, slot: number, itemKey: string | null) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= GARDEN_SLOTS) return { status: 'invalid' as const }
+  if (itemKey !== null && !decorByKey(itemKey)) return { status: 'invalid' as const }
+  const { data, error } = await db.rpc('garden_place', { p_employee: employeeId, p_slot: slot, p_item: itemKey })
+  if (error) {
+    // 033 미적용(함수·표 없음)
+    if (error.code === 'PGRST202' || error.code === '42883' || error.code === '42P01' || error.code === 'PGRST205') return { status: 'not_ready' as const }
+    if (error.code === '23503') return { status: 'not_owned' as const }
+    throw new Error('PLACE_FAILED')
+  }
+  return data as { status: 'ok' | 'not_owned' | 'invalid' }
 }
 
 export async function setEquipment(db: SupabaseClient, employeeId: string, slot: Slot, itemKey: string | null) {
