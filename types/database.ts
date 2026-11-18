@@ -64,12 +64,11 @@ export const CHEER_LABEL: Record<string, string> = {
   '🔥': '대단해요',
 }
 
-// 응원은 사람(직원) 기준으로 한 번만 셉니다. 같은 사람이 여러 기기에서 눌러도 1개.
-// employee_id 가 null 인 행은 이름 기준으로 바뀌기 전(기기 기준)에 눌린 예전 응원입니다.
+// 누가 눌렀는지는 남기지 않습니다. 로그인이 없어 신뢰할 수 없는 정보라서,
+// 화면에 못 쓸 데이터를 모아두지 않기로 했습니다. 취소 판단만 기기 기준으로 합니다.
 export interface LogReaction {
   id: string
   log_id: string
-  employee_id: string | null
   device_id: string | null
   emoji: string
   created_at: string

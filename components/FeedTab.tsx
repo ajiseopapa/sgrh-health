@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Employee, ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
+import { ExerciseLog, ExerciseType, LogReaction, calcPace, formatDuration } from '@/types/database'
 import { getEmployeeColor } from '@/lib/colors'
 import { getDeviceId } from '@/lib/device'
-import { Me, getMe, setMe as saveMe } from '@/lib/me'
 import CheerBar from './CheerBar'
-import MePickerModal from './MePickerModal'
 
 function getPaceMode(name: string): 'min_per_km' | 'min_per_100m' | 'km_per_h' {
   if (/수영/i.test(name)) return 'min_per_100m'
@@ -32,18 +30,12 @@ export default function FeedTab() {
 
   // ── 서로 칭찬하기 ──
   const [reactions, setReactions] = useState<LogReaction[]>([])
-  // 응원은 사람(직원) 기준으로 한 번만. 로그인이 없어서 처음 누를 때 이름을 한 번 고릅니다.
-  const [me, setMe] = useState<Me | null>(null)
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [showMePicker, setShowMePicker] = useState(false)
-  // 이름을 고르기 전에 누른 응원. 이름을 고르면 이어서 반영합니다.
-  const [pendingCheer, setPendingCheer] = useState<{ logId: string; emoji: string } | null>(null)
-  // 이름 기준으로 바뀌기 전에 이 기기에서 누른 예전 응원을 알아보는 데만 씁니다.
+  // 응원 취소 판단 기준. 이름을 묻지 않으려고 사람 대신 기기를 기억합니다.
   const [deviceId, setDeviceId] = useState('')
 
   async function load() {
     setLoading(true)
-    const [logRes, typeRes, empRes] = await Promise.all([
+    const [logRes, typeRes] = await Promise.all([
       supabase
         .from('exercise_logs')
         .select('*, employee:employees(*), exercise_type:exercise_types(*)')
@@ -51,12 +43,10 @@ export default function FeedTab() {
         .order('created_at', { ascending: false })
         .limit(50),
       supabase.from('exercise_types').select('*').order('name'),
-      supabase.from('employees').select('*').order('name'),
     ])
     const logList = (logRes.data as ExerciseLog[]) ?? []
     setLogs(logList)
     setExerciseTypes(typeRes.data ?? [])
-    setEmployees((empRes.data as Employee[]) ?? [])
 
     if (logList.length > 0) {
       const { data } = await supabase
@@ -72,55 +62,22 @@ export default function FeedTab() {
 
   useEffect(() => {
     setDeviceId(getDeviceId())
-    setMe(getMe())
     load()
   }, [])
 
-  // 응원 누르기 — 이름을 아직 안 골랐으면 먼저 묻고, 고른 뒤 이어서 반영합니다.
-  function handleToggleCheer(logId: string, emoji: string) {
-    if (!me) {
-      setPendingCheer({ logId, emoji })
-      setShowMePicker(true)
-      return
-    }
-    toggleCheerAs(me, logId, emoji)
-  }
-
-  function handlePickMe(employee: Employee) {
-    const next: Me = { id: employee.id, name: employee.name }
-    saveMe(next)
-    setMe(next)
-    setShowMePicker(false)
-    if (pendingCheer) {
-      const { logId, emoji } = pendingCheer
-      setPendingCheer(null)
-      // 이미 다른 기기에서 눌러둔 응원이면 취소하지 않고 그대로 둡니다.
-      const already = reactions.some(
-        (r) => r.log_id === logId && r.emoji === emoji && r.employee_id === next.id
-      )
-      if (!already) toggleCheerAs(next, logId, emoji)
-    }
-  }
-
-  async function toggleCheerAs(who: Me, logId: string, emoji: string) {
+  // 응원 누르기 — 아무것도 묻지 않고 바로 반영합니다.
+  async function handleToggleCheer(logId: string, emoji: string) {
     setError('')
     const device = deviceId || getDeviceId()
 
-    // 내 응원 = 내 이름으로 누른 것 + (이름 기준 이전에) 이 기기에서 누른 예전 응원
-    const mine = reactions.filter(
-      (r) =>
-        r.log_id === logId &&
-        r.emoji === emoji &&
-        (r.employee_id === who.id || (!r.employee_id && !!device && r.device_id === device))
+    const existing = reactions.find(
+      (r) => r.log_id === logId && r.device_id === device && r.emoji === emoji
     )
 
     // 이미 누른 응원이면 취소
-    if (mine.length > 0) {
-      const ids = mine.map((r) => r.id)
-      setReactions((prev) => prev.filter((r) => !ids.includes(r.id)))
-      const realIds = ids.filter((id) => !id.startsWith('temp-'))
-      if (realIds.length === 0) return
-      const { error } = await supabase.from('log_reactions').delete().in('id', realIds)
+    if (existing) {
+      setReactions((prev) => prev.filter((r) => r.id !== existing.id))
+      const { error } = await supabase.from('log_reactions').delete().eq('id', existing.id)
       if (error) {
         setError('응원 취소에 실패했어요.')
         load()
@@ -133,7 +90,6 @@ export default function FeedTab() {
     const temp: LogReaction = {
       id: tempId,
       log_id: logId,
-      employee_id: who.id,
       device_id: device,
       emoji,
       created_at: new Date().toISOString(),
@@ -142,17 +98,12 @@ export default function FeedTab() {
 
     const { data, error } = await supabase
       .from('log_reactions')
-      .insert({ log_id: logId, employee_id: who.id, device_id: device, emoji })
+      .insert({ log_id: logId, device_id: device, emoji })
       .select('*')
       .single()
 
     if (error) {
       setReactions((prev) => prev.filter((r) => r.id !== tempId))
-      // 23505 = 이미 다른 기기에서 같은 응원을 눌러둔 경우. 오류가 아니라 최신 상태로 맞춥니다.
-      if (error.code === '23505') {
-        load()
-        return
-      }
       setError('응원을 보내지 못했어요. 잠시 후 다시 시도해주세요.')
       return
     }
@@ -222,21 +173,6 @@ export default function FeedTab() {
   return (
     <div className="space-y-2.5">
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}
-
-      {me && (
-        <div className="flex items-center justify-end gap-1.5 text-xs text-ink-400">
-          <span>
-            <span className="font-semibold text-ink-600">{me.name}</span>님으로 응원 중
-          </span>
-          <button
-            type="button"
-            onClick={() => { setPendingCheer(null); setShowMePicker(true) }}
-            className="rounded-full bg-ink-50 px-2 py-0.5 font-medium text-ink-600 transition active:bg-ink-100"
-          >
-            변경
-          </button>
-        </div>
-      )}
 
       <ul className="space-y-2.5">
         {logs.map((log) => {
@@ -356,7 +292,6 @@ export default function FeedTab() {
 
                     <CheerBar
                       reactions={reactions.filter((r) => r.log_id === log.id)}
-                      myEmployeeId={me?.id}
                       myDeviceId={deviceId}
                       onToggle={(emoji) => handleToggleCheer(log.id, emoji)}
                     />
@@ -382,15 +317,6 @@ export default function FeedTab() {
           )
         })}
       </ul>
-
-      {showMePicker && (
-        <MePickerModal
-          employees={employees}
-          current={me}
-          onSelect={handlePickMe}
-          onClose={() => { setPendingCheer(null); setShowMePicker(false) }}
-        />
-      )}
     </div>
   )
 }
