@@ -10,7 +10,7 @@ export default function TreeArt({ stage, size = 96 }: { stage: number; size?: nu
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`/game/v22/tree/stage-${n}.png`} alt={`${TREE_STAGES[n - 1].name} 그림`} width={size} height={size}
-      className="shrink-0 motion-safe:animate-[sway_4s_ease-in-out_infinite] origin-bottom"
+      className="shrink-0"  // 움직이지 않음(11-18 TK: 흔들리면 멀미 남)
       style={{ imageRendering: 'pixelated', width: size, height: size }} />
   )
 }
