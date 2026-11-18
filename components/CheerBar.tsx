@@ -5,20 +5,24 @@ import { CHEER_EMOJIS, CHEER_LABEL, LogReaction } from '@/types/database'
 interface Props {
   /** 이 기록에 달린 응원만 걸러서 넘겨주세요 */
   reactions: LogReaction[]
-  /** 내 기기 id. 내가 누른 이모지를 색으로 표시하는 데만 씁니다 */
+  /** 내가 고른 이름(직원 id). 내가 누른 이모지를 색으로 표시합니다 */
+  myEmployeeId?: string
+  /** 내 기기 id. 이름 기준으로 바뀌기 전에 이 기기에서 누른 예전 응원 표시용 */
   myDeviceId?: string
   onToggle: (emoji: string) => void
 }
 
-export default function CheerBar({ reactions, myDeviceId, onToggle }: Props) {
+export default function CheerBar({ reactions, myEmployeeId, myDeviceId, onToggle }: Props) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
       {CHEER_EMOJIS.map((emoji) => {
         const mine = reactions.filter((r) => r.emoji === emoji)
         const count = mine.length
-        const isMine = myDeviceId
-          ? mine.some((r) => r.device_id === myDeviceId)
-          : false
+        const isMine = mine.some(
+          (r) =>
+            (!!myEmployeeId && r.employee_id === myEmployeeId) ||
+            (!r.employee_id && !!myDeviceId && r.device_id === myDeviceId)
+        )
         const label = CHEER_LABEL[emoji] ?? '응원'
 
         return (
