@@ -5,6 +5,7 @@
 // 시험용 운동 기록 2개를 만들어 응원을 누르고, 끝나면 지웁니다(응원도 함께 지워짐).
 // 다른 기록에 달린 기존 응원은 시작 전후로 똑같은지 대조합니다.
 import { createClient } from '@supabase/supabase-js'
+import { createHash, randomBytes } from 'node:crypto'
 import { loadEnv } from './backup.mjs'
 
 const [base, envFile] = process.argv.slice(2)
@@ -26,15 +27,30 @@ const check = (name, ok, detail = '') => {
   if (ok) pass++
   console.log(`${ok ? '✅' : '❌'} ${name}${detail ? ` — ${detail}` : ''}`)
 }
-async function post(path, body) {
+// token 을 주면 그 직원으로 로그인한 요청(쿠키 sgrh_me), 없으면 로그인 안 한 요청
+async function post(path, body, token) {
   const res = await fetch(base + path, {
     method: 'POST',
-    headers: { 'x-sgrh-request': '1', 'Content-Type': 'application/json' },
+    headers: { 'x-sgrh-request': '1', 'Content-Type': 'application/json', ...(token ? { Cookie: `sgrh_me=${token}` } : {}) },
     body: JSON.stringify(body),
   })
   return { status: res.status, ...(await res.json().catch(() => ({}))) }
 }
-const cheer = (logId, deviceId, emoji, on) => post('/api/reactions', on === undefined ? { logId, deviceId, emoji } : { logId, deviceId, emoji, on })
+const cheer = (logId, deviceId, emoji, on, token) => post('/api/reactions', on === undefined ? { logId, deviceId, emoji } : { logId, deviceId, emoji, on }, token)
+// 시험용 로그인 세션을 DB에 직접 만듭니다(끝나면 지움). 쿠키에는 토큰, DB에는 해시만 — 앱과 같은 방식.
+const madeSessions = []
+async function loginAs(employeeId) {
+  const token = randomBytes(32).toString('base64url')
+  const token_hash = createHash('sha256').update(token).digest('hex')
+  const { error } = await db.from('auth_sessions').insert({
+    token_hash, role: 'employee', employee_id: employeeId, expires_at: new Date(Date.now() + 600_000).toISOString(),
+  })
+  if (error) throw new Error(error.message)
+  madeSessions.push(token_hash)
+  return token
+}
+const empRows = async (logId, emoji, employeeId) =>
+  (await db.from('log_reactions').select('id', { count: 'exact', head: true }).eq('log_id', logId).eq('emoji', emoji).eq('employee_id', employeeId)).count
 const rows = async (logId, emoji, deviceId) => {
   let q = db.from('log_reactions').select('id', { count: 'exact', head: true }).eq('log_id', logId)
   if (emoji) q = q.eq('emoji', emoji)
@@ -44,19 +60,21 @@ const rows = async (logId, emoji, deviceId) => {
 async function fingerprint(excludeIds) {
   const all = []
   for (let from = 0; ; from += 1000) {
-    const { data } = await db.from('log_reactions').select('id, log_id, device_id, emoji, created_at').order('id').range(from, from + 999)
+    const { data } = await db.from('log_reactions').select('id, log_id, device_id, employee_id, emoji, created_at').order('id').range(from, from + 999)
     all.push(...data)
     if (data.length < 1000) break
   }
   const kept = all.filter((r) => !excludeIds.includes(r.log_id))
-  return { n: kept.length, key: kept.map((r) => `${r.id}|${r.log_id}|${r.device_id}|${r.emoji}|${r.created_at}`).join('\n') }
+  return { n: kept.length, key: kept.map((r) => `${r.id}|${r.log_id}|${r.device_id}|${r.employee_id}|${r.emoji}|${r.created_at}`).join('\n') }
 }
 
 const A = 'cheer-test-device-a'
 const B = 'cheer-test-device-b'
 
 // 준비: 시험 기록 2개
-const { data: emp } = await db.from('employees').select('id').limit(1).single()
+const { data: emps } = await db.from('employees').select('id').limit(2)
+if (!emps || emps.length < 2) throw new Error('시험 DB에 직원이 2명 이상 있어야 합니다.')
+const [emp, emp2] = emps
 const { data: type } = await db.from('exercise_types').select('id').limit(1).single()
 const { data: made, error: mkErr } = await db
   .from('exercise_logs')
@@ -81,6 +99,7 @@ check(
 )
 console.log(`준비: 시험 기록 2개 · 다른 기록의 기존 응원 ${before.n}건\n`)
 
+let L3 = null
 try {
   // 1) 같은 이모지 연속 클릭(켜기 2번) → 1개
   await cheer(L1, A, '👏', true)
@@ -146,15 +165,88 @@ try {
   check('허용되지 않은 이모지 거부', (await cheer(L1, A, '💩', true)).status === 400)
   check('요약 요청 기록 101개 이상 거부', (await post('/api/reactions/summary', { logIds: Array(101).fill(L1), deviceId: A })).status === 400)
   check('전용 헤더 없는 요청 거부(CSRF)', (await fetch(base + '/api/reactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logId: L1, deviceId: A, emoji: '👏', on: true }) })).status === 403)
+
+  // ── 직원 기준(035): 로그인한 직원은 어느 기기에서 눌러도 1개 ──
+  const { data: made2, error: mk2 } = await db
+    .from('exercise_logs')
+    .insert({ employee_id: emp.id, exercise_type_id: type.id, log_date: '2026-11-01', duration_seconds: 600, memo: '응원시험' })
+    .select('id')
+    .single()
+  if (mk2) throw new Error(mk2.message)
+  L3 = made2.id
+  const PHONE = 'cheer-test-phone-1'
+  const PC = 'cheer-test-pc-00001'
+  const t1phone = await loginAs(emp.id)
+  const t1pc = await loginAs(emp.id)
+  const t2 = await loginAs(emp2.id)
+  const sum = (deviceId, token) => post('/api/reactions/summary', { logIds: [L3], deviceId }, token)
+  const cnt = (s, emoji) => s.cheers.find((c) => c.emoji === emoji) ?? { count: 0, mine: false }
+
+  // 12) 같은 직원이 휴대폰·PC에서 각각 켜기 → 1개
+  await cheer(L3, PHONE, '👏', true, t1phone)
+  const e2 = await cheer(L3, PC, '👏', true, t1pc)
+  check('같은 직원이 두 기기에서 켜기 → 1개', e2.count === 1 && (await rows(L3, '👏')) === 1 && (await empRows(L3, '👏', emp.id)) === 1, `응답 count ${e2.count}`)
+
+  // 13) 다른 기기에서도 "내가 누름"으로 보임
+  check('다른 기기에서도 내 응원으로 표시', cnt(await sum(PC, t1pc), '👏').mine === true && cnt(await sum(PHONE, t1phone), '👏').mine === true)
+
+  // 14) 한 기기에서 끄면 다른 기기에서도 꺼짐
+  const eOff = await cheer(L3, PC, '👏', false, t1pc)
+  check('PC에서 끄기 → 0개, 휴대폰에서도 꺼짐', eOff.count === 0 && cnt(await sum(PHONE, t1phone), '👏').mine === false)
+
+  // 15) 같은 직원 두 기기에서 켜기 20번 동시 → 1행
+  await Promise.all(Array.from({ length: 20 }, (_, i) => cheer(L3, i % 2 ? PC : PHONE, '🔥', true, i % 2 ? t1pc : t1phone)))
+  check('같은 직원 두 기기 동시 20번 → DB 1행', (await rows(L3, '🔥')) === 1)
+
+  // 16) 이전 방식(뒤집기)도 직원 기준: 휴대폰에서 켜고 PC에서 뒤집으면 꺼짐
+  await cheer(L3, PHONE, '💪', true, t1phone)
+  const flip = await cheer(L3, PC, '💪', undefined, t1pc)
+  check('이전 방식(뒤집기)도 직원 기준으로 동작', flip.on === false && flip.count === 0)
+
+  // 17) 다른 직원은 따로 1개
+  await cheer(L3, PHONE, '👏', true, t1phone)
+  const other = await cheer(L3, 'cheer-test-other-1', '👏', true, t2)
+  check('다른 직원 응원 → 2개', other.count === 2)
+  // 같은 기기를 두 직원이 번갈아 써도(공용 PC) 각각 1개
+  await cheer(L3, PC, '🔥', true, t2)
+  check('공용 기기에서 두 직원 → 각각 1개', (await rows(L3, '🔥')) === 2)
+
+  // 18) 로그인 안 한 기기는 이전처럼 기기 기준, 직원 응원과 서로 영향 없음
+  const anonOn = await cheer(L3, 'cheer-test-anon-01', '👏', true)
+  check('로그인 안 한 기기 응원 → 따로 1개 추가', anonOn.count === 3 && (await rows(L3, '👏', 'cheer-test-anon-01')) === 1)
+  await cheer(L3, 'cheer-test-anon-01', '👏', false)
+  check('로그인 안 한 기기가 꺼도 직원 응원은 유지', (await empRows(L3, '👏', emp.id)) === 1 && (await empRows(L3, '👏', emp2.id)) === 1)
+  // 로그인 안 한 요청이 직원의 응원을 자기 것으로 보거나 끌 수 없음
+  check('로그인 없이는 직원 응원이 내 것으로 안 보임', cnt(await sum(PHONE), '👏').mine === false)
+  await cheer(L3, PHONE, '👏', false)
+  check('로그인 없이는 직원 응원을 끌 수 없음', (await empRows(L3, '👏', emp.id)) === 1)
+
+  // 19) 예전(기기 기준) 응원이 두 기기에 남아 있던 직원: 로그인 상태에서 누르면 직원 기준 한 줄로 합쳐짐
+  await db.from('log_reactions').insert([
+    { log_id: L3, device_id: PHONE, emoji: '💪' },
+    { log_id: L3, device_id: PC, emoji: '💪' },
+  ])
+  check('예전 기기 응원은 로그인 후에도 내 것으로 표시', cnt(await sum(PHONE, t1phone), '💪').mine === true && cnt(await sum(PHONE, t1phone), '💪').count === 2)
+  const offOld = await cheer(L3, PHONE, '💪', false, t1phone)
+  check('휴대폰에서 끄기 → 휴대폰의 예전 응원만 사라짐(2 → 1)', offOld.count === 1 && (await rows(L3, '💪', PHONE)) === 0)
+  const onNew = await cheer(L3, PHONE, '💪', true, t1phone)
+  check('다시 켜기 → 직원 기준 1줄 추가(PC의 예전 응원이 남아 2)', onNew.count === 2 && (await empRows(L3, '💪', emp.id)) === 1)
+  const pcOn = await cheer(L3, PC, '💪', true, t1pc)
+  check('PC에서 켜기 → PC의 예전 응원이 합쳐져 1개', pcOn.count === 1 && (await rows(L3, '💪', PC)) === 0 && (await empRows(L3, '💪', emp.id)) === 1)
+
+  // 20) 요약 응답에 직원·기기 식별값 없음
+  const sj = JSON.stringify(await sum(PHONE, t1phone))
+  check('요약 응답에 직원·기기 식별값 없음', !sj.includes(emp.id) && !sj.includes(emp2.id) && !sj.includes('employee') && !sj.includes('device'))
 } finally {
-  await db.from('exercise_logs').delete().in('id', [L1, L2])
+  await db.from('exercise_logs').delete().in('id', [L1, L2, L3].filter(Boolean))
+  if (madeSessions.length) await db.from('auth_sessions').delete().in('token_hash', madeSessions)
 }
 
-// 12) 기존 응원 데이터 그대로
+// 21) 기존 응원 데이터 그대로
 const after = await fingerprint([L1, L2])
 check('기존 응원 데이터 유지 (다른 기록의 응원 행 전후 동일)', after.n === before.n && after.key === before.key, `${before.n}건 → ${after.n}건`)
 await db.from('log_reactions').delete().like('device_id', `${SEED}%`)
-check('시험 기록·응원 정리', (await rows(L1)) === 0 && (await rows(L2)) === 0)
+check('시험 기록·응원 정리', (await rows(L1)) === 0 && (await rows(L2)) === 0 && (!L3 || (await rows(L3)) === 0))
 
 console.log(`\n결과: ${pass}/${total} 통과`)
 process.exit(pass === total ? 0 : 2)

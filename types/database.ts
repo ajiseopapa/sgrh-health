@@ -65,11 +65,12 @@ export const CHEER_LABEL: Record<string, string> = {
   '🔥': '대단해요',
 }
 
-// 누가 눌렀는지는 남기지 않습니다. 로그인이 없어 신뢰할 수 없는 정보라서,
-// 화면에 못 쓸 데이터를 모아두지 않기로 했습니다. 취소 판단만 기기 기준으로 합니다.
+// 로그인한 직원의 응원은 직원 기준(employee_id, 어느 기기든 1개), 로그인 없는 응원은 기기 기준(device_id).
+// 두 값 모두 서버(API)만 읽고 화면에는 내려보내지 않습니다.
 export interface LogReaction {
   id: string
   log_id: string
+  employee_id: string | null
   device_id: string | null
   emoji: string
   created_at: string

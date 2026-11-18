@@ -26,7 +26,7 @@ components:
 lib/
   supabase.ts        Supabase 클라이언트
   colors.ts          직원ID -> 고정 색상 매핑 (캘린더/랭킹/피드 공통)
-  device.ts          기기 식별자. 응원 취소 판단 기준 (누가 눌렀는지는 저장하지 않음)
+  device.ts          기기 식별자. 로그인 없는 응원의 중복 기준 (로그인한 직원은 서버가 직원 기준으로 1개만 셈)
   dateUtils.ts        날짜/캘린더 그리드 유틸
 types/
   database.ts        DB 타입 정의
