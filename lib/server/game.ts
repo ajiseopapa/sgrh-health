@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  computeRewards, decorByKey, decorFor, GARDEN_SLOTS, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
+  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -50,8 +50,8 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     db.from('game_equipment').select('slot, item_key').eq('employee_id', employeeId),
     // '*' 로 읽어 029(character 칸) 적용 전 DB 에서도 오류 없이 동작
     db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle(),
-    // 033(정원 배치 표) 적용 전 DB 에서는 오류가 나므로 아래에서 '준비 안 됨'으로 넘깁니다(홈 나무가 같이 죽지 않게)
-    db.from('garden_placements').select('slot, item_key').eq('employee_id', employeeId),
+    // 033·034(정원 배치 표·좌표 칸) 적용 전 DB 에서는 오류가 나므로 아래에서 '준비 안 됨'으로 넘깁니다(홈 나무가 같이 죽지 않게)
+    db.from('garden_placements').select('item_key, slot, x, y').eq('employee_id', employeeId),
   ])
   const purchases = (buys ?? []) as Purchase[]
   const spent = purchases.reduce((s, p) => s + p.price, 0)
@@ -68,13 +68,11 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
   const equipped: Record<Slot, string | null> = { hat: null, top: null, shoes: null }
   for (const r of equip ?? []) equipped[r.slot as Slot] = r.item_key
 
-  // 나의 정원: 가진 장식 + 칸별 배치(0~7). 목록에 없는 키는 내보내지 않음
-  const slots: (string | null)[] = Array.from({ length: GARDEN_SLOTS }, () => null)
-  for (const r of placed.data ?? []) if (r.slot >= 0 && r.slot < GARDEN_SLOTS && decorByKey(r.item_key)) slots[r.slot] = r.item_key
+  // 나의 정원: 가진 장식 + 놓은 자리(좌표). 목록에 없는 키는 내보내지 않음
   const garden = {
-    ready: !placed.error, // false = 033 미적용(꾸미기 준비 중)
+    ready: !placed.error, // false = 033·034 미적용(꾸미기 준비 중)
     owned: purchases.map((p) => p.item_key).filter((k) => !!decorByKey(k)),
-    slots,
+    items: placedItems(placed.data),
   }
 
   return {
@@ -102,13 +100,32 @@ export async function purchaseItem(db: SupabaseClient, employeeId: string, itemK
   return data as { status: 'ok' | 'already_owned' | 'insufficient' | 'invalid'; balance?: number }
 }
 
-/** 정원 칸에 장식 놓기·옮기기·빼기(itemKey null = 그 칸 비우기). 가진 장식만 — DB 함수가 직원별 잠금 안에서 처리 */
-export async function placeDecor(db: SupabaseClient, employeeId: string, slot: number, itemKey: string | null) {
-  if (!Number.isInteger(slot) || slot < 0 || slot >= GARDEN_SLOTS) return { status: 'invalid' as const }
-  if (itemKey !== null && !decorByKey(itemKey)) return { status: 'invalid' as const }
-  const { data, error } = await db.rpc('garden_place', { p_employee: employeeId, p_slot: slot, p_item: itemKey })
+/** 정원 배치 줄 → 화면용 목록. 좌표가 없는 줄(옛 앱이 칸 번호로 놓은 것)은 칸 자리의 좌표로 */
+function placedItems(rows: { item_key: string; slot: number | null; x: number | null; y: number | null }[] | null | undefined): Placed[] {
+  const out: Placed[] = []
+  for (const r of rows ?? []) {
+    const d = decorByKey(r.item_key)
+    if (!d) continue
+    const spot = r.x != null && r.y != null ? { x: r.x, y: r.y } : r.slot != null ? GARDEN_SPOTS[r.slot] : null
+    if (!spot) continue
+    out.push({ key: r.item_key, ...clampSpot(d, spot.x, spot.y) })
+  }
+  return out.sort((a, b) => a.key.localeCompare(b.key))
+}
+
+/** 정원에 장식 놓기·옮기기(pos 지정)·빼기(pos null). 가진 장식만 — DB 함수가 직원별 잠금 안에서 처리 */
+export async function placeDecor(db: SupabaseClient, employeeId: string, itemKey: string, pos: { x: number; y: number } | null) {
+  const d = decorByKey(itemKey)
+  if (!d) return { status: 'invalid' as const }
+  if (pos) {
+    // 화면이 보낸 값을 믿지 않음: 정수·범위 확인 + 그림이 정원 밖으로 나가지 않는 자리인지
+    if (!Number.isInteger(pos.x) || !Number.isInteger(pos.y) || pos.x < 0 || pos.x > GARDEN_SIZE || pos.y < 0 || pos.y > GARDEN_SIZE) return { status: 'invalid' as const }
+    const c = clampSpot(d, pos.x, pos.y)
+    if (c.x !== pos.x || c.y !== pos.y) return { status: 'invalid' as const }
+  }
+  const { data, error } = await db.rpc('garden_put', { p_employee: employeeId, p_item: itemKey, p_x: pos ? pos.x : null, p_y: pos ? pos.y : null })
   if (error) {
-    // 033 미적용(함수·표 없음)
+    // 033·034 미적용(함수·표 없음)
     if (error.code === 'PGRST202' || error.code === '42883' || error.code === '42P01' || error.code === 'PGRST205') return { status: 'not_ready' as const }
     if (error.code === '23503') return { status: 'not_owned' as const }
     throw new Error('PLACE_FAILED')
@@ -164,16 +181,14 @@ export async function feedLooks(db: SupabaseClient, ids: string[], today = kstTo
 export async function peerProfile(db: SupabaseClient, employeeId: string) {
   const { data: p } = await db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle()
   // 정원 구경(2단계): 공개를 켠 직원만. 나무 단계 이름과 놓인 장식만 — 운동한 날 수·햇빛·가진 장식 목록은 내보내지 않음
-  let garden: { stage: number; stageName: string; slots: (string | null)[] } | null = null
+  let garden: { stage: number; stageName: string; items: Placed[] } | null = null
   if (p?.show_in_feed === true) {
     const [e, placed] = await Promise.all([
       earnedFor(db, employeeId),
-      db.from('garden_placements').select('slot, item_key').eq('employee_id', employeeId), // 033 전 DB 면 오류 → 빈 정원
+      db.from('garden_placements').select('item_key, slot, x, y').eq('employee_id', employeeId), // 033·034 전 DB 면 오류 → 빈 정원
     ])
-    const slots: (string | null)[] = Array.from({ length: GARDEN_SLOTS }, () => null)
-    for (const r of placed.data ?? []) if (r.slot >= 0 && r.slot < GARDEN_SLOTS && decorByKey(r.item_key)) slots[r.slot] = r.item_key
     const t = treeStage(e.activeDays)
-    garden = { stage: t.stage, stageName: t.name, slots }
+    garden = { stage: t.stage, stageName: t.name, items: placedItems(placed.data) }
   }
   return {
     garden,

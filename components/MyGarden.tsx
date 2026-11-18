@@ -1,20 +1,19 @@
 'use client'
 
-// 도전 › 정원 — 나의 정원: 가운데 나무(운동으로만 자람) + 둘레 8칸 장식(햇빛으로 받음)
-// 가격·잔액·가진 장식 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
-import { useState } from 'react'
+// 도전 › 정원 — 나의 정원: 가운데 나무(운동으로만 자람) + 햇빛으로 받은 장식을 자유롭게 놓기
+// 가격·잔액·가진 장식·좌표 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
+import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { useDialog } from '@/lib/dialog'
-import { DECOR, Decor, decorByKey, GARDEN_SLOTS, TREE_STAGES } from '@/lib/game'
+import { clampSpot, DECOR, Decor, decorByKey, GARDEN_SIZE, GARDEN_SPOTS, Placed, TREE_STAGES } from '@/lib/game'
 import { Notice, Progress } from '@/lib/ui'
+import GardenCanvas from './GardenCanvas'
 import InfoTip from './InfoTip'
-import { Sheet } from './Profile'
-import TreeArt from './TreeArt'
 
 export interface GardenGame {
   sunlight: { balance: number }
   tree: { stage: number; name: string; activeDays: number; next: { name: string; at: number; remaining: number } | null }
-  garden?: { ready: boolean; owned: string[]; slots: (string | null)[] }
+  garden?: { ready: boolean; owned: string[]; items: Placed[] }
 }
 
 function hasBatchim(word: string) {
@@ -23,46 +22,80 @@ function hasBatchim(word: string) {
 }
 const obj = (d: Decor) => `${d.name}${hasBatchim(d.name) ? '을' : '를'}`
 
+/** 새 장식을 놓을 기본 자리: 다른 장식과 겹치지 않는 첫 자리 */
+function freeSpot(d: Decor, items: Placed[]) {
+  const spot = GARDEN_SPOTS.find((s) => !items.some((it) => Math.abs(it.x - s.x) < 12 && Math.abs(it.y - s.y) < 12)) ?? GARDEN_SPOTS[0]
+  return clampSpot(d, spot.x, spot.y)
+}
+
 export default function MyGarden<G extends GardenGame>({ game, onChange }: { game: G; onChange: (g: G) => void }) {
   const dialog = useDialog()
-  const [pick, setPick] = useState<number | null>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(4)
+  const [selected, setSelected] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [moving, setMoving] = useState<Placed | null>(null) // 저장 응답이 오기 전까지 새 자리를 먼저 보여 줌
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
   const t = game.tree
-  const g = game.garden ?? { ready: false, owned: [], slots: [] }
-  const slots = Array.from({ length: GARDEN_SLOTS }, (_, i) => g.slots[i] ?? null)
-  const placedCount = slots.filter(Boolean).length
+  const g = game.garden ?? { ready: false, owned: [], items: [] }
+  const items = moving ? [...g.items.filter((it) => it.key !== moving.key), moving] : g.items
 
-  async function place(slot: number, key: string | null, done: string) {
+  // 픽셀이 뭉개지지 않게 1칸을 정수 px 로: 폭이 320px 이상이면 4배, 좁으면 3배
+  useEffect(() => {
+    const el = wrap.current
+    if (!el) return
+    const fit = () => setScale(el.clientWidth >= GARDEN_SIZE * 4 ? 4 : 3)
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  async function put(key: string, x: number, y: number, done?: string) {
     if (busy) return
-    setBusy(true); setMsg(null)
-    const r = await api<{ game: G }>('/api/me/game/garden', { method: 'PUT', body: { slot, item: key } })
-    setBusy(false); setPick(null)
-    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '처리하지 못했어요.' }); return }
+    setBusy(true); setMsg(null); setMoving({ key, x, y })
+    const r = await api<{ game: G }>('/api/me/game/garden', { method: 'PUT', body: { item: key, x, y } })
+    setBusy(false); setMoving(null)
+    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '옮기지 못했어요.' }); return false }
     onChange(r.data.game)
-    setMsg({ tone: 'success', text: done })
+    if (done) setMsg({ tone: 'success', text: done })
+    return true
   }
 
-  async function buy(slot: number, d: Decor) {
+  async function takeOut(d: Decor) {
+    if (busy) return
+    setBusy(true); setMsg(null)
+    const r = await api<{ game: G }>('/api/me/game/garden', { method: 'PUT', body: { item: d.key, remove: true } })
+    setBusy(false)
+    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '처리하지 못했어요.' }); return }
+    onChange(r.data.game); setSelected(null)
+    setMsg({ tone: 'success', text: `${obj(d)} 빼 두었어요.` })
+  }
+
+  async function lay(d: Decor) {
+    const s = freeSpot(d, g.items)
+    if (await put(d.key, s.x, s.y, `${obj(d)} 놓았어요. 끌어서 자리를 옮겨 보세요.`)) setSelected(d.key)
+  }
+
+  async function buy(d: Decor) {
     if (busy) return
     const yes = await dialog.confirm({
       title: `${obj(d)} 받을까요?`,
       message: `햇빛 ${d.price}개를 써요. 받은 장식은 내 것이 되고, 햇빛으로 되돌릴 수 없어요.`,
-      confirmText: '받기', icon: d.emoji,
+      confirmText: '받기',
     })
     if (!yes) return
     setBusy(true); setMsg(null)
     const b = await api<{ game: G }>('/api/me/game/purchase', { method: 'POST', body: { item: d.key } })
-    if (!b.ok) { setBusy(false); setPick(null); setMsg({ tone: 'error', text: b.message || '받지 못했어요.' }); return }
+    setBusy(false)
+    if (!b.ok) { setMsg({ tone: 'error', text: b.message || '받지 못했어요.' }); return }
     onChange(b.data.game)
-    const r = await api<{ game: G }>('/api/me/game/garden', { method: 'PUT', body: { slot, item: d.key } })
-    setBusy(false); setPick(null)
-    if (!r.ok) { setMsg({ tone: 'error', text: `${obj(d)} 받았지만 놓지는 못했어요. 칸을 눌러 다시 놓아 주세요.` }); return }
-    onChange(r.data.game)
-    setMsg({ tone: 'success', text: `${obj(d)} 받아서 정원에 놓았어요.` })
+    const s = freeSpot(d, b.data.game.garden?.items ?? [])
+    if (await put(d.key, s.x, s.y, `${obj(d)} 받아서 정원에 놓았어요. 끌어서 자리를 옮겨 보세요.`)) setSelected(d.key)
+    else setMsg({ tone: 'error', text: `${obj(d)} 받았지만 놓지는 못했어요. 아래 목록에서 다시 놓아 주세요.` })
   }
 
-  const here = pick === null ? null : decorByKey(slots[pick])
+  const sel = decorByKey(selected)
   return (
     <section className="py-6">
       <div className="flex items-end justify-between gap-4">
@@ -72,29 +105,29 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
         </div>
         <p className="pb-1 text-right text-[13px] leading-relaxed text-ink-500">
           운동한 날 <span className="font-bold tabular-nums text-ink-900">{t.activeDays}일</span><br />
-          장식 <span className="font-bold tabular-nums text-ink-900">{placedCount}</span> / {GARDEN_SLOTS}칸
+          놓은 장식 <span className="font-bold tabular-nums text-ink-900">{g.items.length}</span>개
         </p>
       </div>
 
-      {/* 3×3: 가운데는 나무, 둘레 8칸은 장식 */}
-      <div className="mx-auto mt-4 grid max-w-[360px] grid-cols-3 gap-2 rounded-2xl bg-brand-50 p-3">
-        {Array.from({ length: 9 }, (_, pos) => {
-          if (pos === 4) {
-            return <div key="tree" className="flex aspect-square items-center justify-center"><TreeArt stage={t.stage} size={96} /></div>
-          }
-          const slot = pos < 4 ? pos : pos - 1
-          const d = decorByKey(slots[slot])
-          return (
-            <button key={slot} type="button" disabled={!g.ready || busy} onClick={() => { setMsg(null); setPick(slot) }}
-              aria-label={d ? `${slot + 1}번 칸: ${d.name}. 눌러서 바꾸기` : `${slot + 1}번 칸: 비어 있음. 눌러서 장식 놓기`}
-              className={`flex aspect-square items-center justify-center rounded-xl leading-none active:bg-brand-200 disabled:opacity-60 ${d ? 'bg-paper text-[40px]' : 'border border-dashed border-ink-300 text-[22px] font-bold text-ink-300'}`}>
-              <span aria-hidden="true">{d ? d.emoji : '+'}</span>
-            </button>
-          )
-        })}
+      <div ref={wrap} className="mt-4">
+        <GardenCanvas stage={t.stage} items={items} scale={scale} label="나의 정원. 장식을 끌어서 옮길 수 있어요."
+          selected={selected} disabled={!g.ready} onSelect={setSelected}
+          onMove={(key, x, y) => { void put(key, x, y) }} />
       </div>
 
-      <div className="mt-4">
+      {/* 고른 장식 안내 */}
+      <div className="mt-3 flex min-h-[44px] items-center justify-between gap-3 text-[13px]">
+        {sel ? (
+          <>
+            <p className="text-ink-700"><span className="font-bold text-ink-900">{sel.name}</span> 고름 · 끌거나, 놓을 자리를 눌러 옮겨요.</p>
+            <button type="button" disabled={busy} onClick={() => takeOut(sel)} className="pill-action shrink-0 text-ink-900 underline">빼 두기</button>
+          </>
+        ) : (
+          <p className="text-ink-500">{g.items.length ? '장식을 끌어서 원하는 자리로 옮겨 보세요.' : '아래에서 장식을 받아 정원에 놓아 보세요.'}</p>
+        )}
+      </div>
+
+      <div className="mt-2">
         {t.next ? (
           <>
             <Progress value={t.activeDays - TREE_STAGES[t.stage - 1].from} max={t.next.at - TREE_STAGES[t.stage - 1].from} label={`${t.next.name}까지 진행률`} />
@@ -105,61 +138,57 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
         )}
       </div>
       {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+
+      {/* 장식 목록: 받기 · 놓기 · 고르기 */}
+      <div className="mt-6 flex items-baseline justify-between">
+        <p className="text-[15px] font-bold text-ink-900">장식</p>
+        <p className="text-[13px] text-ink-500">보유 햇빛 <span className="font-bold tabular-nums text-ink-900">{game.sunlight.balance}개</span></p>
+      </div>
+      <ul className="mt-2 divide-y divide-line border-y border-line">
+        {DECOR.map((d) => {
+          const owned = g.owned.includes(d.key)
+          const placed = g.items.some((it) => it.key === d.key)
+          const short = !owned && game.sunlight.balance < d.price
+          const on = selected === d.key
+          return (
+            <li key={d.key} className="flex min-h-[64px] items-center justify-between gap-3 py-2">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={d.src} alt="" width={d.w * 2} height={d.h * 2} style={{ imageRendering: 'pixelated', width: d.w * 2, height: d.h * 2 }} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-bold text-ink-900">{d.name}</span>
+                  <span className="block text-[12px] text-ink-500">{placed ? '정원에 있어요' : owned ? '가지고 있어요' : `햇빛 ${d.price}개`}</span>
+                </span>
+              </span>
+              {placed ? (
+                <button type="button" disabled={busy || !g.ready} onClick={() => setSelected(on ? null : d.key)} aria-pressed={on}
+                  className={`shrink-0 rounded-lg border px-4 py-2 text-[14px] font-bold disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300 text-ink-900' : 'border-ink-300 text-ink-700'}`}>
+                  {on ? '고름' : '고르기'}
+                </button>
+              ) : owned ? (
+                <button type="button" disabled={busy || !g.ready} onClick={() => lay(d)}
+                  className="shrink-0 rounded-lg border border-ink-900 px-4 py-2 text-[14px] font-bold text-ink-900 active:bg-ink-50 disabled:opacity-50">놓기</button>
+              ) : (
+                <button type="button" disabled={busy || short || !g.ready} onClick={() => buy(d)}
+                  className="shrink-0 rounded-lg bg-ink-900 px-4 py-2 text-[14px] font-bold text-paper active:bg-ink-700 disabled:bg-ink-300">
+                  {short ? '햇빛 모자람' : '받기'}
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
       <InfoTip label="정원 꾸미는 법" className="mt-2">
         <ul className="space-y-1">
           <li>나무는 운동한 날이 쌓이면 자라요. 햇빛으로는 자라지 않아요.</li>
-          <li>칸을 누르고 햇빛으로 장식을 받아 놓아요. 받은 장식은 계속 내 것이에요.</li>
-          <li>놓은 장식은 다른 칸으로 옮기거나 빼 둘 수 있어요.</li>
+          <li>햇빛으로 장식을 받으면 정원에 놓여요. 받은 장식은 계속 내 것이에요.</li>
+          <li>장식을 끌어서 옮기거나, 장식을 고른 뒤 놓을 자리를 누르면 옮겨져요.</li>
+          <li>고른 장식은 &lsquo;빼 두기&rsquo;로 정원에서 뺄 수 있어요. 다시 놓을 수 있어요.</li>
           {!g.ready && <li>정원 꾸미기는 곧 열려요.</li>}
         </ul>
       </InfoTip>
-
-      {pick !== null && (
-        <Sheet title={`${pick + 1}번 칸 꾸미기`} titleId="garden-pick-title" onClose={() => { if (!busy) setPick(null) }}>
-          <p className="text-[13px] text-ink-500">보유 햇빛 <span className="font-bold tabular-nums text-ink-900">{game.sunlight.balance}개</span></p>
-          {here && (
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-ink-50 px-4 py-2">
-              <span className="text-[15px] font-bold text-ink-900"><span className="mr-2 text-[22px]" aria-hidden="true">{here.emoji}</span>지금 {here.name}</span>
-              <button type="button" disabled={busy} onClick={() => place(pick, null, `${obj(here)} 빼 두었어요.`)} className="pill-action text-ink-900 underline">빼 두기</button>
-            </div>
-          )}
-          <ul className="mt-3 divide-y divide-line border-y border-line">
-            {DECOR.map((d) => {
-              const owned = g.owned.includes(d.key)
-              const at = slots.indexOf(d.key)
-              const isHere = at === pick
-              const short = !owned && game.sunlight.balance < d.price
-              return (
-                <li key={d.key} className="flex min-h-[60px] items-center justify-between gap-3 py-2">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="text-[28px] leading-none" aria-hidden="true">{d.emoji}</span>
-                    <span className="min-w-0">
-                      <span className="block text-[15px] font-bold text-ink-900">{d.name}</span>
-                      <span className="block text-[12px] text-ink-500">
-                        {owned ? (isHere ? '이 칸에 있어요' : at >= 0 ? `${at + 1}번 칸에 있어요` : '가지고 있어요') : `햇빛 ${d.price}개`}
-                      </span>
-                    </span>
-                  </span>
-                  {isHere ? (
-                    <span className="shrink-0 text-[13px] font-semibold text-ink-500">놓여 있음</span>
-                  ) : owned ? (
-                    <button type="button" disabled={busy}
-                      onClick={() => place(pick, d.key, at >= 0 ? `${obj(d)} ${pick + 1}번 칸으로 옮겼어요.` : `${obj(d)} 놓았어요.`)}
-                      className="shrink-0 rounded-lg border border-ink-900 px-4 py-2 text-[14px] font-bold text-ink-900 active:bg-ink-50 disabled:opacity-50">
-                      {at >= 0 ? '여기로 옮기기' : '놓기'}
-                    </button>
-                  ) : (
-                    <button type="button" disabled={busy || short} onClick={() => buy(pick, d)}
-                      className="shrink-0 rounded-lg bg-ink-900 px-4 py-2 text-[14px] font-bold text-paper active:bg-ink-700 disabled:bg-ink-300">
-                      {short ? '햇빛 모자람' : '받기'}
-                    </button>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        </Sheet>
-      )}
     </section>
   )
 }

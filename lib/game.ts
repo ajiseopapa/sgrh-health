@@ -75,23 +75,42 @@ export function itemByKey(key: string | null | undefined): Item | null {
   return ITEMS.find((i) => i.key === key) ?? null
 }
 
-// ── 나의 정원: 나무 둘레 8칸에 장식을 놓습니다(11-17 TK 결정, 1단계 꾸미기). 모양만 바뀌고 효과 없음 ──
-//  · 햇빛으로 사면 내 것(환불 없음). 칸 사이로 옮기거나 빼 둘 수 있음. 같은 장식은 1개만.
-//  · 키는 game_purchases 검사(^[a-z]+_[a-z]+$)에 맞게 decor_xxx. 그림은 이모지로 시작(픽셀 그림은 디자이너 교체 예정).
-export const GARDEN_SLOTS = 8
-export interface Decor { key: string; name: string; emoji: string; price: number }
+// ── 나의 정원: 80×80칸 정원에 장식을 자유롭게 놓습니다(11-18 TK 결정: 칸 고정 → 자유 배치, 이모지 → 도트 그림). 모양만 바뀌고 효과 없음 ──
+//  · 햇빛으로 사면 내 것(환불 없음). 놓고, 옮기고, 빼 둘 수 있음. 같은 장식은 1개만.
+//  · 키는 game_purchases 검사(^[a-z]+_[a-z]+$)에 맞게 decor_xxx.
+//  · 좌표 (x, y) = 장식의 발끝(그림 아래쪽 가운데), 칸 단위 정수. 그림 크기가 바뀌어도 자리가 안 틀어지고, y 가 클수록 앞에 그려집니다.
+//  · 그림: public/game/v22/decor/decor-<이름>.png (픽셀 1칸 = 4px). 지금은 개발자 임시 시안(scripts/make-decor-art.py). w·h 는 칸 수.
+export const GARDEN_SIZE = 80
+export const GARDEN_TREE = { x: 40, y: 52, w: 24, h: 24 } // 나무 자리(고정)
+export interface Decor { key: string; name: string; price: number; w: number; h: number; src: string }
+const decor = (id: string, name: string, price: number, w = 16, h = 16): Decor =>
+  ({ key: `decor_${id}`, name, price, w, h, src: `/game/v22/decor/decor-${id}.png` })
 export const DECOR: Decor[] = [
-  { key: 'decor_tulip', name: '튤립', emoji: '🌷', price: 30 },
-  { key: 'decor_wild', name: '들꽃', emoji: '🌼', price: 30 },
-  { key: 'decor_sunflower', name: '해바라기', emoji: '🌻', price: 40 },
-  { key: 'decor_pot', name: '화분', emoji: '🪴', price: 50 },
-  { key: 'decor_bench', name: '벤치', emoji: '🪑', price: 60 },
-  { key: 'decor_butterfly', name: '나비', emoji: '🦋', price: 70 },
-  { key: 'decor_lantern', name: '정원 등', emoji: '🏮', price: 80 },
-  { key: 'decor_fountain', name: '분수', emoji: '⛲', price: 120 },
+  decor('tulip', '튤립', 30),
+  decor('wild', '들꽃', 30),
+  decor('sunflower', '해바라기', 40),
+  decor('pot', '화분', 50),
+  decor('bench', '벤치', 60, 24, 16),
+  decor('butterfly', '나비', 70),
+  decor('lantern', '정원 등', 80),
+  decor('fountain', '분수', 120, 24, 24),
 ]
 export function decorByKey(key: string | null | undefined): Decor | null {
   return DECOR.find((d) => d.key === key) ?? null
+}
+export interface Placed { key: string; x: number; y: number }
+/** 옛 칸 방식(0~7, 3×3 에서 가운데를 뺀 순서)의 자리 → 좌표. 새 장식의 기본 자리로도 씁니다 */
+export const GARDEN_SPOTS: { x: number; y: number }[] = [
+  { x: 14, y: 26 }, { x: 40, y: 26 }, { x: 66, y: 26 }, { x: 14, y: 52 },
+  { x: 66, y: 52 }, { x: 14, y: 78 }, { x: 40, y: 78 }, { x: 66, y: 78 },
+]
+/** 그림이 정원 밖으로 나가지 않게 발끝 좌표를 맞춤 */
+export function clampSpot(d: Decor, x: number, y: number) {
+  const half = Math.ceil(d.w / 2)
+  return {
+    x: Math.min(Math.max(Math.round(x), half), GARDEN_SIZE - half),
+    y: Math.min(Math.max(Math.round(y), d.h), GARDEN_SIZE),
+  }
 }
 
 // ── 보상 계산 ──

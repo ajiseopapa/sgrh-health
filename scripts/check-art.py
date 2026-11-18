@@ -23,5 +23,19 @@ for k in keys:
 for c in ['char-m', 'char-f']:
     im = Image.open(f'public/game/v22/characters/{c}.png')
     check(f'캐릭터 {c}: 64×96 · 투명 배경', im.size == (64, 96) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, f'{im.size}')
+
+# 나무 4단계(96×96) · 정원 장식(lib/game.ts DECOR 의 칸 수 × 4px)
+for n in range(1, 5):
+    f = Path(f'public/game/v22/tree/stage-{n}.png')
+    im = Image.open(f) if f.exists() else None
+    check(f'나무 stage-{n}: 96×96 · 투명 배경', bool(im) and im.size == (96, 96) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, str(im.size if im else '없음'))
+g = Path('lib/game.ts').read_text(encoding='utf-8')
+decor = re.findall(r"decor\('(\w+)', '[^']+', \d+(?:, (\d+), (\d+))?\)", g)
+check('장식 8종 정의', len(decor) == 8, str(len(decor)))
+for name, w, h in decor:
+    w, h = int(w or 16), int(h or 16)
+    f = Path(f'public/game/v22/decor/decor-{name}.png')
+    im = Image.open(f) if f.exists() else None
+    check(f'장식 decor-{name}: {w*4}×{h*4} · 투명 배경', bool(im) and im.size == (w * 4, h * 4) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, str(im.size if im else '없음'))
 print(f'\n결과: {ok}/{ok + bad} 통과')
 sys.exit(1 if bad else 0)

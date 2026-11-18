@@ -10,7 +10,7 @@ export { TreeArt } // 예전 import 경로 유지(HomeTab 등)
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, SHOW_DEPT_GARDEN, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, Placed, SHOW_DEPT_GARDEN, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -20,7 +20,7 @@ interface Game {
   ledger: { type: 'earn' | 'spend'; key: string; date: string; label: string; points: number }[]
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
   character: { owned: string[]; equipped: Record<Slot, string | null> }
-  garden?: { ready: boolean; owned: string[]; slots: (string | null)[] }
+  garden?: { ready: boolean; owned: string[]; items: Placed[] }
   showInFeed: boolean
   characterKey: CharacterKey | null
   goalBasis: { kind: 'sessions' | 'minutes'; target: number; value: number } | null

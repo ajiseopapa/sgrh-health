@@ -5,10 +5,10 @@
 // 저장은 /api/me/game/profile 하나로: character · message · nameEmoji · showInFeed
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
-import { CHARACTERS, CharacterKey, characterOf, decorByKey, DEFAULT_CHARACTER, NAME_EMOJIS } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, NAME_EMOJIS, Placed } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
 import SproutIcon from './SproutIcon'
-import TreeArt from './TreeArt'
+import GardenCanvas from './GardenCanvas'
 
 const MESSAGE_MAX = 40
 
@@ -34,20 +34,22 @@ export function PixelCharacter({ charKey, scale = 2, className = '' }: { charKey
 }
 
 /** 창 껍데기 — 폰은 아래에서 올라오고, PC는 가운데 */
-export function Sheet({ title, titleId, onClose, children }: { title: string; titleId: string; onClose: () => void; children: React.ReactNode }) {
+export function Sheet({ title, titleId, onClose, locked = false, children }: { title: string; titleId: string; onClose: () => void; locked?: boolean; children: React.ReactNode }) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !locked) onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, locked])
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center" onClick={locked ? undefined : onClose}>
       <div role="dialog" aria-modal="true" aria-labelledby={titleId}
         className="flex max-h-[88vh] w-full max-w-md flex-col rounded-t-2xl bg-paper lg:rounded-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 pb-2 pt-4">
           <h2 id={titleId} className="text-[17px] font-extrabold text-ink-900">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="닫기"
-            className="-mr-2 flex h-11 w-11 items-center justify-center text-[24px] leading-none text-ink-500">×</button>
+          {locked ? <span className="h-11" /> : (
+            <button type="button" onClick={onClose} aria-label="닫기"
+              className="-mr-2 flex h-11 w-11 items-center justify-center text-[24px] leading-none text-ink-500">×</button>
+          )}
         </div>
         <div className="overflow-y-auto px-5 pb-6">{children}</div>
       </div>
@@ -57,9 +59,10 @@ export function Sheet({ title, titleId, onClose, children }: { title: string; ti
 
 interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | null; showInFeed: boolean; message: string | null }
 
-/** 내 프로필 창 — 캐릭터 고르기 · 한마디 · 프로필 이모지 · 동료에게 캐릭터 보이기 */
-export function ProfileSheet({ open, name, onClose, onEmoji }: {
-  open: boolean; name: string; onClose: () => void; onEmoji: (v: string | null) => void
+/** 내 프로필 창 — 캐릭터 고르기 · 한마디 · 프로필 이모지 · 동료에게 캐릭터 보이기
+ *  setup: 처음 접속해 캐릭터를 아직 안 고른 직원(11-18 TK). 캐릭터를 골라야 닫을 수 있고, 나머지는 나중에 바꿔도 됨 */
+export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
+  open: boolean; name: string; onClose: () => void; onEmoji: (v: string | null) => void; setup?: boolean
 }) {
   const [p, setP] = useState<MyProfile | null>(null)
   const [draft, setDraft] = useState('')
@@ -94,12 +97,18 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
   const label = 'mb-2 text-[13px] font-bold text-ink-700'
 
   return (
-    <Sheet title="내 프로필" titleId="profile-sheet-title" onClose={onClose}>
+    <Sheet title={setup ? '내 캐릭터 고르기' : '내 프로필'} titleId="profile-sheet-title" onClose={onClose} locked={setup}>
       {!p ? (msg ? <Notice tone={msg.tone}>{msg.text}</Notice> : <Loading lines={3} />) : (
         <div className="space-y-6">
+          {setup && (
+            <p className="rounded-xl bg-brand-50 px-4 py-3 text-[14px] leading-relaxed text-ink-900">
+              {name}님, 반가워요. 시작하기 전에 <span className="font-bold">내 캐릭터</span>를 골라 주세요. 한마디와 이모지는 나중에 바꿔도 돼요.
+            </p>
+          )}
           {/* 캐릭터 */}
           <div className="flex items-end gap-5">
-            <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} scale={2} />
+            {/* 처음 접속해 아직 안 골랐으면 큰 그림을 비워 둠(기본 캐릭터가 고른 것처럼 보이지 않게) */}
+            {(!setup || p.characterKey) && <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} scale={2} />}
             <div className="min-w-0 flex-1 pb-1">
               <p className="text-[18px] font-extrabold text-ink-900">{p.nameEmoji ? `${p.nameEmoji} ` : ''}{name}</p>
               <p className="mt-1 break-words text-[14px] text-ink-600">{p.message || '아직 한마디가 없어요.'}</p>
@@ -110,7 +119,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
             <p className={label}>캐릭터</p>
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="캐릭터 고르기">
               {CHARACTERS.map((c) => {
-                const on = (p.characterKey ?? DEFAULT_CHARACTER) === c.key
+                const on = (setup ? p.characterKey : p.characterKey ?? DEFAULT_CHARACTER) === c.key // 처음에는 아무것도 안 골라진 상태
                 return (
                   <button key={c.key} type="button" role="radio" aria-checked={on} disabled={busy}
                     onClick={() => { if (c.key !== p.characterKey) save({ character: c.key }, (cur) => ({ ...cur, characterKey: c.key })) }}
@@ -121,7 +130,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
                 )
               })}
             </div>
-            <p className="mt-2 text-[12px] text-ink-500">캐릭터를 꾸미는 아이템은 준비 중이에요.</p>
+            {setup && !p.characterKey && <p className="mt-2 text-[13px] font-semibold text-ink-900">둘 중 하나를 눌러 주세요.</p>}
           </div>
 
           {/* 한마디 */}
@@ -170,6 +179,12 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
           </div>
 
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+          {setup && (
+            <button type="button" disabled={busy || !p.characterKey} onClick={onClose}
+              className="flex min-h-[52px] w-full items-center justify-center rounded-xl bg-ink-900 text-[16px] font-bold text-paper active:bg-ink-700 disabled:bg-ink-300">
+              {p.characterKey ? '시작하기' : '캐릭터를 골라 주세요'}
+            </button>
+          )}
         </div>
       )}
     </Sheet>
@@ -178,29 +193,20 @@ export function ProfileSheet({ open, name, onClose, onEmoji }: {
 
 interface Peer {
   emoji: string | null; showCharacter: boolean; character: string | null; message: string | null
-  garden?: { stage: number; stageName: string; slots: (string | null)[] } | null
+  garden?: { stage: number; stageName: string; items: Placed[] } | null
 }
 
-/** 동료 정원(구경만) — 가운데 나무 + 둘레 8칸. 누를 수 없음 */
+/** 동료 정원(구경만) — 나무와 놓인 장식. 누를 수 없음 */
 function PeerGarden({ name, garden }: { name: string; garden: NonNullable<Peer['garden']> }) {
-  const placed = garden.slots.filter(Boolean).length
+  const placed = garden.items.length
   return (
     <div className="mt-5 w-full border-t border-line pt-4 text-left">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-[15px] font-bold text-ink-900">{name}님의 정원</p>
         <p className="text-[13px] font-semibold text-ink-500">{garden.stageName}</p>
       </div>
-      <div className="mx-auto mt-3 grid max-w-[280px] grid-cols-3 gap-1.5 rounded-2xl bg-brand-50 p-2.5" role="img"
-        aria-label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`}>
-        {Array.from({ length: 9 }, (_, pos) => {
-          if (pos === 4) return <div key="tree" className="flex aspect-square items-center justify-center"><TreeArt stage={garden.stage} size={72} /></div>
-          const d = decorByKey(garden.slots[pos < 4 ? pos : pos - 1])
-          return (
-            <div key={pos} className={`flex aspect-square items-center justify-center rounded-xl text-[32px] leading-none ${d ? 'bg-paper' : 'bg-brand-100/70'}`}>
-              {d && <span aria-hidden="true">{d.emoji}</span>}
-            </div>
-          )
-        })}
+      <div className="mt-3">
+        <GardenCanvas stage={garden.stage} items={garden.items} scale={3} label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`} />
       </div>
       {placed === 0 && <p className="mt-2 text-center text-[13px] text-ink-500">아직 장식을 놓지 않았어요.</p>}
     </div>
@@ -241,8 +247,13 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
 export function HomeProfile({ name }: { name: string }) {
   const [emoji, setEmoji] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  const [setup, setSetup] = useState(false) // 처음 접속: 캐릭터를 골라야 시작
   useEffect(() => {
-    api<{ nameEmoji?: string | null }>('/api/me/game').then((r) => { if (r.ok) setEmoji(r.data.nameEmoji ?? null) })
+    api<{ nameEmoji?: string | null; characterKey?: string | null }>('/api/me/game').then((r) => {
+      if (!r.ok) return
+      setEmoji(r.data.nameEmoji ?? null)
+      if (r.data.characterKey === null) { setSetup(true); setOpen(true) }
+    })
   }, [])
   return (
     <>
@@ -251,7 +262,7 @@ export function HomeProfile({ name }: { name: string }) {
         <ProfileAvatar emoji={emoji} size={40} />
         <span className="text-[15px] font-bold text-ink-900">{name}님</span>
       </button>
-      <ProfileSheet open={open} name={name} onClose={() => setOpen(false)} onEmoji={setEmoji} />
+      <ProfileSheet open={open} name={name} setup={setup} onClose={() => { setOpen(false); setSetup(false) }} onEmoji={setEmoji} />
     </>
   )
 }
