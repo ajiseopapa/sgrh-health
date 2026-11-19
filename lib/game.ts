@@ -86,6 +86,8 @@ export const GARDEN_SIZE = 80
 export const GARDEN_TREE = { x: 40, y: 54 } // 나무 밑동 자리(고정)
 /** 정원에서 나무가 차지하는 칸(정사각) — 단계가 오를수록 커집니다(새싹 → 큰 나무) */
 export const TREE_GARDEN = [18, 23, 30, 40] as const
+/** 정원에 서 있는 정원 주인 캐릭터(11-19 TK): 나무 오른쪽 앞, 고정 자리. w·h 는 칸(그림 비율 2:3) */
+export const GARDEN_CHAR = { x: 59, y: 66, w: 14, h: 21 }
 export interface Decor { key: string; name: string; price: number; w: number; h: number; src: string }
 const decor = (id: string, name: string, price: number, w = 16, h = 16): Decor =>
   ({ key: `decor_${id}`, name, price, w, h, src: `/game/v22/decor/decor-${id}.png` })

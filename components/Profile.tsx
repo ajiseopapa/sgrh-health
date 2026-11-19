@@ -182,7 +182,7 @@ interface Peer {
 }
 
 /** 동료 정원(구경만) — 나무와 놓인 장식. 누를 수 없음 */
-function PeerGarden({ name, garden }: { name: string; garden: NonNullable<Peer['garden']> }) {
+function PeerGarden({ name, garden, character }: { name: string; garden: NonNullable<Peer['garden']>; character: string | null }) {
   const placed = garden.items.length
   return (
     <div className="mt-5 w-full border-t border-line pt-4 text-left">
@@ -191,7 +191,7 @@ function PeerGarden({ name, garden }: { name: string; garden: NonNullable<Peer['
         <p className="text-[13px] font-semibold text-ink-500">{garden.stageName}</p>
       </div>
       <div className="mt-3">
-        <GardenCanvas stage={garden.stage} items={garden.items} scale={3} label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`} />
+        <GardenCanvas stage={garden.stage} items={garden.items} scale={3} character={character} label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`} />
       </div>
       {placed === 0 && <p className="mt-2 text-center text-[13px] text-ink-500">아직 장식을 놓지 않았어요.</p>}
     </div>
@@ -221,7 +221,7 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
           <p className={`mt-3 w-full break-words rounded-xl bg-ink-50 px-4 py-3 text-[15px] ${peer.message ? 'text-ink-900' : 'text-ink-500'}`}>
             {peer.message || '아직 한마디가 없어요.'}
           </p>
-          {peer.garden && <PeerGarden name={name} garden={peer.garden} />}
+          {peer.garden && <PeerGarden name={name} garden={peer.garden} character={peer.character} />}
         </div>
       )}
     </Sheet>
