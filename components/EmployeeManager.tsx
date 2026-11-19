@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { useDialog } from '@/lib/dialog'
 import { Employee } from '@/types/database'
 import PinIssueResult, { IssuedPin } from './PinIssueResult'
+import BulkEmployeeAdd from './BulkEmployeeAdd'
 
 type PinStatus = 'none' | 'temp' | 'set' | 'locked'
 type AdminEmployee = Employee & {
@@ -203,8 +204,11 @@ export default function EmployeeManager() {
         {error && <p role="alert" className="text-[14px] font-semibold text-red-700">{error}</p>}
       </div>
 
+      <BulkEmployeeAdd onDone={fetchList} />
+
       <div className="card space-y-2">
         <p className="text-[15px] font-bold text-ink-900">본인 확인 PIN</p>
+        <p className="text-[13px] text-ink-600">PIN이 없는 직원은 처음 들어올 때 직접 PIN을 정해요. 임시 PIN 발급은 PIN을 잊은 직원처럼 필요할 때만 쓰면 돼요.</p>
         <p className="text-[13px] text-ink-600">
           PIN 없음 {missingCount}명 · 임시 PIN {list.filter((e) => e.pin_status === 'temp').length}명 ·
           등록 {list.filter((e) => e.pin_status === 'set').length}명

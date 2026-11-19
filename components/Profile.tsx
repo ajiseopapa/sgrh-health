@@ -13,11 +13,12 @@ import GardenCanvas from './GardenCanvas'
 const MESSAGE_MAX = 40
 
 /** 프로필 원형. 이모지를 고르지 않았으면 기본 아이콘(움트다 새싹) */
-export function ProfileAvatar({ emoji, size = 44 }: { emoji: string | null; size?: number }) {
+export function ProfileAvatar({ emoji, size = 44 }: { emoji: string | null | undefined; size?: number }) {
   return (
     <span className="flex shrink-0 items-center justify-center rounded-full border-2 border-ink-900 bg-sheet"
       style={{ width: size, height: size }} aria-hidden="true">
-      {emoji
+      {/* undefined = 아직 모름(불러오는 중): 비워 둠. 새싹을 먼저 그렸다가 이모지로 바뀌면 깜빡여 보임 */}
+      {emoji === undefined ? null : emoji
         ? <span className="leading-none" style={{ fontSize: Math.round(size * 0.55) }}>{emoji}</span>
         : <SproutIcon size={Math.round(size * 0.6)} />}
     </span>
@@ -228,9 +229,18 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
   )
 }
 
+const EMOJI_KEY = 'sgrh_health_my_emoji'
+
 /** 홈 상단: 프로필 원형 + 이름(본인 확인된 직원만). 누르면 내 프로필 창 */
 export function HomeProfile({ name }: { name: string }) {
-  const [emoji, setEmoji] = useState<string | null>(null)
+  // 지난번에 본 이모지를 먼저 그리고(이 기기에 기억), 서버 값이 오면 맞춥니다 → 새로고침 때 새싹이 잠깐 보이던 깜빡임 없앰
+  const [emoji, setEmojiState] = useState<string | null | undefined>(() => {
+    try { const v = localStorage.getItem(EMOJI_KEY); return v === null ? undefined : v || null } catch { return undefined }
+  })
+  const setEmoji = (v: string | null) => {
+    setEmojiState(v)
+    try { localStorage.setItem(EMOJI_KEY, v ?? '') } catch { /* 저장 못 해도 화면은 그대로 */ }
+  }
   const [open, setOpen] = useState(false)
   useEffect(() => {
     api<{ nameEmoji?: string | null }>('/api/me/game').then((r) => { if (r.ok) setEmoji(r.data.nameEmoji ?? null) })
