@@ -9,9 +9,8 @@ import { Engagement, METRIC_LABEL, METRIC_UNIT, useEngagement } from '@/lib/enga
 import { Empty, Icon, Loading, NeedLogin, Notice, PageHead, Progress, Section, Segmented, fmtMinutes } from '@/lib/ui'
 import { BADGES, BadgeDef, badgeSrc, SERIES_LABEL, SERIES_UNIT } from '@/lib/badges'
 import StatsTab from './StatsTab'
-import GardenPanel from './GardenPanel'
 
-export type Panel = 'goal' | 'challenge' | 'badge' | 'rank' | 'garden'
+export type Panel = 'goal' | 'challenge' | 'badge' | 'rank'
 
 export default function ChallengeTab({ initialPanel = 'goal' }: { initialPanel?: Panel }) {
   const [panel, setPanel] = useState<Panel>(initialPanel)
@@ -26,15 +25,13 @@ export default function ChallengeTab({ initialPanel = 'goal' }: { initialPanel?:
         { value: 'challenge', label: '챌린지' },
         { value: 'badge', label: '배지' },
         { value: 'rank', label: '순위' },
-        { value: 'garden', label: '정원' },
       ]} />
-      {/* PC: 순위(통계)와 정원(정원 + 장식 목록 나란히)은 넓게, 나머지는 읽기 좋은 폭 */}
-      <div className={`pt-2 ${panel === 'rank' || panel === 'garden' ? '' : 'lg:max-w-[680px]'}`}>
+      {/* PC: 순위(통계)만 넓게, 나머지는 읽기 좋은 폭. 정원은 따로 탭으로 뺌(app/page.tsx) */}
+      <div className={`pt-2 ${panel === 'rank' ? '' : 'lg:max-w-[680px]'}`}>
         {panel === 'goal' && <GoalPanel eng={eng} onSaved={() => setRefresh((k) => k + 1)} />}
         {panel === 'challenge' && <ChallengePanel eng={eng} onJoined={() => setRefresh((k) => k + 1)} />}
         {panel === 'badge' && <BadgePanel eng={eng} />}
         {panel === 'rank' && <RankPanel />}
-        {panel === 'garden' && <GardenPanel />}
       </div>
     </div>
   )

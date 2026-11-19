@@ -5,23 +5,26 @@ import HomeTab from '@/components/HomeTab'
 import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
 import ChallengeTab, { type Panel } from '@/components/ChallengeTab'
+import GardenPanel from '@/components/GardenPanel'
 import SettingsPanel from '@/components/SettingsPanel'
 import AdminPasswordModal from '@/components/AdminPasswordModal'
 import AnnouncementsModal, { useHasUnreadAnnouncements } from '@/components/AnnouncementsModal'
 import SuggestionModal, { useHasNewSuggestions } from '@/components/SuggestionModal'
 import IdentityModal from '@/components/IdentityModal'
+import { CharacterSetupGate } from '@/components/Profile'
 import { MeProvider, useMe } from '@/lib/me'
 import { DialogProvider } from '@/lib/dialog'
-import { Icon } from '@/lib/ui'
+import { Icon, PageHead } from '@/lib/ui'
 import SproutIcon from '@/components/SproutIcon'
 
-// 직원 화면은 네 개만. 관리 기능은 위쪽 '관리'에서 따로 엽니다.
-export type TabKey = 'home' | 'record' | 'challenge' | 'feed'
+// 직원 화면은 다섯 개. 정원은 도전 안에 있다가 따로 뺌(11-19 TK). 관리 기능은 위쪽 '관리'에서 따로 엽니다.
+export type TabKey = 'home' | 'record' | 'challenge' | 'garden' | 'feed'
 
-const TABS: { key: TabKey; label: string; icon: 'home' | 'pencil' | 'flag' | 'feed' }[] = [
+const TABS: { key: TabKey; label: string; icon: 'home' | 'pencil' | 'flag' | 'sprout' | 'feed' }[] = [
   { key: 'home', label: '홈', icon: 'home' },
   { key: 'record', label: '기록', icon: 'pencil' },
   { key: 'challenge', label: '도전', icon: 'flag' },
+  { key: 'garden', label: '정원', icon: 'sprout' },
   { key: 'feed', label: '피드', icon: 'feed' },
 ]
 
@@ -36,7 +39,7 @@ export default function Page() {
 }
 
 function AppShell() {
-  const { isAdmin, refresh, adminLogout } = useMe()
+  const { isAdmin, refresh, adminLogout, me, mustChangePin } = useMe()
   const [tab, setTab] = useState<TabKey>('home')
   const [challengePanel, setChallengePanel] = useState<Panel>('goal')
   const [showSettings, setShowSettings] = useState(false)
@@ -98,9 +101,10 @@ function AppShell() {
       <main className="flex-1 px-5 lg:px-10">
         {/* PC: 홈·기록·도전은 넓게, 피드는 읽기 좋은 폭으로 */}
         <div className={`lg:mx-auto ${tab === 'feed' ? 'lg:max-w-[680px]' : 'lg:max-w-[1040px]'}`}>
-        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => { setChallengePanel('goal'); setTab('challenge') }} onTree={() => { setChallengePanel('garden'); setTab('challenge') }} />}
+        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => { setChallengePanel('goal'); setTab('challenge') }} onTree={() => setTab('garden')} />}
         {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
         {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}-${challengePanel}`} initialPanel={challengePanel} />}
+        {tab === 'garden'    && <div key={`garden-${refreshKey}`}><PageHead title="정원" /><GardenPanel /></div>}
         {tab === 'feed'      && <FeedTab      key={`feed-${refreshKey}`} />}
         </div>
       </main>
@@ -160,6 +164,7 @@ function AppShell() {
       )}
 
       <IdentityModal />
+      <CharacterSetupGate employeeId={me && !mustChangePin ? me.id : null} name={me?.name ?? ''} onDone={() => setRefreshKey((k) => k + 1)} />
 
       {showSettings && (
         <SettingsPanel

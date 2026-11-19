@@ -3,11 +3,12 @@ import { serverDb } from '@/lib/server/db'
 import { checkCsrf, fail, handle, limitWrites, ok, readJson } from '@/lib/server/guard'
 import { DEVICE_RE, UUID_RE } from '@/lib/server/validate'
 import { CHEER_EMOJIS } from '@/types/database'
+import { adoptDeviceReactions, reactorKey } from '@/lib/server/reactor'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * 응원 켜기/끄기 — 익명(기기 기준) 유지.
+ * 응원 켜기/끄기 — 익명 유지. 본인 확인을 한 직원은 직원 기준(PC·폰 합쳐 한 번), 아니면 기기 기준(lib/server/reactor.ts).
  *
  * on: true  → 이 기기·기록·이모지 응원을 켭니다. 이미 켜져 있으면 그대로(중복 없음)
  * on: false → 끕니다. 이미 꺼져 있으면 그대로
@@ -34,7 +35,9 @@ export const POST = handle(async (req: NextRequest) => {
   if (body?.on !== undefined && typeof body.on !== 'boolean') return fail(400, '요청 형식이 올바르지 않아요.')
 
   const db = serverDb()
-  const match = { log_id: logId, device_id: deviceId, emoji }
+  const key = (await reactorKey(deviceId)) as string
+  await adoptDeviceReactions(db, deviceId, key)
+  const match = { log_id: logId, device_id: key, emoji }
 
   let want = body?.on as boolean | undefined
   if (want === undefined) {

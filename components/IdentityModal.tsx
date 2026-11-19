@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { Employee } from '@/types/database'
 
-type Step = 'pick' | 'pin' | 'change'
+type Step = 'pick' | 'pin' | 'change' | 'setup'
 
 function PinInput({ value, onChange, placeholder, autoFocus, onEnter }: {
   value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void
@@ -27,6 +27,7 @@ function PinInput({ value, onChange, placeholder, autoFocus, onEnter }: {
 }
 
 // 본인 확인: 이름 고르기 → PIN 6자리 → (임시 PIN이면) 내 PIN으로 바꾸기
+// 처음 시작하는 직원(PIN이 아직 없음): 이름 고르기 → 내 PIN 정하기(setup). 관리자가 PIN을 나눠 주지 않아도 됨(11-19 TK)
 export default function IdentityModal() {
   const { identityOpen, closeIdentity, me, mustChangePin, refresh } = useMe()
   const [step, setStep] = useState<Step>('pick')
@@ -65,6 +66,32 @@ export default function IdentityModal() {
 
   if (!identityOpen) return null
 
+  /** 이름을 고르면 PIN이 있는지 보고, 없으면 바로 '내 PIN 정하기'로 */
+  async function pick(e: Employee) {
+    if (busy) return
+    setPicked(e); setError(''); setBusy(true)
+    const r = await api<{ hasPin: boolean }>(`/api/auth/setup-pin?id=${e.id}`)
+    setBusy(false)
+    setStep(r.ok && !r.data.hasPin ? 'setup' : 'pin')
+  }
+
+  async function setupPin() {
+    if (!picked) return
+    if (newPin.length !== 6) { setError('PIN 6자리를 입력해주세요.'); return }
+    if (newPin !== newPin2) { setError('PIN 두 번이 서로 달라요.'); return }
+    setBusy(true); setError('')
+    const r = await api<{ hasPin?: boolean }>('/api/auth/setup-pin', { method: 'POST', body: { employeeId: picked.id, newPin } })
+    setBusy(false)
+    if (!r.ok) {
+      setError(r.message)
+      // 그 사이 PIN이 정해졌으면 PIN 입력 화면으로
+      if (r.status === 409) { setNewPin(''); setNewPin2(''); setStep('pin') }
+      return
+    }
+    await refresh()
+    closeIdentity(true)
+  }
+
   async function login() {
     if (!picked) return
     if (pin.length !== 6) { setError('PIN 6자리를 입력해주세요.'); return }
@@ -102,12 +129,13 @@ export default function IdentityModal() {
         <div className="flex items-center gap-3">
           <div>
             <h3 className="text-[19px] font-extrabold tracking-[-0.02em] text-ink-900">
-              {step === 'change' ? '내 PIN 정하기' : '본인 확인'}
+              {step === 'change' || step === 'setup' ? '내 PIN 정하기' : '본인 확인'}
             </h3>
             <p className="text-xs text-ink-400">
               {step === 'pick' && '처음 한 번만 확인해요.'}
               {step === 'pin' && `${picked?.name}님의 PIN 6자리`}
               {step === 'change' && '임시 PIN을 나만 아는 번호로 바꿔주세요.'}
+              {step === 'setup' && `${picked?.name}님, 처음이시네요. 나만 아는 PIN을 정해주세요.`}
             </p>
           </div>
         </div>
@@ -127,7 +155,7 @@ export default function IdentityModal() {
                   <li key={e.id}>
                     <button
                       type="button"
-                      onClick={() => { setPicked(e); setStep('pin'); setError('') }}
+                      onClick={() => pick(e)}
                       className="w-full px-3 py-2.5 text-left text-sm text-ink-800 transition hover:bg-brand-50"
                     >
                       {e.name}
@@ -155,18 +183,31 @@ export default function IdentityModal() {
           </div>
         )}
 
+        {step === 'setup' && (
+          <div className="space-y-2">
+            <PinInput value={newPin} onChange={setNewPin} placeholder="새 PIN" autoFocus />
+            <PinInput value={newPin2} onChange={setNewPin2} placeholder="새 PIN 한 번 더" onEnter={setupPin} />
+            <p className="text-[11px] text-ink-400">숫자 6자리 · 123456, 111111처럼 쉬운 번호나 사번은 안 돼요. 다음부터 이 PIN으로 본인 확인을 해요.</p>
+          </div>
+        )}
+
         {error && <p className="text-xs font-medium text-red-700">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <button
-            onClick={() => (step === 'pin' ? (setStep('pick'), setPin(''), setError('')) : closeIdentity(false))}
+            onClick={() => (step === 'pin' || step === 'setup' ? (setStep('pick'), setPin(''), setNewPin(''), setNewPin2(''), setError('')) : closeIdentity(false))}
             className="btn-secondary"
           >
-            {step === 'pin' ? '뒤로' : '닫기'}
+            {step === 'pin' || step === 'setup' ? '뒤로' : '닫기'}
           </button>
           {step === 'pin' && (
             <button onClick={login} disabled={busy} className="btn-primary flex-1">
               {busy ? '확인 중...' : '확인'}
+            </button>
+          )}
+          {step === 'setup' && (
+            <button onClick={setupPin} disabled={busy} className="btn-primary flex-1">
+              {busy ? '저장 중...' : 'PIN 정하고 시작'}
             </button>
           )}
           {step === 'change' && (

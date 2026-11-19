@@ -3,6 +3,7 @@ import { serverDb } from '@/lib/server/db'
 import { checkCsrf, fail, handle, ok, readJson } from '@/lib/server/guard'
 import { DEVICE_RE, UUID_RE } from '@/lib/server/validate'
 import { CHEER_EMOJIS } from '@/types/database'
+import { adoptDeviceReactions, reactorKey } from '@/lib/server/reactor'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,10 @@ export const POST = handle(async (req: NextRequest) => {
     return fail(400, '요청 형식이 올바르지 않아요.')
   }
   const deviceId = String(body?.deviceId ?? '')
-  const myDevice = DEVICE_RE.test(deviceId) ? deviceId : null
+  const device = DEVICE_RE.test(deviceId) ? deviceId : null
+  // 본인 확인을 한 직원은 직원 기준 키(PC·폰 합쳐 한 번). 이 기기로 눌러 둔 옛 응원은 직원 키로 옮김
+  const myDevice = await reactorKey(device)
+  await adoptDeviceReactions(serverDb(), device, myDevice)
 
   // 한 번에 1,000행까지만 오므로 나눠 읽습니다(응원이 많아도 개수가 잘리지 않게)
   const rows: { log_id: string; emoji: string; device_id: string | null }[] = []

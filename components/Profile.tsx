@@ -232,13 +232,8 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
 export function HomeProfile({ name }: { name: string }) {
   const [emoji, setEmoji] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
-  const [setup, setSetup] = useState(false) // 처음 접속: 캐릭터를 골라야 시작
   useEffect(() => {
-    api<{ nameEmoji?: string | null; characterKey?: string | null }>('/api/me/game').then((r) => {
-      if (!r.ok) return
-      setEmoji(r.data.nameEmoji ?? null)
-      if (r.data.characterKey === null) { setSetup(true); setOpen(true) }
-    })
+    api<{ nameEmoji?: string | null }>('/api/me/game').then((r) => { if (r.ok) setEmoji(r.data.nameEmoji ?? null) })
   }, [])
   return (
     <>
@@ -247,7 +242,25 @@ export function HomeProfile({ name }: { name: string }) {
         <ProfileAvatar emoji={emoji} size={40} />
         <span className="text-[15px] font-bold text-ink-900">{name}님</span>
       </button>
-      <ProfileSheet open={open} name={name} setup={setup} onClose={() => { setOpen(false); setSetup(false) }} onEmoji={setEmoji} />
+      <ProfileSheet open={open} name={name} onClose={() => setOpen(false)} onEmoji={setEmoji} />
     </>
   )
+}
+
+/**
+ * 처음 시작하는 직원은 캐릭터(남성형·여성형)를 반드시 고릅니다(11-19 TK).
+ * 본인 확인이 끝난 직원이 캐릭터를 아직 안 골랐으면, 어느 탭에 있든 고르기 창을 띄우고 골라야 닫힙니다.
+ * 임시 PIN 상태(내 PIN으로 바꾸기 전)에는 띄우지 않습니다 — PIN부터 정해야 저장할 수 있음.
+ */
+export function CharacterSetupGate({ employeeId, name, onDone }: { employeeId: string | null; name: string; onDone?: () => void }) {
+  const [need, setNeed] = useState(false)
+  useEffect(() => {
+    setNeed(false)
+    if (!employeeId) return
+    let alive = true
+    api<{ characterKey?: string | null }>('/api/me/game').then((r) => { if (alive && r.ok && r.data.characterKey === null) setNeed(true) })
+    return () => { alive = false }
+  }, [employeeId])
+  if (!need) return null
+  return <ProfileSheet open name={name} setup onClose={() => { setNeed(false); onDone?.() }} onEmoji={() => {}} />
 }

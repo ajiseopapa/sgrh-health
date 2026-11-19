@@ -5,12 +5,13 @@ import { ReactNode } from 'react'
 
 // ── 아이콘 (선 아이콘, 24px 격자, currentColor) ──
 type IconName =
-  | 'home' | 'pencil' | 'flag' | 'feed' | 'bell' | 'chat' | 'gear' | 'check' | 'chevron-left'
+  | 'home' | 'pencil' | 'flag' | 'sprout' | 'feed' | 'bell' | 'chat' | 'gear' | 'check' | 'chevron-left'
   | 'chevron-right' | 'plus' | 'close' | 'lock' | 'alert'
 const PATHS: Record<IconName, ReactNode> = {
   home: <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" />,
   pencil: <><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" /><path d="m14.5 7.5 3 3" /></>,
   flag: <><path d="M5 21V4" /><path d="M5 4h11l-2 4 2 4H5" /></>,
+  sprout: <><path d="M12 21v-9" /><path d="M12 12c0-3.5-2.5-6-7-6 0 4 2.5 6 7 6z" /><path d="M12 10c0-3 2.2-5.5 7-5.5 0 3.8-2.4 5.5-7 5.5z" /></>,
   feed: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
   bell: <><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>,
   chat: <path d="M4 5h16v11H9l-5 4z" />,
