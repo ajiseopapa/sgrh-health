@@ -29,17 +29,64 @@ export function treeStage(activeDays: number) {
 }
 
 // ── 캐릭터 꾸미기: 아이템 6종(모자·상의·운동화). 모양만 바뀌고 능력 효과 없음 ──
-export type Slot = 'hat' | 'top' | 'shoes'
-export interface Item { key: string; slot: Slot; name: string; emoji: string; price: number }
+// ── 캐릭터 꾸미기 아이템: 햇빛으로 사서 입음(11-19 TK). 그림은 디자이너 v4(design/items-v4-2026-11-19) ──
+//  · 칸(slot)마다 1개씩. 키는 `<칸>_<이름>`(game_purchases 키 규칙 ^[a-z]+_[a-z]+$)
+//  · 그림: public/game/v22/wear/item-<칸>-<이름>-<m|f>.png (512×768, 캐릭터와 같은 캔버스·같은 자리), 아이콘 icon-<칸>-<이름>.png
+//  · 기본 몸: base-<m|f>-<부위>.png 6장. 겹치면 운동복 캐릭터(char-<m|f>-workout.png)와 픽셀까지 같음
+//  · 옷(상의·하의·신발)은 운동복 몸에 맞춰 그려져 있어 운동복일 때만 보임. 나머지는 어떤 의상 위에도 보임
+export type Slot = 'back' | 'shoes' | 'bottom' | 'top' | 'face' | 'hair' | 'hat' | 'hand' | 'effect'
+export const SLOTS: Slot[] = ['hat', 'hair', 'face', 'top', 'bottom', 'shoes', 'back', 'hand', 'effect']
+export const CLOTHES_SLOTS: Slot[] = ['top', 'bottom', 'shoes']
+export interface Item { key: string; slot: Slot; name: string; price: number; id: string }
+const item = (slot: Slot, id: string, name: string, price: number): Item => ({ key: `${slot}_${id}`, slot, id, name, price })
 export const ITEMS: Item[] = [
-  { key: 'hat_cap', slot: 'hat', name: '러닝 캡', emoji: '🧢', price: 30 },
-  { key: 'hat_straw', slot: 'hat', name: '정원 밀짚모자', emoji: '👒', price: 50 },
-  { key: 'top_singlet', slot: 'top', name: '러닝 셔츠', emoji: '🎽', price: 40 },
-  { key: 'top_jacket', slot: 'top', name: '바람막이', emoji: '🧥', price: 60 },
-  { key: 'shoes_run', slot: 'shoes', name: '러닝화', emoji: '👟', price: 30 },
-  { key: 'shoes_hike', slot: 'shoes', name: '등산화', emoji: '🥾', price: 50 },
+  item('hat', 'hairband', '헤어밴드', 30),
+  item('hat', 'baseballcap', '야구모자', 50),
+  item('hat', 'strawhat', '밀짚모자', 60),
+  item('hair', 'greenribbon', '초록 리본', 20),
+  item('hair', 'whiteflower', '흰 꽃', 20),
+  item('face', 'glasses', '뿔테 안경', 30),
+  item('face', 'sunglasses', '선글라스', 40),
+  item('top', 'whitezipup', '흰 집업', 70),
+  item('top', 'greenhoodie', '초록 후드', 70),
+  item('top', 'creamhoodie', '크림 후드', 70),
+  item('bottom', 'grayshorts', '회색 반바지', 50),
+  item('bottom', 'stripedpants', '줄무늬 바지', 50),
+  item('shoes', 'darksneakers', '진한 운동화', 50),
+  item('back', 'greenbackpack', '초록 배낭', 60),
+  item('hand', 'waterbottle', '물병', 30),
+  item('effect', 'crown', '왕관', 150),
 ]
-export const SLOT_LABEL: Record<Slot, string> = { hat: '모자', top: '상의', shoes: '운동화' }
+export const SLOT_LABEL: Record<Slot, string> = {
+  hat: '모자', hair: '머리 장식', face: '안경', top: '상의', bottom: '하의', shoes: '신발', back: '가방', hand: '소품', effect: '특별',
+}
+export type Equipped = Partial<Record<Slot, string | null>>
+export const itemIcon = (it: Item) => `/game/v22/wear/icon-${it.slot}-${it.id}.png`
+const itemLayer = (it: Item, g: string) => `/game/v22/wear/item-${it.slot}-${it.id}-${g}.png`
+const base = (g: string, part: string) => `/game/v22/wear/base-${g}-${part}.png`
+/**
+ * 캐릭터 그림 겹치기(아래에서 위로). 아이템이 없으면 한 장짜리 캐릭터 그림을 그대로 씀(같은 모습, 요청 1번).
+ * 순서는 디자이너 v4 README: 가방 → 뒷머리 → 몸 → 신발 → 하의 → 상의 → 안경 → 앞머리 → 머리 장식 → 모자 → 소품 → 특별
+ */
+export function characterLayers(key: string | null | undefined, outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
+  const g = characterOf(key).key
+  const o = isOutfitKey(outfit) ? outfit : DEFAULT_OUTFIT
+  const on = (slot: Slot) => {
+    const it = itemByKey(equipped?.[slot] ?? null)
+    return it && it.slot === slot ? it : null
+  }
+  const worn = SLOTS.filter((s) => on(s) && (o === 'workout' || !CLOTHES_SLOTS.includes(s)))
+  if (worn.length === 0) return [characterSrc(g, o)]
+  const L = (s: Slot) => { const it = on(s); return it && worn.includes(s) ? [itemLayer(it, g)] : [] }
+  if (o !== 'workout') {
+    return [...L('back'), characterSrc(g, o), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
+  }
+  return [
+    ...L('back'), base(g, 'hair-back'), base(g, 'body'), base(g, 'shoes'), ...L('shoes'),
+    base(g, 'bottom'), ...L('bottom'), base(g, 'top'), ...L('top'), ...L('face'),
+    base(g, 'hair-front'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect'),
+  ]
+}
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false
 /** 부서 정원 화면 노출. 혼자 근무하는 부서가 있어 11-17 TK 결정으로 개인 나무로 바꿈 — 서버 계산·DB 는 그대로 둠 */

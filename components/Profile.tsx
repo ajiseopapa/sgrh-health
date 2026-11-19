@@ -5,10 +5,11 @@
 // 저장은 /api/me/game/profile 하나로: character · message · nameEmoji · showInFeed
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
-import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, DEFAULT_OUTFIT, NAME_EMOJIS, OUTFITS, Placed } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, DEFAULT_OUTFIT, Equipped, NAME_EMOJIS, OUTFITS, Placed } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
 import SproutIcon from './SproutIcon'
 import GardenCanvas from './GardenCanvas'
+import CharacterFigure from './CharacterFigure'
 
 const MESSAGE_MAX = 40
 
@@ -26,8 +27,9 @@ export function ProfileAvatar({ emoji, size = 44 }: { emoji: string | null | und
 }
 
 /** 픽셀 캐릭터 그림. 64×96 원본을 정수배로만 키우고 줄여 픽셀이 뭉개지지 않게 함 */
-export function PixelCharacter({ charKey, outfit, scale = 2, className = '' }: { charKey: string | null; outfit?: string | null; scale?: number; className?: string }) {
+export function PixelCharacter({ charKey, outfit, equipped, scale = 2, className = '' }: { charKey: string | null; outfit?: string | null; equipped?: Equipped | null; scale?: number; className?: string }) {
   const c = characterOf(charKey)
+  if (equipped && Object.values(equipped).some(Boolean)) return <CharacterFigure charKey={charKey} outfit={outfit} equipped={equipped} width={64 * scale} className={className} />
   return (
     <img src={characterSrc(charKey, outfit)} alt={`${c.name} 캐릭터`} width={64 * scale} height={96 * scale}
       className={`shrink-0 ${className}`} style={{ width: 64 * scale, height: 96 * scale }} />
@@ -58,7 +60,7 @@ export function Sheet({ title, titleId, onClose, locked = false, children }: { t
   )
 }
 
-interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | null; outfitKey: string | null; showInFeed: boolean; message: string | null }
+interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | null; outfitKey: string | null; equipped: Equipped; showInFeed: boolean; message: string | null }
 
 /** 내 프로필 창 — 캐릭터 고르기 · 한마디 · 프로필 이모지 · 동료에게 캐릭터 보이기
  *  setup: 처음 접속해 캐릭터를 아직 안 고른 직원(11-18 TK). 캐릭터를 골라야 닫을 수 있고, 나머지는 나중에 바꿔도 됨 */
@@ -73,9 +75,9 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
   useEffect(() => {
     if (!open) return
     setMsg(null)
-    api<Partial<MyProfile>>('/api/me/game').then((r) => {
+    api<Partial<MyProfile> & { character?: { equipped?: Equipped } }>('/api/me/game').then((r) => {
       if (!r.ok) { setMsg({ tone: 'error', text: r.message || '불러오지 못했어요.' }); return }
-      const d = { nameEmoji: r.data.nameEmoji ?? null, characterKey: r.data.characterKey ?? null, outfitKey: r.data.outfitKey ?? null, showInFeed: r.data.showInFeed ?? false, message: r.data.message ?? null }
+      const d = { nameEmoji: r.data.nameEmoji ?? null, characterKey: r.data.characterKey ?? null, outfitKey: r.data.outfitKey ?? null, equipped: r.data.character?.equipped ?? {}, showInFeed: r.data.showInFeed ?? false, message: r.data.message ?? null }
       setP(d); setDraft(d.message ?? '')
     })
   }, [open])
@@ -109,7 +111,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
           {/* 캐릭터 */}
           <div className="flex items-end gap-5">
             {/* 처음 접속해 아직 안 골랐으면 큰 그림을 비워 둠(기본 캐릭터가 고른 것처럼 보이지 않게) */}
-            {(!setup || p.characterKey) && <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} outfit={p.outfitKey} scale={2} />}
+            {(!setup || p.characterKey) && <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} outfit={p.outfitKey} equipped={p.equipped} scale={2} />}
             <div className="min-w-0 flex-1 pb-1">
               <p className="text-[18px] font-extrabold text-ink-900">{p.nameEmoji ? `${p.nameEmoji} ` : ''}{name}</p>
               <p className="mt-1 break-words text-[14px] text-ink-600">{p.message || '아직 한마디가 없어요.'}</p>
@@ -196,12 +198,12 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
 }
 
 interface Peer {
-  emoji: string | null; showCharacter: boolean; character: string | null; outfit?: string | null; message: string | null
+  emoji: string | null; showCharacter: boolean; character: string | null; outfit?: string | null; equipped?: Equipped; message: string | null
   garden?: { stage: number; stageName: string; items: Placed[] } | null
 }
 
 /** 동료 정원(구경만) — 나무와 놓인 장식. 누를 수 없음 */
-function PeerGarden({ name, garden, character, outfit }: { name: string; garden: NonNullable<Peer['garden']>; character: string | null; outfit?: string | null }) {
+function PeerGarden({ name, garden, character, outfit, equipped }: { name: string; garden: NonNullable<Peer['garden']>; character: string | null; outfit?: string | null; equipped?: Equipped }) {
   const placed = garden.items.length
   return (
     <div className="mt-5 w-full border-t border-line pt-4 text-left">
@@ -210,7 +212,7 @@ function PeerGarden({ name, garden, character, outfit }: { name: string; garden:
         <p className="text-[13px] font-semibold text-ink-500">{garden.stageName}</p>
       </div>
       <div className="mt-3">
-        <GardenCanvas stage={garden.stage} items={garden.items} scale={3} character={character} outfit={outfit} label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`} />
+        <GardenCanvas stage={garden.stage} items={garden.items} scale={3} character={character} outfit={outfit} equipped={equipped} label={`${name}님의 정원: ${garden.stageName}, 장식 ${placed}개`} />
       </div>
       {placed === 0 && <p className="mt-2 text-center text-[13px] text-ink-500">아직 장식을 놓지 않았어요.</p>}
     </div>
@@ -234,13 +236,13 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
       {err ? <Notice tone="error">{err}</Notice> : !peer ? <Loading lines={2} /> : (
         <div className="flex flex-col items-center pb-2 pt-2 text-center">
           {peer.showCharacter
-            ? <PixelCharacter charKey={peer.character} outfit={peer.outfit} scale={2} />
+            ? <PixelCharacter charKey={peer.character} outfit={peer.outfit} equipped={peer.equipped} scale={2} />
             : <ProfileAvatar emoji={peer.emoji} size={96} />}
           <p className="mt-4 text-[20px] font-extrabold text-ink-900">{peer.showCharacter && peer.emoji ? `${peer.emoji} ` : ''}{name}</p>
           <p className={`mt-3 w-full break-words rounded-xl bg-ink-50 px-4 py-3 text-[15px] ${peer.message ? 'text-ink-900' : 'text-ink-500'}`}>
             {peer.message || '아직 한마디가 없어요.'}
           </p>
-          {peer.garden && <PeerGarden name={name} garden={peer.garden} character={peer.character} outfit={peer.outfit} />}
+          {peer.garden && <PeerGarden name={name} garden={peer.garden} character={peer.character} outfit={peer.outfit} equipped={peer.equipped} />}
         </div>
       )}
     </Sheet>

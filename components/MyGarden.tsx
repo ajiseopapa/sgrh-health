@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { useDialog } from '@/lib/dialog'
-import { clampSpot, DECOR, Decor, decorByKey, GARDEN_SIZE, GARDEN_SPOTS, Placed, TREE_STAGES } from '@/lib/game'
+import { clampSpot, DECOR, Equipped, Decor, decorByKey, GARDEN_SIZE, GARDEN_SPOTS, Placed, TREE_STAGES } from '@/lib/game'
 import { Notice, Progress } from '@/lib/ui'
 import GardenCanvas from './GardenCanvas'
 import InfoTip from './InfoTip'
@@ -16,6 +16,7 @@ export interface GardenGame {
   garden?: { ready: boolean; owned: string[]; items: Placed[] }
   characterKey?: string | null
   outfitKey?: string | null
+  character?: { equipped: Equipped }
 }
 
 function hasBatchim(word: string) {
@@ -114,7 +115,7 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
       </div>
 
       <div ref={wrap} className="mt-4">
-        <GardenCanvas stage={t.stage} items={items} scale={scale} character={game.characterKey ?? null} outfit={game.outfitKey} label="나의 정원. 장식을 끌어서 옮길 수 있어요."
+        <GardenCanvas stage={t.stage} items={items} scale={scale} character={game.characterKey ?? null} outfit={game.outfitKey} equipped={game.character?.equipped} label="나의 정원. 장식을 끌어서 옮길 수 있어요."
           selected={selected} disabled={!g.ready} onSelect={setSelected}
           onMove={(key, x, y) => { void put(key, x, y) }} />
       </div>

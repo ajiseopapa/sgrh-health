@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Slot, treeStage,
+  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -65,8 +65,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     ...purchases.map((p) => ({ type: 'spend' as const, key: `buy:${p.item_key}`, date: kstToday(new Date(p.purchased_at)), label: `${itemByKey(p.item_key)?.name ?? decorByKey(p.item_key)?.name ?? p.item_key} 구매`, points: -p.price })),
   ].sort((a, b) => (a.date === b.date ? (a.type === b.type ? a.key.localeCompare(b.key) : a.type === 'earn' ? -1 : 1) : a.date < b.date ? 1 : -1))
 
-  const equipped: Record<Slot, string | null> = { hat: null, top: null, shoes: null }
-  for (const r of equip ?? []) equipped[r.slot as Slot] = r.item_key
+  const equipped = equippedFrom(equip)
 
   // 나의 정원: 가진 장식 + 놓은 자리(좌표). 목록에 없는 키는 내보내지 않음
   const garden = {
@@ -149,9 +148,21 @@ export async function setEquipment(db: SupabaseClient, employeeId: string, slot:
   if (error) {
     // 구매 행이 없으면 DB 외래키가 막습니다(동시에 지워진 경우 등)
     if (error.code === '23503') return { status: 'not_owned' as const }
+    // 036 전 DB: 칸 검사가 hat·top·shoes 만 허용
+    if (error.code === '23514') return { status: 'not_ready' as const }
     throw new Error('EQUIP_FAILED')
   }
   return { status: 'ok' as const }
+}
+
+/** 착용 줄 → 칸별 아이템. 목록에 없는 키(예전 이모지 아이템 등)나 칸이 맞지 않는 줄은 버림 */
+function equippedFrom(rows: { slot: string; item_key: string }[] | null | undefined): Equipped {
+  const out: Equipped = Object.fromEntries(SLOTS.map((s) => [s, null])) // 빈 칸은 null(화면·시험이 칸 이름으로 확인)
+  for (const r of rows ?? []) {
+    const it = itemByKey(r.item_key)
+    if (it && it.slot === r.slot) out[it.slot] = it.key
+  }
+  return out
 }
 
 // ── 피드 표시(본인이 켠 직원만) ──
@@ -172,7 +183,7 @@ export async function feedLooks(db: SupabaseClient, ids: string[], today = kstTo
   for (const l of logs) days.set(l.employee_id, (days.get(l.employee_id) ?? new Set()).add(l.log_date))
   const out: Record<string, { stage: number; items: string[]; character: string | null }> = {}
   for (const id of on) {
-    const items = (equip ?? []).filter((e) => e.employee_id === id).map((e) => itemByKey(e.item_key)?.emoji).filter(Boolean) as string[]
+    const items = (equip ?? []).filter((e) => e.employee_id === id).map((e) => itemByKey(e.item_key)?.name).filter(Boolean) as string[]
     out[id] = { stage: treeStage(days.get(id)?.size ?? 0).stage, items, character: charOf.get(id) ?? null }
   }
   return out
@@ -184,11 +195,14 @@ export async function peerProfile(db: SupabaseClient, employeeId: string) {
   // 정원 구경: 모든 직원(11-19 TK: 이름을 누르면 그 사람의 정원과 캐릭터가 나오게 — 공개 설정 없앰).
   // 나무 단계 이름과 놓인 장식만 — 운동한 날 수·햇빛·가진 장식 목록은 내보내지 않음
   let garden: { stage: number; stageName: string; items: Placed[] } | null = null
+  let equipped: Equipped = {}
   {
-    const [e, placed] = await Promise.all([
+    const [e, placed, eq] = await Promise.all([
       earnedFor(db, employeeId),
       db.from('garden_placements').select('item_key, slot, x, y').eq('employee_id', employeeId), // 033·034 전 DB 면 오류 → 빈 정원
+      db.from('game_equipment').select('slot, item_key').eq('employee_id', employeeId),
     ])
+    equipped = equippedFrom(eq.data)
     const t = treeStage(e.activeDays)
     garden = { stage: t.stage, stageName: t.name, items: placedItems(placed.data) }
   }
@@ -198,6 +212,7 @@ export async function peerProfile(db: SupabaseClient, employeeId: string) {
     showCharacter: true,
     character: isCharacterKey(p?.character) ? (p.character as string) : null, // 안 골랐으면 화면이 기본 캐릭터로 그림
     outfit: isOutfitKey(p?.outfit) ? (p.outfit as string) : null,
+    equipped, // 입은 아이템(칸별). 가진 아이템 목록·햇빛은 내보내지 않음
     message: typeof p?.status_message === 'string' ? (p.status_message as string) : null,
   }
 }

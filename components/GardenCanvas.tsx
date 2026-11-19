@@ -6,7 +6,8 @@
 //  · onMove 를 주면 편집 가능: 장식을 끌어서 옮기거나, 장식을 고른 뒤 빈 자리를 누르면 그 자리로 옮김. 저장은 손을 뗄 때 1번.
 //  · 움직이는 효과 없음(11-18 TK: 흔들리면 멀미 남)
 import { useRef, useState } from 'react'
-import { characterSrc, clampSpot, decorByKey, GARDEN_CHAR, GARDEN_SIZE, GARDEN_TREE, Placed, TREE_GARDEN, TREE_STAGES } from '@/lib/game'
+import CharacterFigure from './CharacterFigure'
+import { clampSpot, Equipped, decorByKey, GARDEN_CHAR, GARDEN_SIZE, GARDEN_TREE, Placed, TREE_GARDEN, TREE_STAGES } from '@/lib/game'
 
 interface Props {
   stage: number
@@ -17,13 +18,15 @@ interface Props {
   character?: string | null
   /** 정원 주인이 고른 의상. 없으면 기본 의상 */
   outfit?: string | null
+  /** 정원 주인이 입은 아이템 */
+  equipped?: Equipped | null
   selected?: string | null
   disabled?: boolean
   onSelect?: (key: string | null) => void
   onMove?: (key: string, x: number, y: number) => void
 }
 
-export default function GardenCanvas({ stage, items, scale, label, character, outfit, selected = null, disabled = false, onSelect, onMove }: Props) {
+export default function GardenCanvas({ stage, items, scale, label, character, outfit, equipped, selected = null, disabled = false, onSelect, onMove }: Props) {
   const box = useRef<HTMLDivElement>(null)
   // 끄는 중인 장식: 화면에만 반영하고, 손을 떼면 onMove 로 한 번 저장
   const [drag, setDrag] = useState<{ key: string; x: number; y: number; ox: number; oy: number; dx: number; dy: number } | null>(null)
@@ -61,13 +64,10 @@ export default function GardenCanvas({ stage, items, scale, label, character, ou
         }} />
       {/* 정원 주인 캐릭터: 나무 옆 고정 자리에 서 있음. 누를 수 없고(장식을 가리지 않게), 아래쪽 장식은 캐릭터 앞에 그려짐 */}
       {character !== undefined && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={characterSrc(character, outfit)} alt="" draggable={false}
-          className="pointer-events-none absolute select-none"
-          style={{
-            width: GARDEN_CHAR.w * scale, height: GARDEN_CHAR.h * scale,
-            left: (GARDEN_CHAR.x - GARDEN_CHAR.w / 2) * scale, top: (GARDEN_CHAR.y - GARDEN_CHAR.h) * scale, zIndex: GARDEN_CHAR.y,
-          }} />
+        <span className="pointer-events-none absolute select-none" aria-hidden="true"
+          style={{ left: (GARDEN_CHAR.x - GARDEN_CHAR.w / 2) * scale, top: (GARDEN_CHAR.y - GARDEN_CHAR.h) * scale, zIndex: GARDEN_CHAR.y }}>
+          <CharacterFigure charKey={character} outfit={outfit} equipped={equipped} width={GARDEN_CHAR.w * scale} />
+        </span>
       )}
       {shown.map((it) => {
         const d = decorByKey(it.key)

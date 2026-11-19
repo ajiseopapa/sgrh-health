@@ -39,5 +39,19 @@ for name, w, h in decor:
     f = Path(f'public/game/v22/decor/decor-{name}.png')
     im = Image.open(f) if f.exists() else None
     check(f'장식 decor-{name}: {w*8}×{h*8}(칸 {w}×{h}) · 투명 배경', bool(im) and im.size == (w * 8, h * 8) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, str(im.size if im else '없음'))
+# 캐릭터 꾸미기: 기본 몸 12장 + 아이템 32장(512×768) + 아이콘 16장(256×256), lib/game.ts ITEMS 와 대조
+W = Path('public/game/v22/wear')
+items = re.findall(r"item\('(\w+)', '(\w+)', '[^']+', \d+\)", g)
+check('아이템 16종 정의', len(items) == 16, str(len(items)))
+for gg in 'mf':
+    for part in ['body', 'hair-back', 'hair-front', 'top', 'bottom', 'shoes']:
+        f = W / f'base-{gg}-{part}.png'; im = Image.open(f) if f.exists() else None
+        check(f'기본 몸 base-{gg}-{part}: 512×768', bool(im) and im.size == (512, 768) and im.mode == 'RGBA', str(im.size if im else '없음'))
+for slot, name in items:
+    for gg in 'mf':
+        f = W / f'item-{slot}-{name}-{gg}.png'; im = Image.open(f) if f.exists() else None
+        check(f'아이템 item-{slot}-{name}-{gg}: 512×768', bool(im) and im.size == (512, 768) and im.mode == 'RGBA', str(im.size if im else '없음'))
+    f = W / f'icon-{slot}-{name}.png'; im = Image.open(f) if f.exists() else None
+    check(f'아이콘 icon-{slot}-{name}: 256×256', bool(im) and im.size == (256, 256), str(im.size if im else '없음'))
 print(f'\n결과: {ok}/{ok + bad} 통과')
 sys.exit(1 if bad else 0)

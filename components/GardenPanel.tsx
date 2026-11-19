@@ -4,13 +4,14 @@
 // 부서 정원은 혼자 근무하는 부서가 있어 숨김(SHOW_DEPT_GARDEN, 11-17 TK 결정). 계산·데이터는 보존
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import InfoTip from './InfoTip'
+import WardrobeSection from './WardrobeSection'
 import MyGarden from './MyGarden'
 import TreeArt from './TreeArt'
 export { TreeArt } // 예전 import 경로 유지(HomeTab 등)
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
-import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, Placed, SHOW_DEPT_GARDEN, SHOW_ITEM_SHOP, itemByKey, Slot, SLOT_LABEL, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, DEFAULT_CHARACTER, DEFAULT_LOOK, ITEMS, Placed, SHOW_DEPT_GARDEN, Equipped, SUN_DAY, SUN_GOAL, SUN_WEEK3, TREE_STAGES } from '@/lib/game'
 import { Loading, NeedLogin, Notice, Progress, Section } from '@/lib/ui'
 
 interface Game {
@@ -19,7 +20,8 @@ interface Game {
   sunlight: { earned: number; spent: number; balance: number; shortfall: number }
   ledger: { type: 'earn' | 'spend'; key: string; date: string; label: string; points: number }[]
   tree: { stage: number; name: string; activeDays: number; next: { stage: number; name: string; at: number; remaining: number } | null }
-  character: { owned: string[]; equipped: Record<Slot, string | null> }
+  character: { owned: string[]; equipped: Equipped }
+  outfitKey?: string | null
   garden?: { ready: boolean; owned: string[]; items: Placed[] }
   showInFeed: boolean
   characterKey: CharacterKey | null
@@ -54,7 +56,7 @@ export default function GardenPanel() {
     <div>
       <MyGarden game={game} onChange={setGame} />
       <div className="lg:max-w-[680px]"><SunSection game={game} /></div>
-      {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
+      <WardrobeSection game={game} onChange={setGame} />
       {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
     </div>
   )
@@ -190,82 +192,6 @@ function SunSection({ game }: { game: Game }) {
   )
 }
 
-// ── 내 캐릭터 ──
-export function CharacterArt({ equipped, size = 'lg' }: { equipped: Record<Slot, string | null>; size?: 'lg' | 'sm' }) {
-  const hat = itemByKey(equipped.hat)?.emoji
-  const top = itemByKey(equipped.top)?.emoji ?? DEFAULT_LOOK.top
-  const shoes = itemByKey(equipped.shoes)?.emoji
-  const big = size === 'lg'
-  const line = big ? 'h-[40px] text-[36px]' : 'h-[16px] text-[14px]'
-  return (
-    <div className={`flex shrink-0 flex-col items-center leading-none ${big ? 'w-[72px]' : 'w-[18px]'}`} aria-hidden="true">
-      <span className={`${line} flex items-end`}>{hat ?? ''}</span>
-      <span className={`${line} -mt-1`}>{DEFAULT_LOOK.head}</span>
-      <span className={line}>{top}</span>
-      <span className={`${line} flex items-start`}>{shoes ? <>{shoes}</> : ''}</span>
-    </div>
-  )
-}
-
-function CharacterSection({ game, onChange }: { game: Game; onChange: (g: Game) => void }) {
-  const [busy, setBusy] = useState<string | null>(null)
-  const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
-  const { owned, equipped } = game.character
-
-  async function act(key: string, kind: 'buy' | 'equip' | 'unequip') {
-    if (busy) return // 연속 누름 방지(서버도 중복을 막음)
-    const item = itemByKey(key)!
-    setBusy(key); setMsg(null)
-    const r = kind === 'buy'
-      ? await api<{ game: Game }>('/api/me/game/purchase', { method: 'POST', body: { item: key } })
-      : await api<{ game: Game }>('/api/me/game/equip', { method: 'PUT', body: { slot: item.slot, item: kind === 'equip' ? key : null } })
-    setBusy(null)
-    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '처리하지 못했어요.' }); return }
-    onChange(r.data.game)
-    const obj = `${item.name}${hasBatchim(item.name) ? '을' : '를'}`
-    setMsg({ tone: 'success', text: kind === 'buy' ? `${obj} 해금했어요.` : kind === 'equip' ? `${obj} 입었어요.` : `${obj} 벗었어요.` })
-  }
-
-  return (
-    <Section title="내 캐릭터">
-      <div className="flex items-center gap-5">
-        <CharacterArt equipped={equipped} />
-        <p className="text-[14px] leading-relaxed text-ink-600">햇빛으로 모자·상의·운동화를 해금하고 자유롭게 입고 벗을 수 있어요. 꾸미기는 모양만 바뀌어요.</p>
-      </div>
-      <ul className="mt-4 divide-y divide-line border-t border-line">
-        {ITEMS.map((it) => {
-          const have = owned.includes(it.key)
-          const on = equipped[it.slot] === it.key
-          const canBuy = game.sunlight.balance >= it.price
-          return (
-            <li key={it.key} className="flex items-center gap-3 py-2">
-              <span className="w-8 text-center text-[24px]" aria-hidden="true">{it.emoji}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-bold text-ink-900">{it.name}</p>
-                <p className="text-[13px] text-ink-500">{SLOT_LABEL[it.slot]}{have ? (on ? ' · 입는 중' : ' · 가지고 있음') : ` · 햇빛 ${it.price}`}</p>
-              </div>
-              {have ? (
-                <button type="button" disabled={!!busy} onClick={() => act(it.key, on ? 'unequip' : 'equip')}
-                  className={`min-h-[44px] min-w-[72px] rounded-lg px-3 text-[14px] font-bold disabled:opacity-50 ${on ? 'border border-ink-900/80 text-ink-900' : 'bg-ink-900 text-paper'}`}>
-                  {busy === it.key ? '처리 중' : on ? '벗기' : '입기'}
-                </button>
-              ) : (
-                <button type="button" disabled={!!busy || !canBuy} onClick={() => act(it.key, 'buy')}
-                  aria-label={`${it.name} 햇빛 ${it.price}개로 해금`}
-                  className="min-h-[44px] min-w-[72px] rounded-lg border border-ink-900 bg-brand-300 px-3 text-[14px] font-bold text-ink-900 disabled:border-ink-200 disabled:bg-ink-50 disabled:text-ink-500">
-                  {busy === it.key ? '처리 중' : `☀ ${it.price}`}
-                </button>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-      {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-    </Section>
-  )
-}
-
-/** 마지막 글자에 받침이 있으면 true (을/를 고르기) */
 function hasBatchim(word: string) {
   const c = word.charCodeAt(word.length - 1)
   return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0

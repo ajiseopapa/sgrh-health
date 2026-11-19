@@ -1,0 +1,241 @@
+{
+  "m": {
+    "base_reconstruction_different_visible_pixels": 0,
+    "source": "char-m-workout-v2.png",
+    "normalization": "256x384 to 512x768 nearest-neighbour; no translation or aspect change",
+    "items": 16,
+    "nonbinary_item_alpha_pixels": 0,
+    "item_canvas_sizes": [
+      [
+        512,
+        768
+      ]
+    ],
+    "uncovered_standard_lime_shirt_pixels": {
+      "whitezipup": 0,
+      "greenhoodie": 0,
+      "creamhoodie": 0
+    },
+    "item_bounds": {
+      "hairband": [
+        79,
+        170,
+        419,
+        249
+      ],
+      "baseballcap": [
+        45,
+        1,
+        462,
+        245
+      ],
+      "strawhat": [
+        22,
+        5,
+        490,
+        245
+      ],
+      "greenribbon": [
+        340,
+        118,
+        425,
+        198
+      ],
+      "whiteflower": [
+        347,
+        125,
+        426,
+        203
+      ],
+      "glasses": [
+        138,
+        225,
+        374,
+        305
+      ],
+      "sunglasses": [
+        138,
+        225,
+        374,
+        305
+      ],
+      "whitezipup": [
+        97,
+        364,
+        421,
+        581
+      ],
+      "greenhoodie": [
+        97,
+        364,
+        421,
+        581
+      ],
+      "creamhoodie": [
+        97,
+        364,
+        420,
+        580
+      ],
+      "grayshorts": [
+        139,
+        547,
+        367,
+        705
+      ],
+      "stripedpants": [
+        139,
+        546,
+        367,
+        710
+      ],
+      "darksneakers": [
+        130,
+        688,
+        383,
+        758
+      ],
+      "greenbackpack": [
+        91,
+        380,
+        422,
+        559
+      ],
+      "waterbottle": [
+        351,
+        486,
+        417,
+        613
+      ],
+      "crown": [
+        190,
+        5,
+        310,
+        98
+      ]
+    }
+  },
+  "f": {
+    "base_reconstruction_different_visible_pixels": 0,
+    "source": "char-f-workout-v3.png",
+    "normalization": "256x384 to 512x768 nearest-neighbour; no translation or aspect change",
+    "items": 16,
+    "nonbinary_item_alpha_pixels": 0,
+    "item_canvas_sizes": [
+      [
+        512,
+        768
+      ]
+    ],
+    "uncovered_standard_lime_shirt_pixels": {
+      "whitezipup": 0,
+      "greenhoodie": 0,
+      "creamhoodie": 0
+    },
+    "item_bounds": {
+      "hairband": [
+        61,
+        170,
+        401,
+        249
+      ],
+      "baseballcap": [
+        36,
+        1,
+        435,
+        236
+      ],
+      "strawhat": [
+        15,
+        5,
+        464,
+        239
+      ],
+      "greenribbon": [
+        322,
+        118,
+        407,
+        198
+      ],
+      "whiteflower": [
+        329,
+        125,
+        408,
+        203
+      ],
+      "glasses": [
+        112,
+        219,
+        348,
+        301
+      ],
+      "sunglasses": [
+        112,
+        219,
+        348,
+        301
+      ],
+      "whitezipup": [
+        81,
+        361,
+        393,
+        579
+      ],
+      "greenhoodie": [
+        81,
+        361,
+        393,
+        579
+      ],
+      "creamhoodie": [
+        81,
+        361,
+        393,
+        579
+      ],
+      "grayshorts": [
+        121,
+        536,
+        348,
+        707
+      ],
+      "stripedpants": [
+        121,
+        535,
+        348,
+        711
+      ],
+      "darksneakers": [
+        108,
+        688,
+        365,
+        758
+      ],
+      "greenbackpack": [
+        73,
+        380,
+        404,
+        559
+      ],
+      "waterbottle": [
+        326,
+        486,
+        392,
+        613
+      ],
+      "crown": [
+        172,
+        5,
+        292,
+        98
+      ]
+    }
+  },
+  "notes": [
+    "Supplied references are 256x384. All pixels enlarged exactly 2x to required 512x768; same origin and proportions.",
+    "Base layers are a disjoint partition of original pixels. Hidden unclothed body is not invented.",
+    "Garments and headwear extracted from approved worn reviews, then fitted to fixed reference; accessories are pixel-edited on fixed coordinates.",
+    "Gray shorts include opaque leg repaint over original long trousers. Backpack is strapless per request.",
+    "OpenRaster source includes all base and item layers."
+  ]
+}
