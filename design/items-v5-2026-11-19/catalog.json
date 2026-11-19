@@ -1,0 +1,482 @@
+[
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "hairband",
+    "korean": "헤어밴드",
+    "male": "item/item-hat-hairband-m.png",
+    "female": "item/item-hat-hairband-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "baseballcap",
+    "korean": "야구모자",
+    "male": "item/item-hat-baseballcap-m.png",
+    "female": "item/item-hat-baseballcap-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "strawhat",
+    "korean": "밀짚모자",
+    "male": "item/item-hat-strawhat-m.png",
+    "female": "item/item-hat-strawhat-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "beanie",
+    "korean": "비니",
+    "male": "item/item-hat-beanie-m.png",
+    "female": "item/item-hat-beanie-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "buckethat",
+    "korean": "버킷햇",
+    "male": "item/item-hat-buckethat-m.png",
+    "female": "item/item-hat-buckethat-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hat",
+    "name": "catheadphones",
+    "korean": "고양이 헤드폰",
+    "male": "item/item-hat-catheadphones-m.png",
+    "female": "item/item-hat-catheadphones-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "greenribbon",
+    "korean": "초록 리본",
+    "male": "item/item-hair-greenribbon-m.png",
+    "female": "item/item-hair-greenribbon-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "creamribbon",
+    "korean": "크림 리본",
+    "male": "item/item-hair-creamribbon-m.png",
+    "female": "item/item-hair-creamribbon-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "whiteflower",
+    "korean": "흰 꽃",
+    "male": "item/item-hair-whiteflower-m.png",
+    "female": "item/item-hair-whiteflower-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "pinkflower",
+    "korean": "분홍 꽃",
+    "male": "item/item-hair-pinkflower-m.png",
+    "female": "item/item-hair-pinkflower-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "hairpins",
+    "korean": "머리핀",
+    "male": "item/item-hair-hairpins-m.png",
+    "female": "item/item-hair-hairpins-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hair",
+    "name": "sproutclip",
+    "korean": "새싹",
+    "male": "item/item-hair-sproutclip-m.png",
+    "female": "item/item-hair-sproutclip-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "glasses",
+    "korean": "뿔테 안경",
+    "male": "item/item-face-glasses-m.png",
+    "female": "item/item-face-glasses-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "roundglasses",
+    "korean": "둥근 안경",
+    "male": "item/item-face-roundglasses-m.png",
+    "female": "item/item-face-roundglasses-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "sunglasses",
+    "korean": "선글라스",
+    "male": "item/item-face-sunglasses-m.png",
+    "female": "item/item-face-sunglasses-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "mask",
+    "korean": "마스크",
+    "male": "item/item-face-mask-m.png",
+    "female": "item/item-face-mask-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "blush",
+    "korean": "볼터치",
+    "male": "item/item-face-blush-m.png",
+    "female": "item/item-face-blush-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "face",
+    "name": "bandage",
+    "korean": "반창고",
+    "male": "item/item-face-bandage-m.png",
+    "female": "item/item-face-bandage-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "tshirt",
+    "korean": "반팔",
+    "male": "item/item-top-tshirt-m.png",
+    "female": "item/item-top-tshirt-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "whitezipup",
+    "korean": "흰 집업",
+    "male": "item/item-top-whitezipup-m.png",
+    "female": "item/item-top-whitezipup-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "greenhoodie",
+    "korean": "초록 후드",
+    "male": "item/item-top-greenhoodie-m.png",
+    "female": "item/item-top-greenhoodie-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "creamhoodie",
+    "korean": "크림 후드",
+    "male": "item/item-top-creamhoodie-m.png",
+    "female": "item/item-top-creamhoodie-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "blackjacket",
+    "korean": "검은 점퍼",
+    "male": "item/item-top-blackjacket-m.png",
+    "female": "item/item-top-blackjacket-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "whitewindbreaker",
+    "korean": "흰 바람막이",
+    "male": "item/item-top-whitewindbreaker-m.png",
+    "female": "item/item-top-whitewindbreaker-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "top",
+    "name": "vest",
+    "korean": "조끼",
+    "male": "item/item-top-vest-m.png",
+    "female": "item/item-top-vest-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "bottom",
+    "name": "stripedpants",
+    "korean": "줄무늬 긴바지",
+    "male": "item/item-bottom-stripedpants-m.png",
+    "female": "item/item-bottom-stripedpants-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "bottom",
+    "name": "grayshorts",
+    "korean": "회색 반바지",
+    "male": "item/item-bottom-grayshorts-m.png",
+    "female": "item/item-bottom-grayshorts-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "bottom",
+    "name": "blackshorts",
+    "korean": "검은 반바지",
+    "male": "item/item-bottom-blackshorts-m.png",
+    "female": "item/item-bottom-blackshorts-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "bottom",
+    "name": "graypants",
+    "korean": "회색 긴바지",
+    "male": "item/item-bottom-graypants-m.png",
+    "female": "item/item-bottom-graypants-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "bottom",
+    "name": "shortshorts",
+    "korean": "검은 짧은 반바지",
+    "male": "item/item-bottom-shortshorts-m.png",
+    "female": "item/item-bottom-shortshorts-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "shoes",
+    "name": "whitesneakers",
+    "korean": "흰 운동화",
+    "male": "item/item-shoes-whitesneakers-m.png",
+    "female": "item/item-shoes-whitesneakers-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "shoes",
+    "name": "darksneakers",
+    "korean": "진한 운동화",
+    "male": "item/item-shoes-darksneakers-m.png",
+    "female": "item/item-shoes-darksneakers-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "shoes",
+    "name": "limesneakers",
+    "korean": "연두 줄 운동화",
+    "male": "item/item-shoes-limesneakers-m.png",
+    "female": "item/item-shoes-limesneakers-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "shoes",
+    "name": "hightops",
+    "korean": "하이탑",
+    "male": "item/item-shoes-hightops-m.png",
+    "female": "item/item-shoes-hightops-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "shoes",
+    "name": "blacksneakers",
+    "korean": "검은 운동화",
+    "male": "item/item-shoes-blacksneakers-m.png",
+    "female": "item/item-shoes-blacksneakers-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "back",
+    "name": "greenbackpack",
+    "korean": "배낭",
+    "male": "item/item-back-greenbackpack-m.png",
+    "female": "item/item-back-greenbackpack-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "crossbodybag",
+    "korean": "크로스백",
+    "male": "item/item-hand-crossbodybag-m.png",
+    "female": "item/item-hand-crossbodybag-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "drawstringbag",
+    "korean": "복주머니 가방",
+    "male": "item/item-hand-drawstringbag-m.png",
+    "female": "item/item-hand-drawstringbag-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "waistbag",
+    "korean": "힙색",
+    "male": "item/item-hand-waistbag-m.png",
+    "female": "item/item-hand-waistbag-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "towel",
+    "korean": "수건",
+    "male": "item/item-hand-towel-m.png",
+    "female": "item/item-hand-towel-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "waterbottle",
+    "korean": "물병",
+    "male": "item/item-hand-waterbottle-m.png",
+    "female": "item/item-hand-waterbottle-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "hand",
+    "name": "smartwatch",
+    "korean": "스마트워치",
+    "male": "item/item-hand-smartwatch-m.png",
+    "female": "item/item-hand-smartwatch-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "back",
+    "name": "wings",
+    "korean": "날개",
+    "male": "item/item-back-wings-m.png",
+    "female": "item/item-back-wings-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "effect",
+    "name": "crown",
+    "korean": "왕관",
+    "male": "item/item-effect-crown-m.png",
+    "female": "item/item-effect-crown-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "effect",
+    "name": "sprout",
+    "korean": "새싹 머리",
+    "male": "item/item-effect-sprout-m.png",
+    "female": "item/item-effect-sprout-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "effect",
+    "name": "sparkles",
+    "korean": "반짝이",
+    "male": "item/item-effect-sparkles-m.png",
+    "female": "item/item-effect-sparkles-f.png"
+  },
+  {
+    "sheet": "item",
+    "slot": "effect",
+    "name": "laurel",
+    "korean": "월계수",
+    "male": "item/item-effect-laurel-m.png",
+    "female": "item/item-effect-laurel-f.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "workout",
+    "korean": "운동복",
+    "male": "char/char-m-workout.png",
+    "female": "char/char-f-workout.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "nurse",
+    "korean": "간호복",
+    "male": "char/char-m-nurse.png",
+    "female": "char/char-f-nurse.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "doctor",
+    "korean": "의료진 가운",
+    "male": "char/char-m-doctor.png",
+    "female": "char/char-f-doctor.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "office",
+    "korean": "행정부 정장",
+    "male": "char/char-m-office.png",
+    "female": "char/char-f-office.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "hoodie",
+    "korean": "후드 집업",
+    "male": "char/char-m-hoodie.png",
+    "female": "char/char-f-hoodie.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "scrub",
+    "korean": "스크럽",
+    "male": "char/char-m-scrub.png",
+    "female": "char/char-f-scrub.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "glasses",
+    "korean": "가운과 안경",
+    "male": "char/char-m-glasses.png",
+    "female": "char/char-f-glasses.png"
+  },
+  {
+    "sheet": "outfit",
+    "slot": "set",
+    "name": "vest",
+    "korean": "셔츠 차림",
+    "male": "char/char-m-vest.png",
+    "female": "char/char-f-vest.png"
+  },
+  {
+    "sheet": "outfit-extra",
+    "slot": "hand",
+    "name": "stethoscope",
+    "korean": "청진기",
+    "male": "extra/item-hand-stethoscope-m.png",
+    "female": "extra/item-hand-stethoscope-f.png"
+  },
+  {
+    "sheet": "outfit-extra",
+    "slot": "hand",
+    "name": "idbadge",
+    "korean": "사원증",
+    "male": "extra/item-hand-idbadge-m.png",
+    "female": "extra/item-hand-idbadge-f.png"
+  },
+  {
+    "sheet": "outfit-extra",
+    "slot": "hand",
+    "name": "clipboard",
+    "korean": "클립보드",
+    "male": "extra/item-hand-clipboard-m.png",
+    "female": "extra/item-hand-clipboard-f.png"
+  },
+  {
+    "sheet": "outfit-extra",
+    "slot": "hand",
+    "name": "pen",
+    "korean": "펜",
+    "male": "extra/item-hand-pen-m.png",
+    "female": "extra/item-hand-pen-f.png"
+  },
+  {
+    "sheet": "outfit-extra",
+    "slot": "face",
+    "name": "mask",
+    "korean": "마스크",
+    "male": "extra/item-face-mask-m.png",
+    "female": "extra/item-face-mask-f.png"
+  }
+]

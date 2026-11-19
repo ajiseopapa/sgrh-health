@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import { useDialog } from '@/lib/dialog'
-import { CLOTHES_SLOTS, DEFAULT_OUTFIT, Equipped, Item, itemIcon, ITEMS, Slot, SLOT_LABEL, SLOTS } from '@/lib/game'
+import { DEFAULT_OUTFIT, Equipped, Item, itemIcon, ITEMS, Slot, SLOT_LABEL, SLOTS } from '@/lib/game'
 import { Notice } from '@/lib/ui'
 import CharacterFigure from './CharacterFigure'
 import InfoTip from './InfoTip'
@@ -29,7 +29,6 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
   const { owned, equipped } = game.character
   const outfit = game.outfitKey ?? DEFAULT_OUTFIT
-  const clothesHidden = outfit !== 'workout'
 
   async function equip(it: Item, on: boolean) {
     const r = await api<{ game: G }>('/api/me/game/equip', { method: 'PUT', body: { slot: it.slot, item: on ? it.key : null } })
@@ -108,9 +107,6 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
                   )
                 })}
               </ul>
-              {clothesHidden && CLOTHES_SLOTS.includes(grp.slot as Slot) && (
-                <p className="mt-1.5 text-[12px] text-ink-500">{SLOT_LABEL[grp.slot as Slot]}는 운동복을 입었을 때 보여요.</p>
-              )}
             </div>
           ))}
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
@@ -118,7 +114,7 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
             <ul className="space-y-1">
               <li>아이템을 누르면 햇빛으로 사서 바로 입어요. 산 아이템은 계속 내 것이에요.</li>
               <li>입은 아이템을 다시 누르면 벗어요. 가진 아이템은 언제든 다시 입을 수 있어요.</li>
-              <li>상의·하의·신발은 운동복을 입었을 때만 보여요. 모자·안경 같은 나머지는 어떤 의상에도 보여요.</li>
+              <li>상의·하의·신발 아이템을 입으면 지금 의상의 그 부분만 바뀌어요. 벗으면 의상 그대로 돌아와요.</li>
               <li>의상은 내 프로필에서 자유롭게 바꿀 수 있어요.</li>
             </ul>
           </InfoTip>

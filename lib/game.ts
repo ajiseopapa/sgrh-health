@@ -29,32 +29,66 @@ export function treeStage(activeDays: number) {
 }
 
 // ── 캐릭터 꾸미기: 아이템 6종(모자·상의·운동화). 모양만 바뀌고 능력 효과 없음 ──
-// ── 캐릭터 꾸미기 아이템: 햇빛으로 사서 입음(11-19 TK). 그림은 디자이너 v4(design/items-v4-2026-11-19) ──
+// ── 캐릭터 꾸미기 아이템: 햇빛으로 사서 입음(11-19 TK). 그림은 디자이너 v5(design/items-v5-2026-11-19, scripts/import-wear-v5.py) ──
 //  · 칸(slot)마다 1개씩. 키는 `<칸>_<이름>`(game_purchases 키 규칙 ^[a-z]+_[a-z]+$)
 //  · 그림: public/game/v22/wear/item-<칸>-<이름>-<m|f>.png (512×768, 캐릭터와 같은 캔버스·같은 자리), 아이콘 icon-<칸>-<이름>.png
-//  · 기본 몸: base-<m|f>-<부위>.png 6장. 겹치면 운동복 캐릭터(char-<m|f>-workout.png)와 픽셀까지 같음
-//  · 옷(상의·하의·신발)은 운동복 몸에 맞춰 그려져 있어 운동복일 때만 보임. 나머지는 어떤 의상 위에도 보임
+//  · 기본 몸: base-<m|f>-<부위>.png 6장. 겹치면 운동복 캐릭터와 픽셀까지 같음
+//  · 의상도 레이어(outfit-<칸>-<의상>-<m|f>.png)라, 상의·하의·신발 아이템을 고르면 의상의 같은 부위만 바뀜(v5부터 모든 의상에 모든 아이템)
 export type Slot = 'back' | 'shoes' | 'bottom' | 'top' | 'face' | 'hair' | 'hat' | 'hand' | 'effect'
 export const SLOTS: Slot[] = ['hat', 'hair', 'face', 'top', 'bottom', 'shoes', 'back', 'hand', 'effect']
-export const CLOTHES_SLOTS: Slot[] = ['top', 'bottom', 'shoes']
 export interface Item { key: string; slot: Slot; name: string; price: number; id: string }
 const item = (slot: Slot, id: string, name: string, price: number): Item => ({ key: `${slot}_${id}`, slot, id, name, price })
 export const ITEMS: Item[] = [
   item('hat', 'hairband', '헤어밴드', 30),
   item('hat', 'baseballcap', '야구모자', 50),
+  item('hat', 'beanie', '비니', 50),
+  item('hat', 'buckethat', '버킷햇', 50),
   item('hat', 'strawhat', '밀짚모자', 60),
+  item('hat', 'catheadphones', '고양이 헤드폰', 80),
   item('hair', 'greenribbon', '초록 리본', 20),
+  item('hair', 'creamribbon', '크림 리본', 20),
   item('hair', 'whiteflower', '흰 꽃', 20),
+  item('hair', 'pinkflower', '분홍 꽃', 20),
+  item('hair', 'hairpins', '머리핀', 20),
+  item('hair', 'sproutclip', '새싹 핀', 30),
+  item('face', 'mask', '마스크', 20),
+  item('face', 'blush', '볼터치', 20),
+  item('face', 'bandage', '반창고', 20),
   item('face', 'glasses', '뿔테 안경', 30),
+  item('face', 'roundglasses', '둥근 안경', 30),
   item('face', 'sunglasses', '선글라스', 40),
+  item('top', 'tshirt', '라임 반팔', 20),
+  item('top', 'vest', '조끼', 60),
   item('top', 'whitezipup', '흰 집업', 70),
   item('top', 'greenhoodie', '초록 후드', 70),
   item('top', 'creamhoodie', '크림 후드', 70),
+  item('top', 'blackjacket', '검은 점퍼', 80),
+  item('top', 'whitewindbreaker', '흰 바람막이', 80),
   item('bottom', 'grayshorts', '회색 반바지', 50),
+  item('bottom', 'blackshorts', '검은 반바지', 50),
+  item('bottom', 'shortshorts', '짧은 반바지', 50),
+  item('bottom', 'graypants', '회색 긴바지', 50),
   item('bottom', 'stripedpants', '줄무늬 바지', 50),
+  item('shoes', 'whitesneakers', '흰 운동화', 40),
   item('shoes', 'darksneakers', '진한 운동화', 50),
+  item('shoes', 'limesneakers', '연두 운동화', 50),
+  item('shoes', 'blacksneakers', '검은 운동화', 50),
+  item('shoes', 'hightops', '하이탑', 60),
   item('back', 'greenbackpack', '초록 배낭', 60),
+  item('back', 'wings', '날개', 200),
+  item('hand', 'idbadge', '사원증', 20),
+  item('hand', 'pen', '펜', 20),
+  item('hand', 'towel', '수건', 30),
   item('hand', 'waterbottle', '물병', 30),
+  item('hand', 'clipboard', '클립보드', 30),
+  item('hand', 'stethoscope', '청진기', 40),
+  item('hand', 'drawstringbag', '복주머니 가방', 40),
+  item('hand', 'crossbodybag', '크로스백', 50),
+  item('hand', 'waistbag', '힙색', 50),
+  item('hand', 'smartwatch', '스마트워치', 60),
+  item('effect', 'sprout', '새싹 머리', 80),
+  item('effect', 'sparkles', '반짝이', 100),
+  item('effect', 'laurel', '월계수', 120),
   item('effect', 'crown', '왕관', 150),
 ]
 export const SLOT_LABEL: Record<Slot, string> = {
@@ -65,8 +99,9 @@ export const itemIcon = (it: Item) => `/game/v22/wear/icon-${it.slot}-${it.id}.p
 const itemLayer = (it: Item, g: string) => `/game/v22/wear/item-${it.slot}-${it.id}-${g}.png`
 const base = (g: string, part: string) => `/game/v22/wear/base-${g}-${part}.png`
 /**
- * 캐릭터 그림 겹치기(아래에서 위로). 아이템이 없으면 한 장짜리 캐릭터 그림을 그대로 씀(같은 모습, 요청 1번).
- * 순서는 디자이너 v4 README: 가방 → 뒷머리 → 몸 → 신발 → 하의 → 상의 → 안경 → 앞머리 → 머리 장식 → 모자 → 소품 → 특별
+ * 캐릭터 그림 겹치기(아래에서 위로). 아이템이 없으면 의상 한 장짜리 그림을 그대로 씀(겹친 것과 픽셀까지 같음).
+ * 순서는 디자이너 v5 README: 가방 → 뒷머리 → 몸 → 신발 → 하의 → 상의 → 안경 → 앞머리 → 머리 장식 → 모자 → 소품 → 특별.
+ * 상의·하의·신발·안경 칸은 아이템이 있으면 아이템, 없으면 고른 의상의 그 부위(운동복은 기본 몸 그대로).
  */
 export function characterLayers(key: string | null | undefined, outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
   const g = characterOf(key).key
@@ -75,15 +110,18 @@ export function characterLayers(key: string | null | undefined, outfit: string |
     const it = itemByKey(equipped?.[slot] ?? null)
     return it && it.slot === slot ? it : null
   }
-  const worn = SLOTS.filter((s) => on(s) && (o === 'workout' || !CLOTHES_SLOTS.includes(s)))
-  if (worn.length === 0) return [characterSrc(g, o)]
-  const L = (s: Slot) => { const it = on(s); return it && worn.includes(s) ? [itemLayer(it, g)] : [] }
-  if (o !== 'workout') {
-    return [...L('back'), characterSrc(g, o), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
+  if (!SLOTS.some(on)) return [characterSrc(g, o)]
+  const L = (s: Slot) => { const it = on(s); return it ? [itemLayer(it, g)] : [] }
+  const part = (s: Slot) => {
+    const it = on(s)
+    if (it) return [itemLayer(it, g)]
+    if (o === 'workout') return []
+    if (s === 'face') return o === 'glasses' ? [`/game/v22/wear/outfit-face-glasses-${g}.png`] : []
+    return [`/game/v22/wear/outfit-${s}-${o}-${g}.png`]
   }
   return [
-    ...L('back'), base(g, 'hair-back'), base(g, 'body'), base(g, 'shoes'), ...L('shoes'),
-    base(g, 'bottom'), ...L('bottom'), base(g, 'top'), ...L('top'), ...L('face'),
+    ...L('back'), base(g, 'hair-back'), base(g, 'body'), base(g, 'shoes'), ...part('shoes'),
+    base(g, 'bottom'), ...part('bottom'), base(g, 'top'), ...part('top'), ...part('face'),
     base(g, 'hair-front'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect'),
   ]
 }

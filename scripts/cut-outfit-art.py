@@ -1,3 +1,4 @@
+# ⚠️ 11-19 디자이너 v5 묶음(scripts/import-wear-v5.py)으로 대체됨 — 의상 그림은 v5 char/ 를 씀. 이 스크립트를 다시 돌리면 v5 그림을 덮어씀.
 # 의상 시트(design/outfit-sheet-2026-11-19/outfit-sheet-v2.webp, 사원증 보완본 11-19)에서 의상별 전신 캐릭터 16장을 잘라
 # public/game/v22/characters/char-<m|f>-<의상>.png (256×384, 투명) 로 넣습니다.
 #   python scripts/cut-outfit-art.py

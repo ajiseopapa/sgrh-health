@@ -1,0 +1,61 @@
+﻿sheet,slot,name,korean,male,female
+item,hat,hairband,헤어밴드,item/item-hat-hairband-m.png,item/item-hat-hairband-f.png
+item,hat,baseballcap,야구모자,item/item-hat-baseballcap-m.png,item/item-hat-baseballcap-f.png
+item,hat,strawhat,밀짚모자,item/item-hat-strawhat-m.png,item/item-hat-strawhat-f.png
+item,hat,beanie,비니,item/item-hat-beanie-m.png,item/item-hat-beanie-f.png
+item,hat,buckethat,버킷햇,item/item-hat-buckethat-m.png,item/item-hat-buckethat-f.png
+item,hat,catheadphones,고양이 헤드폰,item/item-hat-catheadphones-m.png,item/item-hat-catheadphones-f.png
+item,hair,greenribbon,초록 리본,item/item-hair-greenribbon-m.png,item/item-hair-greenribbon-f.png
+item,hair,creamribbon,크림 리본,item/item-hair-creamribbon-m.png,item/item-hair-creamribbon-f.png
+item,hair,whiteflower,흰 꽃,item/item-hair-whiteflower-m.png,item/item-hair-whiteflower-f.png
+item,hair,pinkflower,분홍 꽃,item/item-hair-pinkflower-m.png,item/item-hair-pinkflower-f.png
+item,hair,hairpins,머리핀,item/item-hair-hairpins-m.png,item/item-hair-hairpins-f.png
+item,hair,sproutclip,새싹,item/item-hair-sproutclip-m.png,item/item-hair-sproutclip-f.png
+item,face,glasses,뿔테 안경,item/item-face-glasses-m.png,item/item-face-glasses-f.png
+item,face,roundglasses,둥근 안경,item/item-face-roundglasses-m.png,item/item-face-roundglasses-f.png
+item,face,sunglasses,선글라스,item/item-face-sunglasses-m.png,item/item-face-sunglasses-f.png
+item,face,mask,마스크,item/item-face-mask-m.png,item/item-face-mask-f.png
+item,face,blush,볼터치,item/item-face-blush-m.png,item/item-face-blush-f.png
+item,face,bandage,반창고,item/item-face-bandage-m.png,item/item-face-bandage-f.png
+item,top,tshirt,반팔,item/item-top-tshirt-m.png,item/item-top-tshirt-f.png
+item,top,whitezipup,흰 집업,item/item-top-whitezipup-m.png,item/item-top-whitezipup-f.png
+item,top,greenhoodie,초록 후드,item/item-top-greenhoodie-m.png,item/item-top-greenhoodie-f.png
+item,top,creamhoodie,크림 후드,item/item-top-creamhoodie-m.png,item/item-top-creamhoodie-f.png
+item,top,blackjacket,검은 점퍼,item/item-top-blackjacket-m.png,item/item-top-blackjacket-f.png
+item,top,whitewindbreaker,흰 바람막이,item/item-top-whitewindbreaker-m.png,item/item-top-whitewindbreaker-f.png
+item,top,vest,조끼,item/item-top-vest-m.png,item/item-top-vest-f.png
+item,bottom,stripedpants,줄무늬 긴바지,item/item-bottom-stripedpants-m.png,item/item-bottom-stripedpants-f.png
+item,bottom,grayshorts,회색 반바지,item/item-bottom-grayshorts-m.png,item/item-bottom-grayshorts-f.png
+item,bottom,blackshorts,검은 반바지,item/item-bottom-blackshorts-m.png,item/item-bottom-blackshorts-f.png
+item,bottom,graypants,회색 긴바지,item/item-bottom-graypants-m.png,item/item-bottom-graypants-f.png
+item,bottom,shortshorts,검은 짧은 반바지,item/item-bottom-shortshorts-m.png,item/item-bottom-shortshorts-f.png
+item,shoes,whitesneakers,흰 운동화,item/item-shoes-whitesneakers-m.png,item/item-shoes-whitesneakers-f.png
+item,shoes,darksneakers,진한 운동화,item/item-shoes-darksneakers-m.png,item/item-shoes-darksneakers-f.png
+item,shoes,limesneakers,연두 줄 운동화,item/item-shoes-limesneakers-m.png,item/item-shoes-limesneakers-f.png
+item,shoes,hightops,하이탑,item/item-shoes-hightops-m.png,item/item-shoes-hightops-f.png
+item,shoes,blacksneakers,검은 운동화,item/item-shoes-blacksneakers-m.png,item/item-shoes-blacksneakers-f.png
+item,back,greenbackpack,배낭,item/item-back-greenbackpack-m.png,item/item-back-greenbackpack-f.png
+item,hand,crossbodybag,크로스백,item/item-hand-crossbodybag-m.png,item/item-hand-crossbodybag-f.png
+item,hand,drawstringbag,복주머니 가방,item/item-hand-drawstringbag-m.png,item/item-hand-drawstringbag-f.png
+item,hand,waistbag,힙색,item/item-hand-waistbag-m.png,item/item-hand-waistbag-f.png
+item,hand,towel,수건,item/item-hand-towel-m.png,item/item-hand-towel-f.png
+item,hand,waterbottle,물병,item/item-hand-waterbottle-m.png,item/item-hand-waterbottle-f.png
+item,hand,smartwatch,스마트워치,item/item-hand-smartwatch-m.png,item/item-hand-smartwatch-f.png
+item,back,wings,날개,item/item-back-wings-m.png,item/item-back-wings-f.png
+item,effect,crown,왕관,item/item-effect-crown-m.png,item/item-effect-crown-f.png
+item,effect,sprout,새싹 머리,item/item-effect-sprout-m.png,item/item-effect-sprout-f.png
+item,effect,sparkles,반짝이,item/item-effect-sparkles-m.png,item/item-effect-sparkles-f.png
+item,effect,laurel,월계수,item/item-effect-laurel-m.png,item/item-effect-laurel-f.png
+outfit,set,workout,운동복,char/char-m-workout.png,char/char-f-workout.png
+outfit,set,nurse,간호복,char/char-m-nurse.png,char/char-f-nurse.png
+outfit,set,doctor,의료진 가운,char/char-m-doctor.png,char/char-f-doctor.png
+outfit,set,office,행정부 정장,char/char-m-office.png,char/char-f-office.png
+outfit,set,hoodie,후드 집업,char/char-m-hoodie.png,char/char-f-hoodie.png
+outfit,set,scrub,스크럽,char/char-m-scrub.png,char/char-f-scrub.png
+outfit,set,glasses,가운과 안경,char/char-m-glasses.png,char/char-f-glasses.png
+outfit,set,vest,셔츠 차림,char/char-m-vest.png,char/char-f-vest.png
+outfit-extra,hand,stethoscope,청진기,extra/item-hand-stethoscope-m.png,extra/item-hand-stethoscope-f.png
+outfit-extra,hand,idbadge,사원증,extra/item-hand-idbadge-m.png,extra/item-hand-idbadge-f.png
+outfit-extra,hand,clipboard,클립보드,extra/item-hand-clipboard-m.png,extra/item-hand-clipboard-f.png
+outfit-extra,hand,pen,펜,extra/item-hand-pen-m.png,extra/item-hand-pen-f.png
+outfit-extra,face,mask,마스크,extra/item-face-mask-m.png,extra/item-face-mask-f.png

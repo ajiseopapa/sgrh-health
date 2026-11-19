@@ -24,7 +24,8 @@ OUTFIT_KEYS = re.findall(r"\{ key: '(\w+)', name: '[^']+' \},", Path('lib/game.t
 check('의상 8벌 정의', len(OUTFIT_KEYS) == 8, str(OUTFIT_KEYS))
 for c in ['char-m', 'char-f'] + [f'char-{g}-{o}' for g in 'mf' for o in OUTFIT_KEYS]:
     im = Image.open(f'public/game/v22/characters/{c}.png')
-    check(f'캐릭터 {c}: 256×384(2:3, 화면에서 64×96 기준으로 줄여 그림) · 투명 배경', im.size == (256, 384) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, f'{im.size}')
+    want = (256, 384) if c in ('char-m', 'char-f') else (512, 768)  # 의상별 그림은 디자이너 v5(512×768), 예전 두 장은 256×384
+    check(f'캐릭터 {c}: {want[0]}×{want[1]} · 투명 배경', im.size == want and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, f'{im.size}')
 
 # 나무 4단계(96×96) · 정원 장식(lib/game.ts DECOR 의 칸 수 × 4px)
 for n in range(1, 5):
@@ -42,7 +43,13 @@ for name, w, h in decor:
 # 캐릭터 꾸미기: 기본 몸 12장 + 아이템 32장(512×768) + 아이콘 16장(256×256), lib/game.ts ITEMS 와 대조
 W = Path('public/game/v22/wear')
 items = re.findall(r"item\('(\w+)', '(\w+)', '[^']+', \d+\)", g)
-check('아이템 16종 정의', len(items) == 16, str(len(items)))
+check('아이템 51종 정의', len(items) == 51, str(len(items)))
+for gg in 'mf':
+    for o in [o for o in OUTFIT_KEYS if o != 'workout']:
+        for part in ['top', 'bottom', 'shoes']:
+            f = W / f'outfit-{part}-{o}-{gg}.png'; im = Image.open(f) if f.exists() else None
+            check(f'의상 레이어 outfit-{part}-{o}-{gg}: 512×768', bool(im) and im.size == (512, 768), str(im.size if im else '없음'))
+    check(f'의상 레이어 outfit-face-glasses-{gg}', (W / f'outfit-face-glasses-{gg}.png').exists())
 for gg in 'mf':
     for part in ['body', 'hair-back', 'hair-front', 'top', 'bottom', 'shoes']:
         f = W / f'base-{gg}-{part}.png'; im = Image.open(f) if f.exists() else None
