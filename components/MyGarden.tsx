@@ -15,6 +15,7 @@ export interface GardenGame {
   tree: { stage: number; name: string; activeDays: number; next: { name: string; at: number; remaining: number } | null }
   garden?: { ready: boolean; owned: string[]; items: Placed[] }
   characterKey?: string | null
+  outfitKey?: string | null
 }
 
 function hasBatchim(word: string) {
@@ -113,7 +114,7 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
       </div>
 
       <div ref={wrap} className="mt-4">
-        <GardenCanvas stage={t.stage} items={items} scale={scale} character={game.characterKey ?? null} label="나의 정원. 장식을 끌어서 옮길 수 있어요."
+        <GardenCanvas stage={t.stage} items={items} scale={scale} character={game.characterKey ?? null} outfit={game.outfitKey} label="나의 정원. 장식을 끌어서 옮길 수 있어요."
           selected={selected} disabled={!g.ready} onSelect={setSelected}
           onMove={(key, x, y) => { void put(key, x, y) }} />
       </div>

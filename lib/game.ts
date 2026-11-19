@@ -56,6 +56,28 @@ export const DEFAULT_CHARACTER: CharacterKey = 'm'
 export function isCharacterKey(v: unknown): v is CharacterKey {
   return typeof v === 'string' && CHARACTERS.some((c) => c.key === v)
 }
+// ── 의상: 누구나 자유롭게 고름(11-19 TK, 햇빛 안 씀). 그림은 의상별 전신 그림(scripts/cut-outfit-art.py, 디자이너 의상 시트) ──
+//  · 파일: public/game/v22/characters/char-<m|f>-<의상>.png. 같은 의상이라도 남성형·여성형 색이 다른 것이 있음(스크럽: 네이비/분홍)
+//  · 고른 의상은 game_profiles.outfit(035). 비어 있으면 기본 의상(운동복)
+export const OUTFITS = [
+  { key: 'workout', name: '운동복' },
+  { key: 'nurse', name: '간호복' },
+  { key: 'doctor', name: '의료진 가운' },
+  { key: 'office', name: '정장' },
+  { key: 'hoodie', name: '후드 집업' },
+  { key: 'scrub', name: '스크럽' },
+  { key: 'glasses', name: '가운과 안경' },
+  { key: 'vest', name: '셔츠 차림' },
+] as const
+export type OutfitKey = (typeof OUTFITS)[number]['key']
+export const DEFAULT_OUTFIT: OutfitKey = 'workout'
+export function isOutfitKey(v: unknown): v is OutfitKey {
+  return typeof v === 'string' && OUTFITS.some((o) => o.key === v)
+}
+/** 캐릭터(m·f) + 의상 → 그림 주소. 모르는 값이면 기본 캐릭터·기본 의상 */
+export function characterSrc(key: string | null | undefined, outfit?: string | null) {
+  return `/game/v22/characters/char-${characterOf(key).key}-${isOutfitKey(outfit) ? outfit : DEFAULT_OUTFIT}.png`
+}
 export function characterOf(key: string | null | undefined) {
   return CHARACTERS.find((c) => c.key === key) ?? CHARACTERS.find((c) => c.key === DEFAULT_CHARACTER)!
 }

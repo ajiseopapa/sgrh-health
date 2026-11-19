@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, ITEMS, itemByKey, Reward, Slot, treeStage,
+  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Slot, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -87,6 +87,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     showInFeed: prof?.show_in_feed ?? false,
     nameEmoji: (prof?.name_emoji as string | null) ?? null,
     characterKey: isCharacterKey(prof?.character) ? prof.character : null, // null = 아직 안 고름(기본 캐릭터)
+    outfitKey: isOutfitKey(prof?.outfit) ? prof.outfit : null, // null = 기본 의상(운동복). 035 전 DB 에서는 항상 null
     message: typeof prof?.status_message === 'string' ? prof.status_message : null, // 프로필 한마디(032 전 DB면 null)
   }
 }
@@ -196,6 +197,7 @@ export async function peerProfile(db: SupabaseClient, employeeId: string) {
     emoji: isNameEmoji(p?.name_emoji) ? (p.name_emoji as string) : null,
     showCharacter: true,
     character: isCharacterKey(p?.character) ? (p.character as string) : null, // 안 골랐으면 화면이 기본 캐릭터로 그림
+    outfit: isOutfitKey(p?.outfit) ? (p.outfit as string) : null,
     message: typeof p?.status_message === 'string' ? (p.status_message as string) : null,
   }
 }
