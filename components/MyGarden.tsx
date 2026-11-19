@@ -40,11 +40,11 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
   const g = game.garden ?? { ready: false, owned: [], items: [] }
   const items = moving ? [...g.items.filter((it) => it.key !== moving.key), moving] : g.items
 
-  // 픽셀이 뭉개지지 않게 1칸을 정수 px 로: 폭이 320px 이상이면 4배, 좁으면 3배
+  // 정원은 놓인 칸의 폭에 맞춰 커집니다: 폰 320px(1칸 4px) 기준, 좁으면 240px 까지 줄고 PC 에서는 480px 까지 커짐
   useEffect(() => {
     const el = wrap.current
     if (!el) return
-    const fit = () => setScale(el.clientWidth >= GARDEN_SIZE * 4 ? 4 : 3)
+    const fit = () => setScale(Math.min(6, Math.max(3, Math.floor((el.clientWidth / GARDEN_SIZE) * 4) / 4)))
     fit()
     const ro = new ResizeObserver(fit)
     ro.observe(el)
@@ -97,7 +97,9 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
 
   const sel = decorByKey(selected)
   return (
-    <section className="py-6">
+    // PC(lg 이상): 왼쪽에 정원, 오른쪽에 장식 목록. 폰: 위아래로
+    <section className="py-6 lg:grid lg:grid-cols-[minmax(320px,480px)_minmax(300px,1fr)] lg:items-start lg:gap-x-10">
+      <div>
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[14px] font-bold text-ink-700">나의 정원</p>
@@ -138,9 +140,11 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
         )}
       </div>
       {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+      </div>
 
       {/* 장식 목록: 받기 · 놓기 · 고르기 */}
-      <div className="mt-6 flex items-baseline justify-between">
+      <div>
+      <div className="mt-6 flex items-baseline justify-between lg:mt-0">
         <p className="text-[15px] font-bold text-ink-900">장식</p>
         <p className="text-[13px] text-ink-500">보유 햇빛 <span className="font-bold tabular-nums text-ink-900">{game.sunlight.balance}개</span></p>
       </div>
@@ -189,6 +193,7 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
           {!g.ready && <li>정원 꾸미기는 곧 열려요.</li>}
         </ul>
       </InfoTip>
+      </div>
     </section>
   )
 }

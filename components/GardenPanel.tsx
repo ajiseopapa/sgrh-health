@@ -53,7 +53,7 @@ export default function GardenPanel() {
   return (
     <div>
       <MyGarden game={game} onChange={setGame} />
-      <SunSection game={game} />
+      <div className="lg:max-w-[680px]"><SunSection game={game} /></div>
       {SHOW_ITEM_SHOP && <CharacterSection game={game} onChange={setGame} />}
       {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
     </div>
