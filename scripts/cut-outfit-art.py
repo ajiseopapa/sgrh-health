@@ -10,12 +10,14 @@ from scipy import ndimage as ndi
 SRC = 'design/outfit-sheet-2026-11-19/outfit-sheet-v2.webp'
 OUT = Path('public/game/v22/characters')
 KEYS = ['workout', 'nurse', 'doctor', 'office', 'hoodie', 'scrub', 'glasses', 'vest']
-im = Image.open(SRC).convert('RGB'); a = np.asarray(im)
-H = im.height
-light = a.min(2) >= 215
-lab, n = ndi.label(light); sizes = ndi.sum(light, lab, range(1, n + 1))
-bg = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s > 6000])   # 바깥 바탕만 배경(그림 안의 흰 가운·신발은 남김)
-fg = ndi.binary_opening(~bg, structure=np.ones((3, 3)))
+def load(src):
+    im = Image.open(src).convert('RGB'); a = np.asarray(im)
+    light = a.min(2) >= 215
+    lab, n = ndi.label(light); sizes = ndi.sum(light, lab, range(1, n + 1))
+    bg = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s > 6000])   # 바깥 바탕만 배경(그림 안의 흰 가운·신발은 남김)
+    return a, ndi.binary_opening(~bg, structure=np.ones((3, 3)))
+a, fg = load(SRC)
+H = a.shape[0]
 rows = []
 for y0, y1 in ((0, H // 2), (H // 2, H)):
     m = np.zeros_like(fg); m[y0:y1] = fg[y0:y1]
@@ -24,7 +26,7 @@ for y0, y1 in ((0, H // 2), (H // 2, H)):
            if sl[0].stop - sl[0].start >= 150 and sl[1].stop - sl[1].start >= 60]
     row.sort(); assert len(row) == 8, len(row); rows.append(row)
 
-def cut(box):
+def cut(box, a=a, fg=fg):
     x0, y0, x1, y1 = box
     m = fg[y0:y1, x0:x1]
     l, k = ndi.label(m); m = l == 1 + int(np.argmax(ndi.sum(m, l, range(1, k + 1))))   # 가장 큰 덩어리 = 캐릭터
@@ -35,6 +37,12 @@ def cut(box):
     return c.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
 
 sprites = {g: [cut(b) for b in rows[r]] for r, g in enumerate('mf')}
+# 기본 의상(운동복)은 사원증 없이(11-19 TK). 보완본 시트의 여성형 운동복에는 사원증이 달려 있어,
+# 사원증이 없는 첫 시안(outfit-sheet-original.png)의 여성형 운동복을 같은 키로 맞춰 대신 씁니다.
+a1, fg1 = load('design/outfit-sheet-2026-11-19/outfit-sheet-original.png')
+old = cut((221, 160, 378, 459), a1, fg1)
+k = sprites['f'][0].height / old.height
+sprites['f'][0] = old.resize((round(old.width * k), round(old.height * k)), Image.LANCZOS)
 s = 372 / max(sp.height for sp in sprites['m'])
 for g in 'mf':
     for k, sp in zip(KEYS, sprites[g]):
