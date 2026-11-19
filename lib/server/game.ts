@@ -180,9 +180,10 @@ export async function feedLooks(db: SupabaseClient, ids: string[], today = kstTo
 /** 동료 프로필(피드에서 이름을 눌렀을 때) — 이모지·한마디, 캐릭터는 본인이 '보이기'를 켠 경우만 */
 export async function peerProfile(db: SupabaseClient, employeeId: string) {
   const { data: p } = await db.from('game_profiles').select('*').eq('employee_id', employeeId).maybeSingle()
-  // 정원 구경(2단계): 공개를 켠 직원만. 나무 단계 이름과 놓인 장식만 — 운동한 날 수·햇빛·가진 장식 목록은 내보내지 않음
+  // 정원 구경: 모든 직원(11-19 TK: 이름을 누르면 그 사람의 정원과 캐릭터가 나오게 — 공개 설정 없앰).
+  // 나무 단계 이름과 놓인 장식만 — 운동한 날 수·햇빛·가진 장식 목록은 내보내지 않음
   let garden: { stage: number; stageName: string; items: Placed[] } | null = null
-  if (p?.show_in_feed === true) {
+  {
     const [e, placed] = await Promise.all([
       earnedFor(db, employeeId),
       db.from('garden_placements').select('item_key, slot, x, y').eq('employee_id', employeeId), // 033·034 전 DB 면 오류 → 빈 정원
@@ -193,8 +194,8 @@ export async function peerProfile(db: SupabaseClient, employeeId: string) {
   return {
     garden,
     emoji: isNameEmoji(p?.name_emoji) ? (p.name_emoji as string) : null,
-    showCharacter: p?.show_in_feed === true,
-    character: p?.show_in_feed === true && isCharacterKey(p?.character) ? (p.character as string) : null,
+    showCharacter: true,
+    character: isCharacterKey(p?.character) ? (p.character as string) : null, // 안 골랐으면 화면이 기본 캐릭터로 그림
     message: typeof p?.status_message === 'string' ? (p.status_message as string) : null,
   }
 }

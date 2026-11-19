@@ -104,7 +104,6 @@ function MyCharacterSection({ game, onChange }: { game: Game; onChange: (g: Game
         </div>
       </div>
       {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-      <FeedToggle game={game} onChange={(v) => onChange({ ...game, showInFeed: v })} />
     </section>
   )
 }
@@ -332,32 +331,3 @@ function GardenSection({ garden }: { garden: Garden | null }) {
   )
 }
 
-// ── 피드 표시 ──
-function FeedToggle({ game, onChange }: { game: Game; onChange: (v: boolean) => void }) {
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState('')
-  async function toggle() {
-    setSaving(true); setErr('')
-    const r = await api('/api/me/game/profile', { method: 'PUT', body: { showInFeed: !game.showInFeed } })
-    setSaving(false)
-    if (r.ok) onChange(!game.showInFeed); else setErr(r.message || '저장하지 못했어요.')
-  }
-  return (
-    <div className="mt-5 border-t border-line pt-4">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-[15px] font-bold text-ink-900">피드에 내 캐릭터 보이기</p>
-          <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료 피드의 내 이름 옆에 작은 캐릭터가 보여요. 햇빛 수는 보이지 않아요.</p>
-        </div>
-        <button type="button" role="switch" aria-checked={game.showInFeed} disabled={saving} onClick={toggle}
-          aria-label="피드에 내 캐릭터 보이기"
-          className="flex h-[44px] w-[60px] shrink-0 items-center justify-center disabled:opacity-50">
-          <span className={`relative block h-[32px] w-[56px] rounded-full border-2 border-ink-900 transition-colors ${game.showInFeed ? 'bg-brand-300' : 'bg-ink-100'}`}>
-            <span className={`absolute top-[2px] h-[24px] w-[24px] rounded-full bg-ink-900 motion-safe:transition-[left] ${game.showInFeed ? 'left-[26px]' : 'left-[2px]'}`} />
-          </span>
-        </button>
-      </div>
-      {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
-    </div>
-  )
-}

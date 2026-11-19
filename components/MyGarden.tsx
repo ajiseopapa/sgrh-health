@@ -155,7 +155,7 @@ export default function MyGarden<G extends GardenGame>({ game, onChange }: { gam
               <span className="flex min-w-0 items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={d.src} alt="" width={d.w * 2} height={d.h * 2} style={{ imageRendering: 'pixelated', width: d.w * 2, height: d.h * 2 }} />
+                  <img src={d.src} alt="" width={d.w * 2} height={d.h * 2} className="max-h-12 max-w-12 object-contain" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[15px] font-bold text-ink-900">{d.name}</span>

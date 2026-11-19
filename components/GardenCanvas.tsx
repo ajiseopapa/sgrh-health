@@ -6,7 +6,7 @@
 //  · onMove 를 주면 편집 가능: 장식을 끌어서 옮기거나, 장식을 고른 뒤 빈 자리를 누르면 그 자리로 옮김. 저장은 손을 뗄 때 1번.
 //  · 움직이는 효과 없음(11-18 TK: 흔들리면 멀미 남)
 import { useRef, useState } from 'react'
-import { clampSpot, decorByKey, GARDEN_SIZE, GARDEN_TREE, Placed, TREE_STAGES } from '@/lib/game'
+import { clampSpot, decorByKey, GARDEN_SIZE, GARDEN_TREE, Placed, TREE_GARDEN, TREE_STAGES } from '@/lib/game'
 
 interface Props {
   stage: number
@@ -26,6 +26,7 @@ export default function GardenCanvas({ stage, items, scale, label, selected = nu
   const editable = !!onMove && !disabled
   const px = GARDEN_SIZE * scale
   const n = Math.min(Math.max(Math.round(stage) || 1, 1), TREE_STAGES.length)
+  const tree = TREE_GARDEN[n - 1] // 단계가 오를수록 나무가 커짐
 
   const cellAt = (e: { clientX: number; clientY: number }) => {
     const r = box.current!.getBoundingClientRect()
@@ -36,7 +37,8 @@ export default function GardenCanvas({ stage, items, scale, label, selected = nu
 
   return (
     <div ref={box} role={editable ? 'group' : 'img'} aria-label={label}
-      className="relative mx-auto overflow-hidden rounded-2xl bg-brand-50" style={{ width: px, height: px }}
+      className="relative mx-auto overflow-hidden rounded-2xl bg-brand-50"
+      style={{ width: px, height: px, backgroundImage: 'url(/game/v22/garden/garden-bg.png)', backgroundSize: '100% 100%' }}
       onClick={(e) => {
         // 장식을 고른 상태에서 빈 자리를 누르면 그 자리로(그림 가운데가 누른 곳에 오게)
         if (!editable || !selected || e.target !== e.currentTarget) return
@@ -50,8 +52,8 @@ export default function GardenCanvas({ stage, items, scale, label, selected = nu
       <img src={`/game/v22/tree/stage-${n}.png`} alt="" draggable={false}
         className="pointer-events-none absolute select-none"
         style={{
-          imageRendering: 'pixelated', width: GARDEN_TREE.w * scale, height: GARDEN_TREE.h * scale,
-          left: (GARDEN_TREE.x - GARDEN_TREE.w / 2) * scale, top: (GARDEN_TREE.y - GARDEN_TREE.h) * scale, zIndex: GARDEN_TREE.y,
+          width: tree * scale, height: tree * scale,
+          left: (GARDEN_TREE.x - tree / 2) * scale, top: (GARDEN_TREE.y - tree) * scale, zIndex: GARDEN_TREE.y,
         }} />
       {shown.map((it) => {
         const d = decorByKey(it.key)
@@ -63,7 +65,7 @@ export default function GardenCanvas({ stage, items, scale, label, selected = nu
         }
         const img = (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={d.src} alt={editable ? '' : d.name} draggable={false} className="pointer-events-none block h-full w-full select-none" style={{ imageRendering: 'pixelated' }} />
+          <img src={d.src} alt={editable ? '' : d.name} draggable={false} className="pointer-events-none block h-full w-full select-none" />
         )
         if (!editable) return <div key={it.key} className="absolute" style={style}>{img}</div>
         return (

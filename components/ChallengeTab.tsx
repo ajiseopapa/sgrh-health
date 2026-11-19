@@ -307,7 +307,7 @@ function BadgeArt({ b, size = 64 }: { b: BadgeView; size?: number }) {
   if (broken) return <div style={{ opacity: b.earnedAt ? 1 : 0.45 }}><Seal text={String(b.threshold)} unit={SERIES_UNIT[b.series]} size={size} /></div>
   return (
     <img src={badgeSrc(b.key)} alt="" aria-hidden="true" width={size} height={size} onError={() => setBroken(true)}
-      style={{ imageRendering: 'pixelated', width: size, height: size, filter: b.earnedAt ? undefined : 'grayscale(1)', opacity: b.earnedAt ? 1 : 0.45 }} />
+      style={{ width: size, height: size, filter: b.earnedAt ? undefined : 'grayscale(1)', opacity: b.earnedAt ? 1 : 0.45 }} />
   )
 }
 

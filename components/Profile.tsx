@@ -163,21 +163,6 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
             </button>
           </div>
 
-          {/* 캐릭터 공개 */}
-          <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
-            <div>
-              <p className="text-[15px] font-bold text-ink-900">동료에게 내 캐릭터·정원 보이기</p>
-              <p className="mt-0.5 text-[13px] text-ink-500">켜면 동료가 피드에서 내 이름을 눌렀을 때 캐릭터와 정원이 보여요. 운동한 날 수와 햇빛은 보이지 않아요.</p>
-            </div>
-            <button type="button" role="switch" aria-checked={p.showInFeed} disabled={busy} aria-label="동료에게 내 캐릭터·정원 보이기"
-              onClick={() => save({ showInFeed: !p.showInFeed }, (cur) => ({ ...cur, showInFeed: !cur.showInFeed }))}
-              className="flex h-[44px] w-[60px] shrink-0 items-center justify-center disabled:opacity-50">
-              <span className={`relative block h-[32px] w-[56px] rounded-full border-2 border-ink-900 transition-colors ${p.showInFeed ? 'bg-brand-300' : 'bg-ink-100'}`}>
-                <span className={`absolute top-[2px] h-[24px] w-[24px] rounded-full bg-ink-900 motion-safe:transition-[left] ${p.showInFeed ? 'left-[26px]' : 'left-[2px]'}`} />
-              </span>
-            </button>
-          </div>
-
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
           {setup && (
             <button type="button" disabled={busy || !p.characterKey} onClick={onClose}
