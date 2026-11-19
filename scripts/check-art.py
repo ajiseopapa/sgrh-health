@@ -22,7 +22,7 @@ for k in keys:
     check(f'{k} → {p.name}: 64×64 · 투명 배경', im.size == (64, 64) and a is not None and a.getpixel((0, 0)) == 0 and min(a.getdata()) == 0, f'{im.size} {im.mode}')
 for c in ['char-m', 'char-f']:
     im = Image.open(f'public/game/v22/characters/{c}.png')
-    check(f'캐릭터 {c}: 64×96 · 투명 배경', im.size == (64, 96) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, f'{im.size}')
+    check(f'캐릭터 {c}: 256×384(2:3, 화면에서 64×96 기준으로 줄여 그림) · 투명 배경', im.size == (256, 384) and im.mode == 'RGBA' and im.getchannel('A').getpixel((0, 0)) == 0, f'{im.size}')
 
 # 나무 4단계(96×96) · 정원 장식(lib/game.ts DECOR 의 칸 수 × 4px)
 for n in range(1, 5):

@@ -29,7 +29,7 @@ export function PixelCharacter({ charKey, scale = 2, className = '' }: { charKey
   const c = characterOf(charKey)
   return (
     <img src={c.src} alt={`${c.name} 캐릭터`} width={64 * scale} height={96 * scale}
-      className={`shrink-0 ${className}`} style={{ imageRendering: 'pixelated', width: 64 * scale, height: 96 * scale }} />
+      className={`shrink-0 ${className}`} style={{ width: 64 * scale, height: 96 * scale }} />
   )
 }
 

@@ -46,6 +46,7 @@ export const SHOW_ITEM_SHOP = false
 export const SHOW_DEPT_GARDEN = false
 
 /** 픽셀 캐릭터 2종(본인이 고름, 성별·인사정보와 연결하지 않음). 고르지 않으면 DEFAULT_CHARACTER */
+// 그림: 디자이너 확정본(11-19 TK). 256×384 투명 PNG — 도트 격자가 아닌 큰 그림이라 화면에서 부드럽게 줄여 그림(pixelated 아님)
 export const CHARACTERS = [
   { key: 'm', name: '남성형', src: '/game/v22/characters/char-m.png' },
   { key: 'f', name: '여성형', src: '/game/v22/characters/char-f.png' },
