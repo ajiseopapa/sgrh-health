@@ -70,7 +70,8 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
   const [p, setP] = useState<MyProfile | null>(null)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
+  // at: 안내를 어느 칸 아래에 보여 줄지(의상·캐릭터를 누르고 생긴 오류가 창 맨 아래에 떠서 '안 눌린다'고 느껴졌음, 11-19 TK)
+  const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string; at?: 'look' } | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -89,10 +90,11 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
     setBusy(true); setMsg(null)
     const r = await api('/api/me/game/profile', { method: 'PUT', body })
     setBusy(false)
-    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '저장하지 못했어요.' }); return }
+    const at = 'outfit' in body || 'character' in body ? 'look' as const : undefined
+    if (!r.ok) { setMsg({ tone: 'error', text: r.message || '저장하지 못했어요.', at }); return }
     const next = apply(p)
     setP(next); onEmoji(next.nameEmoji)
-    if (done) setMsg({ tone: 'success', text: done })
+    if (done) setMsg({ tone: 'success', text: done, at })
   }
 
   const cell = (on: boolean) =>
@@ -152,6 +154,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
                 )
               })}
             </div>
+            {msg && msg.at === 'look' && <div className="mt-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
           </div>
 
           {/* 한마디 */}
@@ -184,7 +187,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
             </button>
           </div>
 
-          {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+          {msg && msg.at !== 'look' && <Notice tone={msg.tone}>{msg.text}</Notice>}
           {setup && (
             <button type="button" disabled={busy || !p.characterKey} onClick={onClose}
               className="flex min-h-[52px] w-full items-center justify-center rounded-xl bg-ink-900 text-[16px] font-bold text-paper active:bg-ink-700 disabled:bg-ink-300">

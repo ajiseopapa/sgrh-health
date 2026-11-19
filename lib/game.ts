@@ -147,7 +147,7 @@ export function isCharacterKey(v: unknown): v is CharacterKey {
 export const OUTFITS = [
   { key: 'workout', name: '운동복' },
   { key: 'nurse', name: '간호복' },
-  { key: 'doctor', name: '의료진 가운' },
+  { key: 'doctor', name: '가운' },
   { key: 'office', name: '정장' },
   { key: 'hoodie', name: '후드 집업' },
   { key: 'scrub', name: '스크럽' },
