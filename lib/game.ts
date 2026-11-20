@@ -36,8 +36,10 @@ export function treeStage(activeDays: number) {
 //  · 의상도 레이어(outfit-<칸>-<의상>-<m|f>.png)라, 상의·하의·신발 아이템을 고르면 의상의 같은 부위만 바뀜(v5부터 모든 의상에 모든 아이템)
 export type Slot = 'back' | 'shoes' | 'bottom' | 'top' | 'face' | 'hair' | 'hat' | 'hand' | 'effect'
 export const SLOTS: Slot[] = ['hat', 'hair', 'face', 'top', 'bottom', 'shoes', 'back', 'hand', 'effect']
-export interface Item { key: string; slot: Slot; name: string; price: number; id: string }
+export interface Item { key: string; slot: Slot; name: string; price: number; id: string; uniform?: boolean }
 const item = (slot: Slot, id: string, name: string, price: number): Item => ({ key: `${slot}_${id}`, slot, id, name, price })
+/** 유니폼(11-20 TK): 운동복 말고 다른 옷은 햇빛으로 삼. 옷 칸(상의 칸에 저장)의 통그림 옷 */
+const uniform = (id: string, name: string, price: number): Item => ({ ...item('top', id, name, price), uniform: true })
 export const ITEMS: Item[] = [
   item('hat', 'hairband', '헤어밴드', 30),
   item('hat', 'baseballcap', '야구모자', 50),
@@ -57,6 +59,11 @@ export const ITEMS: Item[] = [
   item('face', 'glasses', '뿔테 안경', 30),
   item('face', 'roundglasses', '둥근 안경', 30),
   item('face', 'sunglasses', '선글라스', 40),
+  uniform('nurse', '간호복', 100),
+  uniform('doctor', '가운', 100),
+  uniform('office', '정장', 100),
+  uniform('scrub', '스크럽', 100),
+  uniform('hoodie', '후드 집업', 100),
   item('top', 'tshirt', '라임 반팔', 20),
   item('top', 'vest', '조끼', 60),
   item('top', 'whitezipup', '흰 집업', 70),
@@ -92,38 +99,54 @@ export const ITEMS: Item[] = [
   item('effect', 'crown', '왕관', 150),
 ]
 export const SLOT_LABEL: Record<Slot, string> = {
-  hat: '모자', hair: '머리 장식', face: '안경', top: '상의', bottom: '하의', shoes: '신발', back: '가방', hand: '소품', effect: '특별',
+  hat: '모자', hair: '머리 장식', face: '안경', top: '옷', bottom: '하의', shoes: '신발', back: '가방', hand: '소품', effect: '특별',
 }
 export type Equipped = Partial<Record<Slot, string | null>>
 export const itemIcon = (it: Item) => `/game/v22/wear/icon-${it.slot}-${it.id}.png`
 const itemLayer = (it: Item, g: string) => `/game/v22/wear/item-${it.slot}-${it.id}-${g}.png`
 const base = (g: string, part: string) => `/game/v22/wear/base-${g}-${part}.png`
-/**
- * 캐릭터 그림 겹치기(아래에서 위로). 아이템이 없으면 의상 한 장짜리 그림을 그대로 씀(겹친 것과 픽셀까지 같음).
- * 순서는 디자이너 v5 README: 가방 → 뒷머리 → 몸 → 신발 → 하의 → 상의 → 안경 → 앞머리 → 머리 장식 → 모자 → 소품 → 특별.
- * 상의·하의·신발·안경 칸은 아이템이 있으면 아이템, 없으면 고른 의상의 그 부위(운동복은 기본 몸 그대로).
- */
-export function characterLayers(key: string | null | undefined, outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
+// ── 옷은 통그림, 꾸미기는 운동복에서만(11-20 TK) ──
+//  · 잘라 덧입히는 방식은 디자이너 그림(생성 도구)이 겹치는 자리가 맞지 않아 가장자리가 깨짐(v5·v6) → 옷은 사람까지 그린 전신 한 장
+//  · 옷 = 유니폼 + 상의·하의·신발 아이템. 모두 햇빛으로 사고, 한 번에 한 벌만 입음(서버가 나머지 옷 칸을 비움)
+//  · 옷을 입으면 꾸미기(모자·머리 장식·안경·가방·소품·특별)는 안 보임. 꾸미기를 입으면 서버가 옷을 벗겨 운동복으로 돌아감
+//  · 옷 전신 그림: public/game/v22/looks/look-<칸>-<이름>-<m|f>.png (512×768). 받은 그림은 LOOK_READY 에 키를 넣어야 쓰임
+//    아직 없으면: 유니폼은 예전 의상 그림(characters/char-<m|f>-<이름>.png), 상의·하의·신발은 기본 몸 위에 그 옷만 겹쳐 보여 줌
+//  · game_profiles.outfit(예전에 무료로 고른 의상)은 더 이상 그림에 쓰지 않음
+export const CLOTHES: Slot[] = ['top', 'bottom', 'shoes']
+export const isClothes = (s: Slot) => CLOTHES.includes(s)
+export const LOOK_READY = new Set<string>([])
+const lookSrc = (it: Item, g: string) => `/game/v22/looks/look-${it.slot}-${it.id}-${g}.png`
+/** 입은 옷(유니폼·상의·하의·신발 중 하나). 예전 데이터로 여러 개면 상의 → 하의 → 신발 순으로 하나만 */
+export function wornClothes(equipped: Equipped | null | undefined): Item | null {
+  for (const s of CLOTHES) {
+    const it = itemByKey(equipped?.[s] ?? null)
+    if (it && it.slot === s) return it
+  }
+  return null
+}
+/** 옷 하나의 전신 그림 레이어(꾸미기 없이) */
+export function clothesLayers(c: Item, key: string | null | undefined): string[] {
   const g = characterOf(key).key
-  const o = isOutfitKey(outfit) ? outfit : DEFAULT_OUTFIT
-  const on = (slot: Slot) => {
-    const it = itemByKey(equipped?.[slot] ?? null)
-    return it && it.slot === slot ? it : null
+  if (LOOK_READY.has(c.key)) return [lookSrc(c, g)]
+  if (c.uniform) return [`/game/v22/characters/char-${g}-${c.id}.png`]
+  return [base(g, 'hair-back'), base(g, 'body'), base(g, 'shoes'), ...(c.slot === 'shoes' ? [itemLayer(c, g)] : []),
+    base(g, 'bottom'), ...(c.slot === 'bottom' ? [itemLayer(c, g)] : []), base(g, 'top'), ...(c.slot === 'top' ? [itemLayer(c, g)] : []),
+    base(g, 'hair-front')]
+}
+/**
+ * 캐릭터 그림 겹치기(아래에서 위로).
+ * 옷을 입었으면 그 옷 전신 그림 한 장만. 아니면 운동복 + 꾸미기(가방 → 몸 → 안경 → 머리 장식 → 모자 → 소품 → 특별).
+ * outfit 인자는 예전 호출과 맞추려고 남겨 둠(쓰지 않음).
+ */
+export function characterLayers(key: string | null | undefined, _outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
+  const g = characterOf(key).key
+  const c = wornClothes(equipped)
+  if (c) return clothesLayers(c, g)
+  const L = (s: Slot) => {
+    const it = itemByKey(equipped?.[s] ?? null)
+    return it && it.slot === s ? [itemLayer(it, g)] : []
   }
-  if (!SLOTS.some(on)) return [characterSrc(g, o)]
-  const L = (s: Slot) => { const it = on(s); return it ? [itemLayer(it, g)] : [] }
-  const part = (s: Slot) => {
-    const it = on(s)
-    if (it) return [itemLayer(it, g)]
-    if (o === 'workout') return []
-    if (s === 'face') return o === 'glasses' ? [`/game/v22/wear/outfit-face-glasses-${g}.png`] : []
-    return [`/game/v22/wear/outfit-${s}-${o}-${g}.png`]
-  }
-  return [
-    ...L('back'), base(g, 'hair-back'), base(g, 'body'), base(g, 'shoes'), ...part('shoes'),
-    base(g, 'bottom'), ...part('bottom'), base(g, 'top'), ...part('top'), ...part('face'),
-    base(g, 'hair-front'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect'),
-  ]
+  return [...L('back'), characterSrc(g, DEFAULT_OUTFIT), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
 }
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false

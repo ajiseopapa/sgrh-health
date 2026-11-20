@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
+  CLOTHES, isClothes, clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -152,6 +152,10 @@ export async function setEquipment(db: SupabaseClient, employeeId: string, slot:
     if (error.code === '23514') return { status: 'not_ready' as const }
     throw new Error('EQUIP_FAILED')
   }
+  // 옷은 한 벌만(11-20 TK): 옷을 입으면 다른 옷 칸을 비움. 꾸미기를 입으면 옷을 벗고 운동복으로(꾸미기는 운동복에서만 보임)
+  const clear = isClothes(slot) ? CLOTHES.filter((s) => s !== slot) : CLOTHES
+  const { error: e2 } = await db.from('game_equipment').delete().eq('employee_id', employeeId).in('slot', clear)
+  if (e2) throw new Error('EQUIP_FAILED')
   return { status: 'ok' as const }
 }
 

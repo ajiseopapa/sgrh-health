@@ -5,7 +5,7 @@
 // 저장은 /api/me/game/profile 하나로: character · message · nameEmoji · showInFeed
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
-import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, DEFAULT_OUTFIT, Equipped, NAME_EMOJIS, OUTFITS, Placed } from '@/lib/game'
+import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, Equipped, NAME_EMOJIS, Placed } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
 import SproutIcon from './SproutIcon'
 import GardenCanvas from './GardenCanvas'
@@ -31,7 +31,7 @@ export function PixelCharacter({ charKey, outfit, equipped, scale = 2, className
   const c = characterOf(charKey)
   if (equipped && Object.values(equipped).some(Boolean)) return <CharacterFigure charKey={charKey} outfit={outfit} equipped={equipped} width={64 * scale} className={className} />
   return (
-    <img src={characterSrc(charKey, outfit)} alt={`${c.name} 캐릭터`} width={64 * scale} height={96 * scale}
+    <img src={characterSrc(charKey)} alt={`${c.name} 캐릭터`} width={64 * scale} height={96 * scale}
       className={`shrink-0 ${className}`} style={{ width: 64 * scale, height: 96 * scale }} />
   )
 }
@@ -138,23 +138,10 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
             {setup && !p.characterKey && <p className="mt-2 text-[13px] font-semibold text-ink-900">둘 중 하나를 눌러 주세요.</p>}
           </div>
 
-          {/* 의상: 누구나 자유롭게 고름. 처음 접속 때는 캐릭터를 고른 뒤에 보임 */}
+          {/* 옷·꾸미기는 정원 › 캐릭터 꾸미기에서(11-20 TK: 운동복 말고 다른 옷은 햇빛으로 삼) */}
           <div className={p.characterKey || !setup ? '' : 'hidden'}>
-            <p className={label}>의상</p>
-            <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="의상 고르기">
-              {OUTFITS.map((o) => {
-                const on = (p.outfitKey ?? DEFAULT_OUTFIT) === o.key
-                return (
-                  <button key={o.key} type="button" role="radio" aria-checked={on} aria-label={o.name} disabled={busy}
-                    onClick={() => { if (!on) save({ outfit: o.key }, (cur) => ({ ...cur, outfitKey: o.key })) }}
-                    className={`flex flex-col items-center gap-1 rounded-xl border-2 px-1 pb-1.5 pt-2 disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`}>
-                    <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} outfit={o.key} scale={0.75} />
-                    <span className="text-[11px] font-bold leading-tight text-ink-900">{o.name}</span>
-                  </button>
-                )
-              })}
-            </div>
-            {msg && msg.at === 'look' && <div className="mt-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+            {msg && msg.at === 'look' && <div className="mb-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+            <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">정원 › 캐릭터 꾸미기</span>에서 햇빛으로 사서 입어요.</p>
           </div>
 
           {/* 한마디 */}
