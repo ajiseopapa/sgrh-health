@@ -171,7 +171,7 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
           {/* 이모지 */}
           <div>
             <p className={label}>프로필 이모지</p>
-            <div className="grid grid-cols-6 gap-2" role="radiogroup" aria-label="프로필 이모지">
+            <div className={`grid grid-cols-6 gap-2 ${inline ? 'lg:grid-cols-12' : ''}`} role="radiogroup" aria-label="프로필 이모지">
               {NAME_EMOJIS.map((e) => (
                 <button key={e} type="button" role="radio" aria-checked={p.nameEmoji === e} aria-label={e} disabled={busy}
                   onClick={() => { if (e !== p.nameEmoji) save({ nameEmoji: e }, (cur) => ({ ...cur, nameEmoji: e })) }}

@@ -57,7 +57,7 @@ export default function GardenPanel({ view = 'garden' }: { view?: 'garden' | 'pr
   if (view === 'profile') return (
     <div>
       {/* 내 프로필(캐릭터·한마디·이모지) — 홈의 이름을 눌러 뜨던 창과 같은 내용(11-20 TK) */}
-      <section className="pb-6 pt-2 lg:max-w-[680px]">
+      <section className="pb-6 pt-2">
         <ProfileEditor name={me?.name ?? ''} inline onSaved={load}
           onEmoji={(v) => { try { localStorage.setItem(EMOJI_KEY, v ?? '') } catch { /* 저장 못 해도 화면은 그대로 */ } }} />
       </section>
