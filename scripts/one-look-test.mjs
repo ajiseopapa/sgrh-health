@@ -19,7 +19,9 @@ check('하의를 입으면 유니폼(상의 칸)은 벗음',e.bottom==='bottom_g
 r=await wear('top','top_greenhoodie'); e=r.game.character.equipped
 check('상의를 입으면 하의는 벗음(옷 한 벌)',e.top==='top_greenhoodie'&&!e.bottom&&!e.shoes,JSON.stringify(e))
 r=await wear('hat','hat_hairband'); e=r.game.character.equipped
-check('꾸미기를 입으면 옷을 벗고 운동복으로',!e.top&&!e.bottom&&!e.shoes&&e.hat==='hat_hairband',JSON.stringify(e))
+check('운동복 계열 옷(초록 후드)에는 꾸미기를 같이 입음',e.top==='top_greenhoodie'&&e.hat==='hat_hairband',JSON.stringify(e))
+r=await wear('top','top_nurse'); r=await wear('hat','hat_hairband'); e=r.game.character.equipped
+check('유니폼 입은 채 꾸미기를 입으면 유니폼만 벗음',!e.top&&e.hat==='hat_hairband',JSON.stringify(e))
 r=await wear('top','top_nurse'); r=await wear('top',null); e=r.game.character.equipped
 check('옷 벗기(운동복으로) 200',r.status===200&&!e.top)
 check('안 산 유니폼 입기 403',(await wear('top','top_office')).status===403)

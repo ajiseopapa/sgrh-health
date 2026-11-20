@@ -110,12 +110,14 @@ const base = (g: string, part: string) => `/game/v22/wear/base-${g}-${part}.png`
 // ── 옷은 통그림, 꾸미기는 운동복에서만(11-20 TK) ──
 //  · 잘라 덧입히는 방식은 디자이너 그림(생성 도구)이 겹치는 자리가 맞지 않아 가장자리가 깨짐(v5·v6) → 옷은 사람까지 그린 전신 한 장
 //  · 옷 = 유니폼 + 상의·하의·신발 아이템. 모두 햇빛으로 사고, 한 번에 한 벌만 입음(서버가 나머지 옷 칸을 비움)
-//  · 옷을 입으면 꾸미기(모자·머리 장식·안경·가방·소품·특별)는 안 보임. 꾸미기를 입으면 서버가 옷을 벗겨 운동복으로 돌아감
+//  · 유니폼을 입으면 꾸미기(모자·머리 장식·안경·가방·소품·특별)는 안 보임. 운동복과 상의·하의·신발 아이템(운동복 계열,
+//    머리가 기본 캐릭터와 픽셀까지 같음)에는 꾸미기를 겹침(11-20 TK). 꾸미기를 입으면 서버가 유니폼을 벗김
 //  · 옷 전신 그림: public/game/v22/looks/look-<칸>-<이름>-<m|f>.png (512×768). 받은 그림은 LOOK_READY 에 키를 넣어야 쓰임
 //    아직 없으면: 유니폼은 예전 의상 그림(characters/char-<m|f>-<이름>.png), 상의·하의·신발은 기본 몸 위에 그 옷만 겹쳐 보여 줌
 //  · game_profiles.outfit(예전에 무료로 고른 의상)은 더 이상 그림에 쓰지 않음
 export const CLOTHES: Slot[] = ['top', 'bottom', 'shoes']
 export const isClothes = (s: Slot) => CLOTHES.includes(s)
+export const UNIFORM_KEYS = ITEMS.filter((i) => i.uniform).map((i) => i.key)
 // 디자이너 통그림 v8(11-20, design/full-looks-v8-2026-11-20): 머리는 기준 캐릭터와 픽셀 차이 0(조리모만 예외), 발바닥 y=755
 export const LOOK_READY = new Set<string>([
   'bottom_blackshorts',
@@ -162,18 +164,19 @@ export function clothesLayers(c: Item, key: string | null | undefined): string[]
 }
 /**
  * 캐릭터 그림 겹치기(아래에서 위로).
- * 옷을 입었으면 그 옷 전신 그림 한 장만. 아니면 운동복 + 꾸미기(가방 → 몸 → 안경 → 머리 장식 → 모자 → 소품 → 특별).
+ * 유니폼이면 그 전신 그림 한 장만. 아니면 몸(운동복 또는 상의·하의·신발 아이템 전신 그림) + 꾸미기
+ * (가방 → 몸 → 안경 → 머리 장식 → 모자 → 소품 → 특별).
  * outfit 인자는 예전 호출과 맞추려고 남겨 둠(쓰지 않음).
  */
 export function characterLayers(key: string | null | undefined, _outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
   const g = characterOf(key).key
   const c = wornClothes(equipped)
-  if (c) return clothesLayers(c, g)
+  if (c?.uniform) return clothesLayers(c, g)
   const L = (s: Slot) => {
     const it = itemByKey(equipped?.[s] ?? null)
     return it && it.slot === s ? [itemLayer(it, g)] : []
   }
-  return [...L('back'), characterSrc(g, DEFAULT_OUTFIT), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
+  return [...L('back'), ...(c ? clothesLayers(c, g) : [characterSrc(g, DEFAULT_OUTFIT)]), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
 }
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false
