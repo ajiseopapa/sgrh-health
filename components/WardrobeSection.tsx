@@ -66,6 +66,9 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
   }
 
   const groups = SLOTS.map((slot) => ({ slot, items: ITEMS.filter((i) => i.slot === slot) })).filter((g) => g.items.length)
+  // 칸별 탭(11-20 TK): 한 번에 한 칸만 보여 위아래로 길게 스크롤하지 않게
+  const [tab, setTab] = useState<Slot>(groups[0]?.slot ?? 'hat')
+  const grp = groups.find((g) => g.slot === tab) ?? groups[0]
 
   return (
     <section className="border-t border-line py-6">
@@ -82,10 +85,22 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
           <CharacterFigure charKey={game.characterKey} outfit={outfit} equipped={equipped} width={128} label="지금 내 캐릭터" />
         </div>
 
-        <div className="mt-4 space-y-5 lg:mt-0">
-          {groups.map((grp) => (
-            <div key={grp.slot}>
-              <p className="mb-2 text-[13px] font-bold text-ink-700">{SLOT_LABEL[grp.slot as Slot]}</p>
+        <div className="mt-4 space-y-4 lg:mt-0">
+          <div role="tablist" aria-label="꾸미기 칸" className="flex flex-wrap gap-1.5">
+            {groups.map((g) => {
+              const sel = g.slot === grp.slot
+              const wearing = !!equipped[g.slot]
+              return (
+                <button key={g.slot} type="button" role="tab" aria-selected={sel} onClick={() => setTab(g.slot)}
+                  className={`relative shrink-0 rounded-full border-2 px-3.5 py-1.5 text-[13px] font-bold ${sel ? 'border-ink-900 bg-ink-900 text-white' : 'border-line bg-sheet text-ink-700'}`}>
+                  {SLOT_LABEL[g.slot]}
+                  {wearing && <span aria-label="입는 중" className={`absolute right-1 top-1 h-1.5 w-1.5 rounded-full ${sel ? 'bg-brand-300' : 'bg-ink-900'}`} />}
+                </button>
+              )
+            })}
+          </div>
+          {grp && (
+            <div key={grp.slot} role="tabpanel" aria-label={SLOT_LABEL[grp.slot]}>
               <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
                 {grp.items.map((it) => {
                   const have = owned.includes(it.key)
@@ -108,7 +123,7 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
                 })}
               </ul>
             </div>
-          ))}
+          )}
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
           <InfoTip label="꾸미기 안내">
             <ul className="space-y-1">
