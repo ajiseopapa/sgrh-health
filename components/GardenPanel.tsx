@@ -5,6 +5,7 @@
 // 숫자 계산과 잔액 확인은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import InfoTip from './InfoTip'
 import WardrobeSection from './WardrobeSection'
+import { EMOJI_KEY, ProfileEditor } from './Profile'
 import MyGarden from './MyGarden'
 import TreeArt from './TreeArt'
 export { TreeArt } // 예전 import 경로 유지(HomeTab 등)
@@ -53,7 +54,16 @@ export default function GardenPanel({ view = 'garden' }: { view?: 'garden' | 'pr
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
-  if (view === 'profile') return <WardrobeSection game={game} onChange={setGame} bare />
+  if (view === 'profile') return (
+    <div>
+      {/* 내 프로필(캐릭터·한마디·이모지) — 홈의 이름을 눌러 뜨던 창과 같은 내용(11-20 TK) */}
+      <section className="pb-6 pt-2 lg:max-w-[680px]">
+        <ProfileEditor name={me?.name ?? ''} inline onSaved={load}
+          onEmoji={(v) => { try { localStorage.setItem(EMOJI_KEY, v ?? '') } catch { /* 저장 못 해도 화면은 그대로 */ } }} />
+      </section>
+      <WardrobeSection game={game} onChange={setGame} />
+    </div>
+  )
   return (
     <div>
       <MyGarden game={game} onChange={setGame} />

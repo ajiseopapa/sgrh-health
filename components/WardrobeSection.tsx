@@ -102,6 +102,13 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
         <div>
           <p className="text-[14px] font-bold text-ink-700">캐릭터 꾸미기</p>
           <p className="mt-1 text-[13px] text-ink-500">햇빛으로 옷과 꾸미기 아이템을 사서 입어요.</p>
+          <InfoTip label="꾸미기 안내" className="mt-1">
+            <ul className="space-y-1">
+              <li>운동복은 기본 옷이에요. 유니폼과 다른 옷은 햇빛으로 사서 입어요. 옷은 한 번에 한 벌만 입어요.</li>
+              <li>모자·안경 같은 꾸미기는 운동복을 입었을 때만 보여요. 옷을 입는 동안에도 고른 꾸미기는 남아 있다가, 운동복으로 돌아오면 다시 보여요.</li>
+              <li>산 아이템은 계속 내 것이에요. 입은 아이템을 다시 누르면 벗어요.</li>
+            </ul>
+          </InfoTip>
         </div>
         <p className="shrink-0 pb-0.5 text-[13px] text-ink-500">보유 햇빛 <span className="font-bold tabular-nums text-ink-900">{game.sunlight.balance}개</span></p>
       </div>
@@ -169,13 +176,6 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
             </ul>
           </div>
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-          <InfoTip label="꾸미기 안내">
-            <ul className="space-y-1">
-              <li>운동복은 기본 옷이에요. 유니폼과 다른 옷은 햇빛으로 사서 입어요. 옷은 한 번에 한 벌만 입어요.</li>
-              <li>모자·안경 같은 꾸미기는 운동복을 입었을 때만 보여요. 옷을 입는 동안에도 고른 꾸미기는 남아 있다가, 운동복으로 돌아오면 다시 보여요.</li>
-              <li>산 아이템은 계속 내 것이에요. 입은 아이템을 다시 누르면 벗어요.</li>
-            </ul>
-          </InfoTip>
         </div>
       </div>
     </section>

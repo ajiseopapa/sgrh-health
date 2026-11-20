@@ -102,7 +102,7 @@ function AppShell() {
       <main className="flex-1 px-5 lg:px-10">
         {/* PC: 홈·기록·도전은 넓게, 피드는 읽기 좋은 폭으로 */}
         <div className={`lg:mx-auto ${tab === 'feed' ? 'lg:max-w-[680px]' : 'lg:max-w-[1040px]'}`}>
-        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => { setChallengePanel('goal'); setTab('challenge') }} onTree={() => setTab('garden')} />}
+        {tab === 'home'      && <HomeTab      key={`home-${refreshKey}`} onRecord={() => setTab('record')} onChallenge={() => { setChallengePanel('goal'); setTab('challenge') }} onTree={() => setTab('garden')} onProfile={() => setTab('profile')} />}
         {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
         {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}-${challengePanel}`} initialPanel={challengePanel} />}
         {tab === 'garden'    && <div key={`garden-${refreshKey}`}><PageHead title="정원" /><GardenPanel /></div>}

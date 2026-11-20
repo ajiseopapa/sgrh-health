@@ -19,7 +19,7 @@ const DOW = ['월', '화', '수', '목', '금', '토', '일']
 
 type Tree = { stage: number; name: string; activeDays: number; next: { name: string; remaining: number } | null }
 
-export default function HomeTab({ onRecord, onChallenge, onTree }: { onRecord: () => void; onChallenge: () => void; onTree: () => void }) {
+export default function HomeTab({ onRecord, onChallenge, onTree, onProfile }: { onRecord: () => void; onChallenge: () => void; onTree: () => void; onProfile?: () => void }) {
   const { me, requireMe } = useMe()
   const { data, loading, error, needLogin } = useEngagement()
   const [teamToday, setTeamToday] = useState<number | null>(null)
@@ -50,7 +50,7 @@ export default function HomeTab({ onRecord, onChallenge, onTree }: { onRecord: (
     <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:pt-2">
       {/* 오늘 — 연두 색 면으로 가장 먼저 눈에 들어오게 */}
       <section className="-mx-5 mb-2 bg-brand-300 px-5 pb-6 pt-5 text-ink-900 lg:mx-0 lg:rounded-2xl lg:p-8">
-        {me && <div className="mb-3"><HomeProfile name={me.name} /></div>}
+        {me && <div className="mb-3"><HomeProfile name={me.name} onOpen={onProfile} /></div>}
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[13px] font-semibold text-ink-700">오늘의 움직임이 내일의 성장으로</p>

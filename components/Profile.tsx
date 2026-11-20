@@ -67,6 +67,19 @@ interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | nul
 export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
   open: boolean; name: string; onClose: () => void; onEmoji: (v: string | null) => void; setup?: boolean
 }) {
+  if (!open) return null
+  return (
+    <Sheet title={setup ? '내 캐릭터 고르기' : '내 프로필'} titleId="profile-sheet-title" onClose={onClose} locked={setup}>
+      <ProfileEditor name={name} onEmoji={onEmoji} setup={setup} onClose={onClose} />
+    </Sheet>
+  )
+}
+
+/** 내 프로필 고치기(캐릭터·한마디·이모지). 창(ProfileSheet)과 프로필 탭(inline, 11-20 TK)에서 같이 씀.
+ *  inline: 프로필 탭 — 큰 캐릭터 그림은 아래 캐릭터 꾸미기 미리보기가 대신함. onSaved: 저장 뒤 탭의 다른 칸을 새로 읽게 */
+export function ProfileEditor({ name, onEmoji, setup = false, inline = false, onClose, onSaved }: {
+  name: string; onEmoji: (v: string | null) => void; setup?: boolean; inline?: boolean; onClose?: () => void; onSaved?: () => void
+}) {
   const [p, setP] = useState<MyProfile | null>(null)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -74,15 +87,13 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string; at?: 'look' } | null>(null)
 
   useEffect(() => {
-    if (!open) return
     setMsg(null)
     api<Partial<MyProfile> & { character?: { equipped?: Equipped } }>('/api/me/game').then((r) => {
       if (!r.ok) { setMsg({ tone: 'error', text: r.message || '불러오지 못했어요.' }); return }
       const d = { nameEmoji: r.data.nameEmoji ?? null, characterKey: r.data.characterKey ?? null, outfitKey: r.data.outfitKey ?? null, equipped: r.data.character?.equipped ?? {}, showInFeed: r.data.showInFeed ?? false, message: r.data.message ?? null }
       setP(d); setDraft(d.message ?? '')
     })
-  }, [open])
-  if (!open) return null
+  }, [])
 
   /** 한 칸만 저장. 성공하면 화면 값을 바꿉니다 */
   async function save(body: Record<string, unknown>, apply: (cur: MyProfile) => MyProfile, done?: string) {
@@ -93,7 +104,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
     const at = 'outfit' in body || 'character' in body ? 'look' as const : undefined
     if (!r.ok) { setMsg({ tone: 'error', text: r.message || '저장하지 못했어요.', at }); return }
     const next = apply(p)
-    setP(next); onEmoji(next.nameEmoji)
+    setP(next); onEmoji(next.nameEmoji); onSaved?.()
     if (done) setMsg({ tone: 'success', text: done, at })
   }
 
@@ -102,7 +113,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
   const label = 'mb-2 text-[13px] font-bold text-ink-700'
 
   return (
-    <Sheet title={setup ? '내 캐릭터 고르기' : '내 프로필'} titleId="profile-sheet-title" onClose={onClose} locked={setup}>
+    <>
       {!p ? (msg ? <Notice tone={msg.tone}>{msg.text}</Notice> : <Loading lines={3} />) : (
         <div className="space-y-6">
           {setup && (
@@ -113,7 +124,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
           {/* 캐릭터 */}
           <div className="flex items-end gap-5">
             {/* 처음 접속해 아직 안 골랐으면 큰 그림을 비워 둠(기본 캐릭터가 고른 것처럼 보이지 않게) */}
-            {(!setup || p.characterKey) && <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} outfit={p.outfitKey} equipped={p.equipped} scale={2} />}
+            {!inline && (!setup || p.characterKey) && <PixelCharacter charKey={p.characterKey ?? DEFAULT_CHARACTER} outfit={p.outfitKey} equipped={p.equipped} scale={2} />}
             <div className="min-w-0 flex-1 pb-1">
               <p className="text-[18px] font-extrabold text-ink-900">{p.nameEmoji ? `${p.nameEmoji} ` : ''}{name}</p>
               <p className="mt-1 break-words text-[14px] text-ink-600">{p.message || '아직 한마디가 없어요.'}</p>
@@ -141,7 +152,7 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
           {/* 옷·꾸미기는 프로필 탭 › 캐릭터 꾸미기에서(11-20 TK: 운동복 말고 다른 옷은 햇빛으로 삼) */}
           <div className={p.characterKey || !setup ? '' : 'hidden'}>
             {msg && msg.at === 'look' && <div className="mb-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-            <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">프로필 탭</span>에서 햇빛으로 사서 입어요.</p>
+            {!inline && <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">프로필 탭</span>에서 햇빛으로 사서 입어요.</p>}
           </div>
 
           {/* 한마디 */}
@@ -176,14 +187,14 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
 
           {msg && msg.at !== 'look' && <Notice tone={msg.tone}>{msg.text}</Notice>}
           {setup && (
-            <button type="button" disabled={busy || !p.characterKey} onClick={onClose}
+            <button type="button" disabled={busy || !p.characterKey} onClick={() => onClose?.()}
               className="flex min-h-[52px] w-full items-center justify-center rounded-xl bg-ink-900 text-[16px] font-bold text-paper active:bg-ink-700 disabled:bg-ink-300">
               {p.characterKey ? '시작하기' : '캐릭터를 골라 주세요'}
             </button>
           )}
         </div>
       )}
-    </Sheet>
+    </>
   )
 }
 
@@ -239,10 +250,11 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
   )
 }
 
-const EMOJI_KEY = 'sgrh_health_my_emoji'
+export const EMOJI_KEY = 'sgrh_health_my_emoji'
 
 /** 홈 상단: 프로필 원형 + 이름(본인 확인된 직원만). 누르면 내 프로필 창 */
-export function HomeProfile({ name }: { name: string }) {
+/** onOpen 이 있으면 누를 때 프로필 탭으로 감(11-20 TK). 없으면 예전처럼 창 */
+export function HomeProfile({ name, onOpen }: { name: string; onOpen?: () => void }) {
   // 지난번에 본 이모지를 먼저 그리고(이 기기에 기억), 서버 값이 오면 맞춥니다 → 새로고침 때 새싹이 잠깐 보이던 깜빡임 없앰
   const [emoji, setEmojiState] = useState<string | null | undefined>(() => {
     try { const v = localStorage.getItem(EMOJI_KEY); return v === null ? undefined : v || null } catch { return undefined }
@@ -257,7 +269,7 @@ export function HomeProfile({ name }: { name: string }) {
   }, [])
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={`${name}님 프로필 열기`}
+      <button type="button" onClick={() => (onOpen ? onOpen() : setOpen(true))} aria-label={`${name}님 프로필 열기`}
         className="-ml-1 flex min-h-[44px] items-center gap-2.5 rounded-full py-1 pl-1 pr-3 active:bg-ink-900/5">
         <ProfileAvatar emoji={emoji} size={40} />
         <span className="text-[15px] font-bold text-ink-900">{name}님</span>
