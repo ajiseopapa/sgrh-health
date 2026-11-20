@@ -63,6 +63,7 @@ export const ITEMS: Item[] = [
   uniform('doctor', '가운', 100),
   uniform('office', '정장', 100),
   uniform('scrub', '스크럽', 100),
+  uniform('casualcoat', '가운·사복', 100), // 사복 위 흰 가운(11-20 uniform-512)
   uniform('hoodie', '후드 집업', 100),
   uniform('chef', '조리복', 100),
   uniform('worker', '작업복', 100),
@@ -131,6 +132,7 @@ export const LOOK_READY = new Set<string>([
   'shoes_limesneakers',
   'shoes_whitesneakers',
   'top_blackjacket',
+  'top_casualcoat',
   'top_chef',
   'top_creamhoodie',
   'top_doctor',
@@ -175,7 +177,7 @@ export function characterLayers(key: string | null | undefined, _outfit: string 
   return c ? clothesLayers(c, g) : [characterSrc(g, DEFAULT_OUTFIT)]
 }
 /** 지금 파는 옷(11-20 TK): 운동복(기본·무료) + 새 그림이 온 유니폼 4종만. 나머지는 새 그림이 오면 여기에 더함 */
-export const SHOP_KEYS = new Set<string>(['top_nurse', 'top_doctor', 'top_office', 'top_scrub'])
+export const SHOP_KEYS = new Set<string>(['top_nurse', 'top_doctor', 'top_office', 'top_scrub', 'top_casualcoat'])
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false
 /** 캐릭터 옷 화면. 11-20 TK: 운동복 + 유니폼(SHOP_KEYS)만 열고 꾸미기는 중단 */
