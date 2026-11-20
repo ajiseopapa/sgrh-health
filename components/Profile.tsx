@@ -152,7 +152,7 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
           {/* 옷·꾸미기는 프로필 탭 › 캐릭터 꾸미기에서(11-20 TK: 운동복 말고 다른 옷은 햇빛으로 삼) */}
           <div className={p.characterKey || !setup ? '' : 'hidden'}>
             {msg && msg.at === 'look' && <div className="mb-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-            {!inline && <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">프로필 탭</span>에서 햇빛으로 사서 입어요.</p>}
+            {!inline && <p className="text-[13px] text-ink-500">유니폼은 <span className="font-bold text-ink-700">프로필 탭</span>에서 햇빛으로 사서 입어요.</p>}
           </div>
 
           {/* 한마디 */}

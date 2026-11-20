@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  CLOTHES, isClothes, UNIFORM_KEYS, clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
+  CLOTHES, isClothes, UNIFORM_KEYS, SHOP_KEYS, clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -92,7 +92,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
 }
 
 export async function purchaseItem(db: SupabaseClient, employeeId: string, itemKey: string) {
-  const item = itemByKey(itemKey) ?? decorByKey(itemKey) // 캐릭터 아이템 또는 정원 장식
+  const item = (SHOP_KEYS.has(itemKey) ? itemByKey(itemKey) : null) ?? decorByKey(itemKey) // 지금 파는 옷(11-20 TK) 또는 정원 장식
   if (!item) return { status: 'unknown_item' as const }
   const { earned } = await earnedFor(db, employeeId)
   const { data, error } = await db.rpc('game_purchase', { p_employee: employeeId, p_item: item.key, p_price: item.price, p_earned: earned })

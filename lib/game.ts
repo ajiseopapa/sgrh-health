@@ -171,17 +171,15 @@ export function clothesLayers(c: Item, key: string | null | undefined): string[]
 export function characterLayers(key: string | null | undefined, _outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
   const g = characterOf(key).key
   const c = wornClothes(equipped)
-  if (c) return clothesLayers(c, g) // 옷 위에 꾸미기를 겹치면 어색해서(11-20 TK) 옷을 입으면 옷 그림만. 꾸미기 방식은 디자이너 그림을 받은 뒤 다시 정함
-  const L = (s: Slot) => {
-    const it = itemByKey(equipped?.[s] ?? null)
-    return it && it.slot === s ? [itemLayer(it, g)] : []
-  }
-  return [...L('back'), ...(c ? clothesLayers(c, g) : [characterSrc(g, DEFAULT_OUTFIT)]), ...L('face'), ...L('hair'), ...L('hat'), ...L('hand'), ...L('effect')]
+  // 11-20 TK: 꾸미기(모자·안경·소품 등)는 중단 — 이미 입은 기록이 있어도 그리지 않음. 옷을 입었으면 그 옷 그림, 아니면 운동복
+  return c ? clothesLayers(c, g) : [characterSrc(g, DEFAULT_OUTFIT)]
 }
+/** 지금 파는 옷(11-20 TK): 운동복(기본·무료) + 새 그림이 온 유니폼 4종만. 나머지는 새 그림이 오면 여기에 더함 */
+export const SHOP_KEYS = new Set<string>(['top_nurse', 'top_doctor', 'top_office', 'top_scrub'])
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false
-/** 캐릭터 꾸미기 화면. 11-20 TK: 방식을 다시 정하는 동안 '업데이트 중'으로 닫아 둠. 입은 옷·아이템은 그대로 보임 */
-export const WARDROBE_OPEN = false
+/** 캐릭터 옷 화면. 11-20 TK: 운동복 + 유니폼(SHOP_KEYS)만 열고 꾸미기는 중단 */
+export const WARDROBE_OPEN = true
 /** 부서 정원 화면 노출. 혼자 근무하는 부서가 있어 11-17 TK 결정으로 개인 나무로 바꿈 — 서버 계산·DB 는 그대로 둠 */
 export const SHOW_DEPT_GARDEN = false
 
