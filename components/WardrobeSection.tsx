@@ -5,7 +5,7 @@
 // 가격·잔액·가진 아이템 확인과 "옷 한 벌만" 규칙은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import { useCallback, useState } from 'react'
 import { api } from '@/lib/api'
-import { CLOTHES, Equipped, isClothes, Item, itemIcon, ITEMS, Slot, SLOT_LABEL, SLOTS, wornClothes } from '@/lib/game'
+import { WARDROBE_OPEN, CLOTHES, Equipped, isClothes, Item, itemIcon, ITEMS, Slot, SLOT_LABEL, SLOTS, wornClothes } from '@/lib/game'
 import { Notice } from '@/lib/ui'
 import CharacterFigure from './CharacterFigure'
 import InfoTip from './InfoTip'
@@ -101,6 +101,16 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
   const list = items(cur)
   const wearingIn = (t: Tab) => (t === 'clothes' ? !!uni : isClothes(t) ? worn?.slot === t && !uni : !uni && !!equipped[t]) // 유니폼을 입은 동안 꾸미기는 안 보이므로 점도 안 찍음
   const card = (on: boolean) => `flex w-full flex-col items-center gap-1 rounded-xl border-2 px-1 pb-2 pt-2 disabled:opacity-60 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`
+
+  if (!WARDROBE_OPEN) return (
+    <section className={bare ? 'pb-6 pt-2' : 'border-t border-line py-6'}>
+      <p className="text-[14px] font-bold text-ink-700">캐릭터 꾸미기</p>
+      <div className="mt-3 rounded-2xl bg-brand-50 px-5 py-6 text-center">
+        <p className="text-[15px] font-bold text-ink-900">업데이트 중이에요</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-ink-600">옷과 꾸미기 아이템을 더 예쁘게 바꾸고 있어요. 조금만 기다려 주세요.<br />가지고 있는 햇빛과 산 아이템은 그대로 남아 있어요.</p>
+      </div>
+    </section>
+  )
 
   return (
     <section className={bare ? 'pb-6 pt-2' : 'border-t border-line py-6'}>

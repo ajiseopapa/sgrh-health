@@ -171,7 +171,7 @@ export function clothesLayers(c: Item, key: string | null | undefined): string[]
 export function characterLayers(key: string | null | undefined, _outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
   const g = characterOf(key).key
   const c = wornClothes(equipped)
-  if (c?.uniform) return clothesLayers(c, g)
+  if (c) return clothesLayers(c, g) // 옷 위에 꾸미기를 겹치면 어색해서(11-20 TK) 옷을 입으면 옷 그림만. 꾸미기 방식은 디자이너 그림을 받은 뒤 다시 정함
   const L = (s: Slot) => {
     const it = itemByKey(equipped?.[s] ?? null)
     return it && it.slot === s ? [itemLayer(it, g)] : []
@@ -180,6 +180,8 @@ export function characterLayers(key: string | null | undefined, _outfit: string 
 }
 /** 아이템 상점(해금·장착) 화면 노출. PM 결정(11-13)으로 보류 — 후속 버전에서 true. 서버 기능·DB·구매 기록은 그대로 둠 */
 export const SHOW_ITEM_SHOP = false
+/** 캐릭터 꾸미기 화면. 11-20 TK: 방식을 다시 정하는 동안 '업데이트 중'으로 닫아 둠. 입은 옷·아이템은 그대로 보임 */
+export const WARDROBE_OPEN = false
 /** 부서 정원 화면 노출. 혼자 근무하는 부서가 있어 11-17 TK 결정으로 개인 나무로 바꿈 — 서버 계산·DB 는 그대로 둠 */
 export const SHOW_DEPT_GARDEN = false
 
