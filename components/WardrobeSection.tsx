@@ -1,6 +1,6 @@
 'use client'
 
-// 정원 › 캐릭터 꾸미기 — 햇빛으로 사서 입고 벗습니다(11-19 TK).
+// 프로필 탭 › 캐릭터 꾸미기(11-20 정원에서 옮김) — 햇빛으로 사서 입고 벗습니다(11-19 TK).
 // 11-20 TK: 옷(유니폼·상의·하의·신발)은 통그림 한 벌만, 꾸미기(모자·안경 등)는 운동복에서만 보임.
 // 가격·잔액·가진 아이템 확인과 "옷 한 벌만" 규칙은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import { useState } from 'react'
@@ -28,7 +28,7 @@ type Tab = 'clothes' | Slot
 const TABS: Tab[] = ['clothes', ...SLOTS.filter((s) => !isClothes(s))]
 const tabLabel = (t: Tab) => (t === 'clothes' ? '옷' : SLOT_LABEL[t])
 
-export default function WardrobeSection<G extends WardrobeGame>({ game, onChange }: { game: G; onChange: (g: G) => void }) {
+export default function WardrobeSection<G extends WardrobeGame>({ game, onChange, bare = false }: { game: G; onChange: (g: G) => void; bare?: boolean }) {
   const dialog = useDialog()
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
@@ -97,7 +97,7 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
   const card = (on: boolean) => `flex w-full flex-col items-center gap-1 rounded-xl border-2 px-1 pb-2 pt-2 disabled:opacity-60 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`
 
   return (
-    <section className="border-t border-line py-6">
+    <section className={bare ? 'pb-6 pt-2' : 'border-t border-line py-6'}>
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[14px] font-bold text-ink-700">캐릭터 꾸미기</p>

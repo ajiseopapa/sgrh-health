@@ -138,10 +138,10 @@ export function ProfileSheet({ open, name, onClose, onEmoji, setup = false }: {
             {setup && !p.characterKey && <p className="mt-2 text-[13px] font-semibold text-ink-900">둘 중 하나를 눌러 주세요.</p>}
           </div>
 
-          {/* 옷·꾸미기는 정원 › 캐릭터 꾸미기에서(11-20 TK: 운동복 말고 다른 옷은 햇빛으로 삼) */}
+          {/* 옷·꾸미기는 프로필 탭 › 캐릭터 꾸미기에서(11-20 TK: 운동복 말고 다른 옷은 햇빛으로 삼) */}
           <div className={p.characterKey || !setup ? '' : 'hidden'}>
             {msg && msg.at === 'look' && <div className="mb-2"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
-            <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">정원 › 캐릭터 꾸미기</span>에서 햇빛으로 사서 입어요.</p>
+            <p className="text-[13px] text-ink-500">옷과 모자·안경 같은 꾸미기는 <span className="font-bold text-ink-700">프로필 탭</span>에서 햇빛으로 사서 입어요.</p>
           </div>
 
           {/* 한마디 */}

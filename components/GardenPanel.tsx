@@ -33,7 +33,8 @@ interface Garden {
   decorations?: { week: string; emoji: string; name: string }[]
 }
 
-export default function GardenPanel() {
+/** view: 'garden' = 정원 탭(정원·햇빛), 'profile' = 프로필 탭(캐릭터 꾸미기, 11-20 TK). 같은 데이터(/api/me/game)를 씀 */
+export default function GardenPanel({ view = 'garden' }: { view?: 'garden' | 'profile' }) {
   const { me, mustChangePin, loaded, requireMe } = useMe()
   const ready = loaded && !!me && !mustChangePin
   const [game, setGame] = useState<Game | null>(null)
@@ -48,15 +49,15 @@ export default function GardenPanel() {
   }, [ready])
   useEffect(() => { load() }, [load])
 
-  if (loaded && !ready) return <NeedLogin text="본인 확인을 하면 나의 정원과 햇빛을 볼 수 있어요."  onLogin={() => requireMe()} />
+  if (loaded && !ready) return <NeedLogin text={view === 'profile' ? '본인 확인을 하면 내 캐릭터를 꾸밀 수 있어요.' : '본인 확인을 하면 나의 정원과 햇빛을 볼 수 있어요.'} onLogin={() => requireMe()} />
   if (error) return <div className="py-6"><Notice tone="error">{error}</Notice></div>
   if (!game) return <div className="py-6"><Loading /></div>
 
+  if (view === 'profile') return <WardrobeSection game={game} onChange={setGame} bare />
   return (
     <div>
       <MyGarden game={game} onChange={setGame} />
       <div className="lg:max-w-[680px]"><SunSection game={game} /></div>
-      <WardrobeSection game={game} onChange={setGame} />
       {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
     </div>
   )

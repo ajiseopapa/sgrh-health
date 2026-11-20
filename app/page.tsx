@@ -18,13 +18,14 @@ import { Icon, PageHead } from '@/lib/ui'
 import SproutIcon from '@/components/SproutIcon'
 
 // 직원 화면은 다섯 개. 정원은 도전 안에 있다가 따로 뺌(11-19 TK). 관리 기능은 위쪽 '관리'에서 따로 엽니다.
-export type TabKey = 'home' | 'record' | 'challenge' | 'garden' | 'feed'
+export type TabKey = 'home' | 'record' | 'challenge' | 'garden' | 'profile' | 'feed'
 
-const TABS: { key: TabKey; label: string; icon: 'home' | 'pencil' | 'flag' | 'sprout' | 'feed' }[] = [
+const TABS: { key: TabKey; label: string; icon: 'home' | 'pencil' | 'flag' | 'sprout' | 'user' | 'feed' }[] = [
   { key: 'home', label: '홈', icon: 'home' },
   { key: 'record', label: '기록', icon: 'pencil' },
   { key: 'challenge', label: '도전', icon: 'flag' },
   { key: 'garden', label: '정원', icon: 'sprout' },
+  { key: 'profile', label: '프로필', icon: 'user' }, // 캐릭터 꾸미기를 정원에서 뺌(11-20 TK)
   { key: 'feed', label: '피드', icon: 'feed' },
 ]
 
@@ -105,6 +106,7 @@ function AppShell() {
         {tab === 'record'    && <RecordTab    key={`record-${refreshKey}`} />}
         {tab === 'challenge' && <ChallengeTab key={`challenge-${refreshKey}-${challengePanel}`} initialPanel={challengePanel} />}
         {tab === 'garden'    && <div key={`garden-${refreshKey}`}><PageHead title="정원" /><GardenPanel /></div>}
+        {tab === 'profile'   && <div key={`profile-${refreshKey}`}><PageHead title="프로필" /><GardenPanel view="profile" /></div>}
         {tab === 'feed'      && <FeedTab      key={`feed-${refreshKey}`} />}
         </div>
       </main>
