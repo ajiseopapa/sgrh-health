@@ -1,0 +1,209 @@
+[
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "nurse",
+    "name": "간호복",
+    "male": "looks/look-top-nurse-m.png",
+    "female": "looks/look-top-nurse-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "doctor",
+    "name": "가운",
+    "male": "looks/look-top-doctor-m.png",
+    "female": "looks/look-top-doctor-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "office",
+    "name": "정장",
+    "male": "looks/look-top-office-m.png",
+    "female": "looks/look-top-office-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "scrub",
+    "name": "스크럽",
+    "male": "looks/look-top-scrub-m.png",
+    "female": "looks/look-top-scrub-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "hoodie",
+    "name": "후드 집업",
+    "male": "looks/look-top-hoodie-m.png",
+    "female": "looks/look-top-hoodie-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "chef",
+    "name": "조리복",
+    "male": "looks/look-top-chef-m.png",
+    "female": "looks/look-top-chef-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "uniform",
+    "slot": "top",
+    "key": "worker",
+    "name": "작업복",
+    "male": "looks/look-top-worker-m.png",
+    "female": "looks/look-top-worker-f.png",
+    "id_badge": true
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "vest",
+    "name": "조끼",
+    "male": "looks/look-top-vest-m.png",
+    "female": "looks/look-top-vest-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "whitezipup",
+    "name": "흰 집업",
+    "male": "looks/look-top-whitezipup-m.png",
+    "female": "looks/look-top-whitezipup-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "greenhoodie",
+    "name": "초록 후드",
+    "male": "looks/look-top-greenhoodie-m.png",
+    "female": "looks/look-top-greenhoodie-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "creamhoodie",
+    "name": "크림 후드",
+    "male": "looks/look-top-creamhoodie-m.png",
+    "female": "looks/look-top-creamhoodie-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "blackjacket",
+    "name": "검은 점퍼",
+    "male": "looks/look-top-blackjacket-m.png",
+    "female": "looks/look-top-blackjacket-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "top",
+    "key": "whitewindbreaker",
+    "name": "흰 바람막이",
+    "male": "looks/look-top-whitewindbreaker-m.png",
+    "female": "looks/look-top-whitewindbreaker-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "bottom",
+    "key": "grayshorts",
+    "name": "회색 반바지",
+    "male": "looks/look-bottom-grayshorts-m.png",
+    "female": "looks/look-bottom-grayshorts-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "bottom",
+    "key": "blackshorts",
+    "name": "검은 반바지",
+    "male": "looks/look-bottom-blackshorts-m.png",
+    "female": "looks/look-bottom-blackshorts-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "bottom",
+    "key": "shortshorts",
+    "name": "짧은 반바지",
+    "male": "looks/look-bottom-shortshorts-m.png",
+    "female": "looks/look-bottom-shortshorts-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "bottom",
+    "key": "graypants",
+    "name": "회색 긴바지",
+    "male": "looks/look-bottom-graypants-m.png",
+    "female": "looks/look-bottom-graypants-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "bottom",
+    "key": "stripedpants",
+    "name": "줄무늬 바지",
+    "male": "looks/look-bottom-stripedpants-m.png",
+    "female": "looks/look-bottom-stripedpants-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "shoes",
+    "key": "whitesneakers",
+    "name": "흰 운동화",
+    "male": "looks/look-shoes-whitesneakers-m.png",
+    "female": "looks/look-shoes-whitesneakers-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "shoes",
+    "key": "darksneakers",
+    "name": "진한 운동화",
+    "male": "looks/look-shoes-darksneakers-m.png",
+    "female": "looks/look-shoes-darksneakers-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "shoes",
+    "key": "limesneakers",
+    "name": "연두 운동화",
+    "male": "looks/look-shoes-limesneakers-m.png",
+    "female": "looks/look-shoes-limesneakers-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "shoes",
+    "key": "blacksneakers",
+    "name": "검은 운동화",
+    "male": "looks/look-shoes-blacksneakers-m.png",
+    "female": "looks/look-shoes-blacksneakers-f.png",
+    "id_badge": false
+  },
+  {
+    "kind": "item",
+    "slot": "shoes",
+    "key": "hightops",
+    "name": "하이탑",
+    "male": "looks/look-shoes-hightops-m.png",
+    "female": "looks/look-shoes-hightops-f.png",
+    "id_badge": false
+  }
+]

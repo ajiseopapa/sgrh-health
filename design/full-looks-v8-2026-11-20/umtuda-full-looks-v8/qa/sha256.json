@@ -1,0 +1,232 @@
+[
+  {
+    "file": "looks/look-top-nurse-m.png",
+    "bytes": 87291,
+    "sha256": "834d3182b37990c9880717a7dc60d75d395518c3c0ee58ec2993e0c5f069b12a"
+  },
+  {
+    "file": "looks/look-top-nurse-f.png",
+    "bytes": 88108,
+    "sha256": "094a3f51223b8ef07535af6f91b9a3a9ccfbdd2406acfe78879629260e1b082c"
+  },
+  {
+    "file": "looks/look-top-doctor-m.png",
+    "bytes": 86678,
+    "sha256": "6364faaec6e0fa7bc6ad4926c7b69eda88b6497b1ff0807f5a24f3d895340f1a"
+  },
+  {
+    "file": "looks/look-top-doctor-f.png",
+    "bytes": 87160,
+    "sha256": "115ad92e3712706ce67c3d3e6e0956579880ff5d2b6c029e05ed0b9c3362f756"
+  },
+  {
+    "file": "looks/look-top-office-m.png",
+    "bytes": 83229,
+    "sha256": "652547e7a52f5cafc5618463a43df400d7adb88ea8dca5d7d410d06281004d10"
+  },
+  {
+    "file": "looks/look-top-office-f.png",
+    "bytes": 83689,
+    "sha256": "73100e9f55f1b53fdef51ca59c66eb609f2267458380220f6cb2a51e1c07978e"
+  },
+  {
+    "file": "looks/look-top-scrub-m.png",
+    "bytes": 86259,
+    "sha256": "9c9c487632d31b060a6eb32fd6b1ce141f4a939fb702876ef5900e34f64990af"
+  },
+  {
+    "file": "looks/look-top-scrub-f.png",
+    "bytes": 88059,
+    "sha256": "2a2e49f5cf00511fe035304976379999c61e293bc6d751aa004c9e5945e1998b"
+  },
+  {
+    "file": "looks/look-top-hoodie-m.png",
+    "bytes": 86153,
+    "sha256": "0b73871f2179f2e5c62ea502cb438e47952453d97397793c44935b10930f2100"
+  },
+  {
+    "file": "looks/look-top-hoodie-f.png",
+    "bytes": 87530,
+    "sha256": "b4095ed54076ab77b32f4cc93a083ead636669de65c8bb3e5bf3853b84ca1d61"
+  },
+  {
+    "file": "looks/look-top-chef-m.png",
+    "bytes": 46778,
+    "sha256": "4e72db08f6fc7f3bdb8ef8491f9b8818208fe45a2897e40ceef3a4ba69060500"
+  },
+  {
+    "file": "looks/look-top-chef-f.png",
+    "bytes": 52416,
+    "sha256": "78ab5f3f13f5cc72f526d2397277a4e530df4c0d1210a66c98bb45b321100eb4"
+  },
+  {
+    "file": "looks/look-top-worker-m.png",
+    "bytes": 84942,
+    "sha256": "251beb4028f95abe41581f75f434f4c89ef10b6c67a14a7a79a04625ae741cab"
+  },
+  {
+    "file": "looks/look-top-worker-f.png",
+    "bytes": 85695,
+    "sha256": "8c8e1e4e5f9189a076a5eec13664d2b97056229fc56ec1796481c86ff350c19d"
+  },
+  {
+    "file": "looks/look-top-vest-m.png",
+    "bytes": 96852,
+    "sha256": "422bf3317aeed3ed9d46bf81b1725177ddbb2503d00c7419cc5ab245037c6091"
+  },
+  {
+    "file": "looks/look-top-vest-f.png",
+    "bytes": 100100,
+    "sha256": "82fe2a844debb39587e75db64e7220302a68d4a544a26fdf314c491b09a9f65b"
+  },
+  {
+    "file": "looks/look-top-whitezipup-m.png",
+    "bytes": 96863,
+    "sha256": "fac071e5a59ea7b22910651d5f04bae4467ec642287e5f82262dbd746bce634e"
+  },
+  {
+    "file": "looks/look-top-whitezipup-f.png",
+    "bytes": 100182,
+    "sha256": "8eaf9420f5b12e43c1c765a89a7c9cf36ae7b080aa9304be0b276d94ed4fb782"
+  },
+  {
+    "file": "looks/look-top-greenhoodie-m.png",
+    "bytes": 96414,
+    "sha256": "fd16625da767eb75bd780d711e43a1d84cf9a52b4b335304ca12634b98c8a1e2"
+  },
+  {
+    "file": "looks/look-top-greenhoodie-f.png",
+    "bytes": 99693,
+    "sha256": "2247130a464ba856ec7cda2e229978c99d0221fa33517ef68ba5124d12d8d088"
+  },
+  {
+    "file": "looks/look-top-creamhoodie-m.png",
+    "bytes": 96496,
+    "sha256": "76626bc15deab4d3e53e046219d79e77d86784c438768db808c384f7e773aa3e"
+  },
+  {
+    "file": "looks/look-top-creamhoodie-f.png",
+    "bytes": 99862,
+    "sha256": "24ac4c0b4045d9d9c7d0a709b6dfbfeb88da363c005c5ae8be0964942617b0fc"
+  },
+  {
+    "file": "looks/look-top-blackjacket-m.png",
+    "bytes": 95145,
+    "sha256": "cc9e42a4fefefd1b9f57ba73e4d0579ca73ca61fe914113e1e071c7c39bfbd33"
+  },
+  {
+    "file": "looks/look-top-blackjacket-f.png",
+    "bytes": 98336,
+    "sha256": "7e991d2a6300045568902dc166283e8825a0e25642f614ca9b3d041a1d927594"
+  },
+  {
+    "file": "looks/look-top-whitewindbreaker-m.png",
+    "bytes": 97411,
+    "sha256": "024fc3658ef6c04f49c9bb2b005f7e0f1c8ed46319ffa5c3fbd3f342a8d2e82e"
+  },
+  {
+    "file": "looks/look-top-whitewindbreaker-f.png",
+    "bytes": 100661,
+    "sha256": "7e4b1b52675bc92ae68c8367d1d91c6c6568a9346198a00602c3c6f8fb2129c1"
+  },
+  {
+    "file": "looks/look-bottom-grayshorts-m.png",
+    "bytes": 104634,
+    "sha256": "a4fbdc821080dbc85f8e7da6156825c9921e80bbbe774e3b07ac18d61719290f"
+  },
+  {
+    "file": "looks/look-bottom-grayshorts-f.png",
+    "bytes": 107608,
+    "sha256": "93c6182315cdc54fc7601b86da429c08b96a9fe9c168bc7f360b1f7f830e1141"
+  },
+  {
+    "file": "looks/look-bottom-blackshorts-m.png",
+    "bytes": 104289,
+    "sha256": "8106ae986a409e5c5553e601b9984a743ab70094d074e32793fb6c3d04330e1d"
+  },
+  {
+    "file": "looks/look-bottom-blackshorts-f.png",
+    "bytes": 107231,
+    "sha256": "80a313797fba3580f80d3d167e059491d07c79e6d0cd842e32294e35012c7c55"
+  },
+  {
+    "file": "looks/look-bottom-shortshorts-m.png",
+    "bytes": 104438,
+    "sha256": "564ce1764907570bfccb49c23386305e4a2e6ee51e9d3c39003b69b522ea75d5"
+  },
+  {
+    "file": "looks/look-bottom-shortshorts-f.png",
+    "bytes": 107349,
+    "sha256": "f23363f17cc330b714262cf0fd1a74d4cb4b981f34d9db64dd148b34da7c13f3"
+  },
+  {
+    "file": "looks/look-bottom-graypants-m.png",
+    "bytes": 104451,
+    "sha256": "8856571a4566029cb9dd85f1862bcd8b7201879a60ef0e0b7f6b4d9c52bc020a"
+  },
+  {
+    "file": "looks/look-bottom-graypants-f.png",
+    "bytes": 107346,
+    "sha256": "241c8be366b4e8737b3ec65837306ee4e2d80a7938fb974ee5dff8d3cc77f034"
+  },
+  {
+    "file": "looks/look-bottom-stripedpants-m.png",
+    "bytes": 104036,
+    "sha256": "1a6a2e9192481b4714b419b4ff5dc06950acd0fc1d77f6c045397b11d61dc1af"
+  },
+  {
+    "file": "looks/look-bottom-stripedpants-f.png",
+    "bytes": 106909,
+    "sha256": "8f9eaa622db5c58af0250dc276071b72681539782d137cc2d36097b9fb207537"
+  },
+  {
+    "file": "looks/look-shoes-whitesneakers-m.png",
+    "bytes": 106474,
+    "sha256": "7e911efeb01b7f790beb037bb90a14105eb8de981732acda7035ae8f498f5923"
+  },
+  {
+    "file": "looks/look-shoes-whitesneakers-f.png",
+    "bytes": 110874,
+    "sha256": "05ec849cdb0c0144f28a4ab7da4492ffecf26ced56dea5130359ea72e8edf1db"
+  },
+  {
+    "file": "looks/look-shoes-darksneakers-m.png",
+    "bytes": 106237,
+    "sha256": "6803bfa8c954304864f1f035730a0eb94e018f46014b2e7d5f148366a035c21e"
+  },
+  {
+    "file": "looks/look-shoes-darksneakers-f.png",
+    "bytes": 110602,
+    "sha256": "219928119fc8e8e58b3ebeed6331ad56a8ab804f9d2cc7367f839d2ffabe165b"
+  },
+  {
+    "file": "looks/look-shoes-limesneakers-m.png",
+    "bytes": 106527,
+    "sha256": "4ede83e8a7b9eca03112824fd96e15a7f868dc1febfe30952b908ddff101516d"
+  },
+  {
+    "file": "looks/look-shoes-limesneakers-f.png",
+    "bytes": 110914,
+    "sha256": "2a6a079a5a0369c06fbc90b0806e4400dc949f0207eb53b382f31561ba0509c1"
+  },
+  {
+    "file": "looks/look-shoes-blacksneakers-m.png",
+    "bytes": 105924,
+    "sha256": "c9f1113b4b0aed2484d8763bd9e37299a17931ecb04558d0c7f6dcd8717c3533"
+  },
+  {
+    "file": "looks/look-shoes-blacksneakers-f.png",
+    "bytes": 110282,
+    "sha256": "5b3401e081fd359dd7b64664e43b57ff710a3fc1cc46b921e7b62c4ed283e47a"
+  },
+  {
+    "file": "looks/look-shoes-hightops-m.png",
+    "bytes": 105340,
+    "sha256": "d135022d39a09602899ba512895a78e1861842d99a886a3246dbe84c1b1f514e"
+  },
+  {
+    "file": "looks/look-shoes-hightops-f.png",
+    "bytes": 109417,
+    "sha256": "5954687502d5ed50d4d832d85460cb598f4229995baf4ad3cda0db7563ab3198"
+  }
+]

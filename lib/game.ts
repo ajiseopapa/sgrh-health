@@ -64,6 +64,8 @@ export const ITEMS: Item[] = [
   uniform('office', '정장', 100),
   uniform('scrub', '스크럽', 100),
   uniform('hoodie', '후드 집업', 100),
+  uniform('chef', '조리복', 100),
+  uniform('worker', '작업복', 100),
   item('top', 'tshirt', '라임 반팔', 20),
   item('top', 'vest', '조끼', 60),
   item('top', 'whitezipup', '흰 집업', 70),
@@ -114,7 +116,32 @@ const base = (g: string, part: string) => `/game/v22/wear/base-${g}-${part}.png`
 //  · game_profiles.outfit(예전에 무료로 고른 의상)은 더 이상 그림에 쓰지 않음
 export const CLOTHES: Slot[] = ['top', 'bottom', 'shoes']
 export const isClothes = (s: Slot) => CLOTHES.includes(s)
-export const LOOK_READY = new Set<string>([])
+// 디자이너 통그림 v8(11-20, design/full-looks-v8-2026-11-20): 머리는 기준 캐릭터와 픽셀 차이 0(조리모만 예외), 발바닥 y=755
+export const LOOK_READY = new Set<string>([
+  'bottom_blackshorts',
+  'bottom_graypants',
+  'bottom_grayshorts',
+  'bottom_shortshorts',
+  'bottom_stripedpants',
+  'shoes_blacksneakers',
+  'shoes_darksneakers',
+  'shoes_hightops',
+  'shoes_limesneakers',
+  'shoes_whitesneakers',
+  'top_blackjacket',
+  'top_chef',
+  'top_creamhoodie',
+  'top_doctor',
+  'top_greenhoodie',
+  'top_hoodie',
+  'top_nurse',
+  'top_office',
+  'top_scrub',
+  'top_vest',
+  'top_whitewindbreaker',
+  'top_whitezipup',
+  'top_worker',
+])
 const lookSrc = (it: Item, g: string) => `/game/v22/looks/look-${it.slot}-${it.id}-${g}.png`
 /** 입은 옷(유니폼·상의·하의·신발 중 하나). 예전 데이터로 여러 개면 상의 → 하의 → 신발 순으로 하나만 */
 export function wornClothes(equipped: Equipped | null | undefined): Item | null {

@@ -1,0 +1,675 @@
+{
+  "canvas": [
+    512,
+    768
+  ],
+  "look_png_count": 46,
+  "sets": 23,
+  "head_policy": "44 head-exact; chef pair uses an explicit hat-occlusion exception only",
+  "reference_native_size": [
+    256,
+    384
+  ],
+  "reference_normalization": "exact 2x nearest-neighbour to 512x768, same origin",
+  "checks": {
+    "look-top-nurse-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-nurse-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-doctor-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 704,
+      "badge_expected": true
+    },
+    "look-top-doctor-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 568,
+      "badge_expected": true
+    },
+    "look-top-office-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-office-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-scrub-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-scrub-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-hoodie-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-hoodie-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-chef-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-chef-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-worker-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-worker-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 492,
+      "badge_expected": true
+    },
+    "look-top-vest-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-vest-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-whitezipup-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-whitezipup-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-greenhoodie-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-greenhoodie-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-creamhoodie-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-creamhoodie-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-blackjacket-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-blackjacket-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-whitewindbreaker-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-top-whitewindbreaker-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-grayshorts-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-grayshorts-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-blackshorts-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-blackshorts-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-shortshorts-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-shortshorts-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-graypants-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-graypants-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-stripedpants-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-bottom-stripedpants-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-whitesneakers-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-whitesneakers-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-darksneakers-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-darksneakers-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-limesneakers-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-limesneakers-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-blacksneakers-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-blacksneakers-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-hightops-m.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    },
+    "look-shoes-hightops-f.png": {
+      "head_different_pixels_outside_hat": 0,
+      "sole_row": 755,
+      "reference_sole_row": 755,
+      "sole_row_difference": 0,
+      "size": [
+        512,
+        768
+      ],
+      "mode": "RGBA",
+      "transparent_border": true,
+      "badge_color_pixels": 0,
+      "badge_expected": false
+    }
+  },
+  "chef_hat_exception_files": [
+    "look-top-chef-m.png",
+    "look-top-chef-f.png"
+  ],
+  "final_validation": {
+    "passed": true,
+    "full_looks": 46,
+    "uniforms_with_badges": 14,
+    "retail_looks_without_badges": 32,
+    "contact_sheet_character_size": [
+      128,
+      192
+    ],
+    "visual_review": "All 23 male/female pairs inspected at 2x clothing crops and all 46 at 128x192."
+  }
+}
