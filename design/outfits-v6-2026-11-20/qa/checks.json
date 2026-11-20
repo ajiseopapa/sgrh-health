@@ -1,0 +1,137 @@
+{
+  "scope": "outfits only; v5 base and 47 catalog items unmodified",
+  "outfit_pngs": 44,
+  "character_pngs": 14,
+  "icons": 2,
+  "roles": [
+    "nurse",
+    "doctor",
+    "office",
+    "hoodie",
+    "scrub",
+    "chef",
+    "worker"
+  ],
+  "pixel_checks": {
+    "nurse-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "doctor-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "office-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "hoodie-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "scrub-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "chef-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "worker-m": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "nurse-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "doctor-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "office-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "hoodie-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "scrub-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "chef-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    },
+    "worker-f": {
+      "uncovered_original_shirt_and_outline": 0,
+      "uncovered_lime": 0,
+      "detached_components": 0,
+      "nonbinary_alpha": 0,
+      "export_composition_different_pixels": 0,
+      "noncharcoal_outer_rim_pixels": 0
+    }
+  },
+  "chef_hat_upper_hair_uncovered": {
+    "m": 0,
+    "f": 0
+  },
+  "interior_alpha": "binary 0/255",
+  "combined_catalog_types": 47,
+  "unchanged_v5_pngs_verified_against_original_zip": 116,
+  "status": "PASS"
+}
