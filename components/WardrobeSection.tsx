@@ -24,9 +24,12 @@ function hasBatchim(word: string) {
 }
 const obj = (w: string) => `${w}${hasBatchim(w) ? '을' : '를'}`
 
+// 탭(11-20 TK): 옷(운동복·유니폼) → 상의 → 하의 → 신발 → 모자 … 상의·하의·신발도 통그림 옷이라 한 벌 규칙은 같음
 type Tab = 'clothes' | Slot
-const TABS: Tab[] = ['clothes', ...SLOTS.filter((s) => !isClothes(s))]
-const tabLabel = (t: Tab) => (t === 'clothes' ? '옷' : SLOT_LABEL[t])
+const TABS: Tab[] = ['clothes', ...CLOTHES, ...SLOTS.filter((s) => !isClothes(s))]
+const CLOTHES_LABEL: Partial<Record<Slot, string>> = { top: '상의', bottom: '하의', shoes: '신발' }
+const tabLabel = (t: Tab) => (t === 'clothes' ? '옷' : CLOTHES_LABEL[t] ?? SLOT_LABEL[t])
+const isClothesTab = (t: Tab) => t === 'clothes' || isClothes(t)
 
 export default function WardrobeSection<G extends WardrobeGame>({ game, onChange, bare = false }: { game: G; onChange: (g: G) => void; bare?: boolean }) {
   const dialog = useDialog()
@@ -89,11 +92,10 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
   }
 
   // 라임 반팔은 운동복과 같아 새로 팔지 않음(이미 산 사람에게만 보임)
-  const items = (t: Tab) => ITEMS.filter((i) => (t === 'clothes' ? CLOTHES.includes(i.slot) : i.slot === t))
+  const items = (t: Tab) => ITEMS.filter((i) => (t === 'clothes' ? !!i.uniform : i.slot === t && !i.uniform))
     .filter((i) => i.key !== 'top_tshirt' || owned.includes(i.key))
-    .sort((a, b) => (t === 'clothes' ? Number(!!b.uniform) - Number(!!a.uniform) : 0))
   const list = items(tab)
-  const wearingIn = (t: Tab) => (t === 'clothes' ? !!worn : !worn && !!equipped[t]) // 옷을 입은 동안 꾸미기는 안 보이므로 점도 안 찍음
+  const wearingIn = (t: Tab) => (t === 'clothes' ? !!worn?.uniform : isClothes(t) ? worn?.slot === t && !worn.uniform : !worn && !!equipped[t]) // 옷을 입은 동안 꾸미기는 안 보이므로 점도 안 찍음
   const card = (on: boolean) => `flex w-full flex-col items-center gap-1 rounded-xl border-2 px-1 pb-2 pt-2 disabled:opacity-60 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`
 
   return (
@@ -134,7 +136,7 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
           </div>
 
           <div role="tabpanel" aria-label={tabLabel(tab)}>
-            {tab !== 'clothes' && worn && (
+            {!isClothesTab(tab) && worn && (
               <p className="mb-2 rounded-xl bg-brand-50 px-3 py-2 text-[13px] text-ink-700">
                 꾸미기는 운동복에서만 보여요. 지금은 <span className="font-bold">{obj(worn.name)}</span> 입고 있어서, 꾸미기를 입으면 운동복으로 갈아입어요.
               </p>
@@ -154,14 +156,14 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
               )}
               {list.map((it) => {
                 const have = owned.includes(it.key)
-                const on = tab === 'clothes' ? worn?.key === it.key : equipped[it.slot] === it.key
+                const on = isClothesTab(tab) ? worn?.key === it.key : equipped[it.slot] === it.key
                 const short = !have && game.sunlight.balance < it.price
                 return (
                   <li key={it.key}>
                     <button type="button" onClick={() => press(it)} disabled={!!busy} aria-pressed={on}
                       aria-label={`${it.name}, ${on ? '입는 중, 눌러서 벗기' : have ? '가지고 있음, 눌러서 입기' : `햇빛 ${it.price}개로 사기`}`}
                       className={card(on)}>
-                      {tab === 'clothes'
+                      {isClothesTab(tab)
                         ? <span className={short ? 'opacity-50' : ''}><CharacterFigure charKey={game.characterKey} outfit={null} equipped={{ [it.slot]: it.key }} width={48} label="" /></span>
                         // eslint-disable-next-line @next/next/no-img-element
                         : <img src={itemIcon(it)} alt="" width={56} height={56} className={`h-14 w-14 object-contain ${short ? 'opacity-50' : ''}`} />}
