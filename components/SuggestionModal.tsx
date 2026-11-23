@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/api'
+import { useDialog } from '@/lib/dialog'
 import type { Suggestion, Employee } from '@/types/database'
 
 interface Props {
@@ -17,12 +19,13 @@ const STATUS_LABEL: Record<Suggestion['status'], string> = {
 }
 
 const STATUS_STYLE: Record<Suggestion['status'], string> = {
-  new: 'bg-red-50 text-red-500',
+  new: 'bg-red-50 text-red-700',
   read: 'bg-ink-100 text-ink-500',
   answered: 'bg-brand-50 text-brand-700',
 }
 
 export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
+  const dialog = useDialog()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [isWriting, setIsWriting] = useState(false)
@@ -63,7 +66,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
   useEffect(() => {
     if (!isOpen) return
     fetchSuggestions()
-    supabase.from('employees').select('*').order('name').then(({ data }) => setEmployees(data ?? []))
+    api<{ employees: Employee[] }>('/api/employees').then((r) => setEmployees(r.ok ? r.data.employees : []))
   }, [isOpen, fetchSuggestions])
 
   function resetForm() {
@@ -104,28 +107,23 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
     setReplyDraft(s.admin_reply ?? '')
     // 관리자가 새 건의를 열어보면 자동으로 '확인함' 처리
     if (opening && isAdmin && s.status === 'new') {
-      await supabase.from('suggestions').update({ status: 'read' }).eq('id', s.id)
+      await api(`/api/admin/suggestions/${s.id}`, { method: 'PATCH', body: { markRead: true } })
       setSuggestions((prev) => prev.map((x) => (x.id === s.id ? { ...x, status: 'read' } : x)))
     }
   }
 
   async function handleSaveReply(id: string) {
     setReplySaving(true)
-    await supabase
-      .from('suggestions')
-      .update({
-        admin_reply: replyDraft.trim() || null,
-        status: replyDraft.trim() ? 'answered' : 'read',
-        replied_at: replyDraft.trim() ? new Date().toISOString() : null,
-      })
-      .eq('id', id)
+    const r = await api(`/api/admin/suggestions/${id}`, { method: 'PATCH', body: { reply: replyDraft } })
     setReplySaving(false)
+    if (!r.ok) await dialog.alert({ icon: '⚠️', title: '답변을 저장하지 못했어요', message: r.message })
     fetchSuggestions()
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('이 건의를 삭제하시겠습니까?')) return
-    await supabase.from('suggestions').delete().eq('id', id)
+    if (!(await dialog.confirm({ title: '이 건의를 삭제할까요?', message: '삭제하면 되돌릴 수 없어요.', tone: 'danger' }))) return
+    const r = await api(`/api/admin/suggestions/${id}`, { method: 'DELETE' })
+    if (!r.ok) { await dialog.alert({ icon: '⚠️', title: '삭제하지 못했어요', message: r.message }); return }
     if (expandedId === id) setExpandedId(null)
     fetchSuggestions()
   }
@@ -141,27 +139,27 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/45 lg:items-center" onClick={onClose}>
       <div
-        className="bg-white rounded-t-2xl w-full max-w-md flex flex-col"
+        className="bg-paper rounded-t-xl lg:rounded-xl w-full max-w-md flex flex-col"
         style={{ maxHeight: '86vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── 헤더 ── */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-          <h2 className="font-bold text-[15px] text-gray-900">💬 건의함</h2>
+          <h2 className="font-bold text-[15px] text-ink-900">건의함</h2>
           <div className="flex items-center gap-2">
             {!isWriting && (
               <button
                 onClick={() => setIsWriting(true)}
-                className="text-xs bg-teal-500 text-white px-3 py-1 rounded-full font-medium"
+                className="text-xs bg-ink-900 text-white px-3 py-1 rounded-full font-medium"
               >
                 + 건의하기
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-gray-400 text-2xl leading-none w-7 h-7 flex items-center justify-center"
+              className="text-ink-500 text-2xl leading-none w-7 h-7 flex items-center justify-center"
             >
               ×
             </button>
@@ -170,18 +168,18 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
 
         {/* ── 작성 폼 (누구나) ── */}
         {isWriting && (
-          <div className="px-4 py-3 bg-gray-50 border-b space-y-2 shrink-0">
-            <p className="text-xs font-semibold text-gray-500 mb-1">새 건의 작성</p>
+          <div className="px-4 py-3 bg-ink-50 border-b space-y-2 shrink-0">
+            <p className="text-xs font-semibold text-ink-500 mb-1">새 건의 작성</p>
 
             {/* 이름 선택 / 익명 */}
             {!isAnonymous && (
               <div className="relative">
                 {selectedEmployee ? (
-                  <div className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2 text-sm">
-                    <span className="font-medium text-gray-800">{selectedEmployee.name}</span>
+                  <div className="flex items-center justify-between border border-ink-200 rounded-xl px-3 py-2 text-sm">
+                    <span className="font-medium text-ink-800">{selectedEmployee.name}</span>
                     <button
                       onClick={() => setSelectedEmployee(null)}
-                      className="text-xs text-gray-400"
+                      className="text-xs text-ink-500"
                     >
                       변경
                     </button>
@@ -189,13 +187,13 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                 ) : (
                   <>
                     <input
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                      className="w-full border border-ink-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink-900"
                       placeholder="이름 또는 사번 검색"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
                     {filteredEmployees.length > 0 && (
-                      <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-lg overflow-hidden">
+                      <ul className="absolute z-10 w-full bg-paper border border-ink-200 rounded-xl mt-1 shadow-raised overflow-hidden">
                         {filteredEmployees.map((e) => (
                           <li key={e.id}>
                             <button
@@ -203,11 +201,11 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                                 setSelectedEmployee(e)
                                 setQuery('')
                               }}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-ink-50"
                             >
                               {e.name}
                               {e.employee_number && (
-                                <span className="text-gray-400 ml-1 text-xs">({e.employee_number})</span>
+                                <span className="text-ink-500 ml-1 text-xs">({e.employee_number})</span>
                               )}
                             </button>
                           </li>
@@ -219,7 +217,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
               </div>
             )}
 
-            <label className="flex items-center gap-1.5 text-xs text-gray-500">
+            <label className="flex items-center gap-1.5 text-xs text-ink-500">
               <input
                 type="checkbox"
                 checked={isAnonymous}
@@ -233,33 +231,33 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
             </label>
 
             <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full border border-ink-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink-900"
               placeholder="제목을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
             <textarea
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full border border-ink-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ink-900"
               rows={4}
               placeholder="건의/요청 내용을 입력하세요"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            {submitMessage && <p className="text-xs text-red-500">{submitMessage}</p>}
+            {submitMessage && <p className="text-xs text-red-700">{submitMessage}</p>}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
                   resetForm()
                   setIsWriting(false)
                 }}
-                className="text-xs text-gray-500 px-3 py-1.5"
+                className="text-xs text-ink-500 px-3 py-1.5"
               >
                 취소
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={saving}
-                className="text-xs bg-teal-500 text-white px-4 py-1.5 rounded-full font-medium disabled:opacity-50"
+                className="text-xs bg-ink-900 text-white px-4 py-1.5 rounded-full font-medium disabled:opacity-50"
               >
                 {saving ? '전송 중…' : '전송'}
               </button>
@@ -270,11 +268,10 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
         {/* ── 목록 ── */}
         <div className="overflow-y-auto flex-1">
           {loading ? (
-            <p className="text-center text-gray-400 py-10 text-sm">불러오는 중…</p>
+            <p className="text-center text-ink-500 py-10 text-sm">불러오는 중…</p>
           ) : suggestions.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-3xl mb-2">📭</p>
-              <p className="text-sm text-gray-400">등록된 건의가 없습니다</p>
+                            <p className="text-sm text-ink-500">등록된 건의가 없습니다</p>
             </div>
           ) : (
             <ul>
@@ -294,11 +291,11 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                             >
                               {STATUS_LABEL[s.status]}
                             </span>
-                            <p className="font-semibold text-sm text-gray-900 leading-snug truncate">
+                            <p className="font-semibold text-sm text-ink-900 leading-snug truncate">
                               {s.title}
                             </p>
                           </div>
-                          <p className="text-[11px] text-gray-400 mt-1">
+                          <p className="text-[11px] text-ink-500 mt-1">
                             {s.employee_name ?? '익명'} · {formatDate(s.created_at)}
                           </p>
                         </div>
@@ -307,7 +304,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
 
                     {expanded && (
                       <div className="mt-2 space-y-2">
-                        <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed bg-gray-50 rounded-xl px-3 py-2">
+                        <p className="text-xs text-ink-600 whitespace-pre-wrap leading-relaxed bg-ink-50 rounded-xl px-3 py-2">
                           {s.content}
                         </p>
 
@@ -323,7 +320,7 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                         {isAdmin && (
                           <div className="space-y-1.5">
                             <textarea
-                              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-teal-400"
+                              className="w-full border border-ink-200 rounded-xl px-3 py-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-ink-900"
                               rows={2}
                               placeholder="답변을 입력하세요"
                               value={replyDraft}
@@ -332,14 +329,14 @@ export default function SuggestionModal({ isOpen, onClose, isAdmin }: Props) {
                             <div className="flex justify-end gap-3">
                               <button
                                 onClick={() => handleDelete(s.id)}
-                                className="text-[11px] text-red-400 font-medium"
+                                className="text-[11px] text-red-700 font-medium"
                               >
                                 삭제
                               </button>
                               <button
                                 onClick={() => handleSaveReply(s.id)}
                                 disabled={replySaving}
-                                className="text-[11px] bg-teal-500 text-white px-3 py-1 rounded-full font-medium disabled:opacity-50"
+                                className="text-[11px] bg-ink-900 text-white px-3 py-1 rounded-full font-medium disabled:opacity-50"
                               >
                                 {replySaving ? '저장 중…' : '답변 저장'}
                               </button>

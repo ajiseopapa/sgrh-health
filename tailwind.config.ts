@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   safelist: [
     // StatsTab 랭킹 배지 동적 클래스
     'bg-accent-400',
@@ -12,42 +12,50 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // v2.1 디자인 토큰 — 팔레트 '트랙 클럽' (PM 지시 11-13)
+      //   배경 #F6F4EE · 기본 글자 #202D29 · 포인트 #D8F36A · 보조 #7B8780
+      //   포인트(연두)는 면·막대·선택 표시에만 쓰고, 그 위 글자는 항상 기본 글자색(#202D29, 11.4:1).
+      //   보조색 #7B8780 은 배경 위 3.4:1 이라 큰 글자·아이콘·선에만. 작은 보조 글자는 ink-400(#5E6A64, 5.1:1) 이상.
       colors: {
+        paper: '#F6F4EE',   // 배경
+        sheet: '#FCFBF7',   // 입력칸 바탕
+        line: 'rgba(32,45,41,0.14)', // 구분선(기본 글자색 14%)
         brand: {
-          50: '#EAF6F1',
-          100: '#CFEBE0',
-          200: '#9FD7C1',
-          300: '#6FC3A2',
-          400: '#42AC85',
-          500: '#1F9B7D',
-          600: '#0F8268',
-          700: '#0C6A55',
-          800: '#0A5444',
-          900: '#073D32',
+          50: '#F8FDE6',
+          100: '#F0FAC9',
+          200: '#E5F69C',
+          300: '#D8F36A', // 포인트
+          400: '#C6E44A',
+          500: '#A9C82E',
+          600: '#5C6E12', // 배경 위 글자로 쓸 때(5.1:1)
+          700: '#48570D',
+          800: '#36420A',
+          900: '#232B06',
         },
         accent: {
-          50: '#FDF3E2',
-          400: '#F6BB5C',
-          500: '#F2A93B',
-          600: '#E0901C',
+          50: '#F8FDE6',
+          400: '#C6E44A',
+          500: '#A9C82E',
+          600: '#5C6E12',
         },
         ink: {
-          50: '#F6F5F2',
-          100: '#EAE8E2',
-          200: '#D7D4CB',
-          300: '#B5B1A4',
-          400: '#8F8B7D',
-          500: '#6E6A5E',
-          600: '#535045',
-          700: '#3D3B33',
-          800: '#292722',
-          900: '#1C1B17',
+          50: '#EEECE5',
+          100: '#E2E1D9',
+          200: '#C9CCC5',
+          300: '#7B8780', // 보조(큰 글자·아이콘·선)
+          400: '#5E6A64', // 작은 보조 글자 최소(5.1:1)
+          500: '#4D5853',
+          600: '#3C4743',
+          700: '#2E3A36',
+          800: '#263330',
+          900: '#202D29', // 기본 글자
         },
-        surface: '#F8F7F3',
+        surface: '#F6F4EE',
       },
       fontFamily: {
         sans: [
-          'var(--font-jakarta)',
+          '"Pretendard Variable"',
+          'Pretendard',
           '-apple-system',
           'BlinkMacSystemFont',
           'Apple SD Gothic Neo',
@@ -55,10 +63,11 @@ const config: Config = {
           'sans-serif',
         ],
       },
+      // 그림자는 떠 있는 창(시트·확인창)에만. 화면 안 영역은 구분선으로 나눕니다.
       boxShadow: {
-        card: '0 1px 2px rgba(28,27,23,0.04), 0 8px 20px -6px rgba(28,27,23,0.10)',
-        raised: '0 4px 14px -2px rgba(28,27,23,0.18)',
-        nav: '0 -4px 20px rgba(28,27,23,0.06)',
+        card: 'none',
+        raised: '0 12px 32px -8px rgba(27,25,22,0.28)',
+        nav: 'none',
       },
       borderRadius: {
         '2xl': '1rem',

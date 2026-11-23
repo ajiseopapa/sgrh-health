@@ -1,0 +1,53 @@
+━━ A. 021 → 022 순서 검증 (운영과 같은 시작 상태에서) ━━
+시작: 운동 기록 1826건 · 응원 30건 · 직원 308명
+✅ 시작 상태: 공개 키로 응원 읽기 가능(운영과 같음)
+021 적용 변화:
+  functions + {"proname":"calendar_headcount","args":"p_day date","defhash":"c14186da1b93b78be485e517fe599740","acl":"{postgres=X/postgres,anon=X/postgres,authentic
+  functions + {"proname":"calendar_month_summary","args":"p_month date","defhash":"b1a6c901d576488321e88769579511d4","acl":"{postgres=X/postgres,anon=X/postgres,aut
+  functions - {"proname":"calendar_month_summary","args":"p_month date","defhash":"792eb90693575e56d6fa382522eb0d10","acl":"{postgres=X/postgres,anon=X/postgres,aut
+022 적용 변화:
+  policies - {"tablename":"log_reactions","policyname":"log_reactions_select","cmd":"SELECT","roles":"{public}","qual":"true","with_check":null}
+✅ 1) 운동 기록 보존 (021·022 전후 행·내용 동일) — 1826건
+✅ 2) 응원 데이터 보존 (전후 행·내용 동일) — 30건
+✅    다른 테이블 데이터·칸·제약·인덱스·권한 변화 없음
+✅    021 변화 = 함수만 (추가 1·교체 1)
+✅    022 변화 = 응원 공개 읽기 정책 1개 삭제만
+✅ 3) 날짜별 참여 인원 집계 (공개 키 호출 = 직접 집계, 100% 초과 없음) — 11일
+✅ 4) 응원 중복 방지 (같은 기기·기록·이모지 두 번째 넣기 거부) — 오류 코드 23505
+✅ 5) 권한·RLS: 공개 키 응원 읽기 0행
+✅    공개 키 응원·기록 직접 쓰기 거부 — 42501 · 42501
+✅    공개 키 화면용 읽기(직원) 정상
+✅    서버(service_role)는 응원 전부 읽음
+✅ 6) 재실행 안전 (021·022 한 번 더 → 변화 없음)
+✅ 7) 되돌리기 (022 복구 → 021 복구) → 시작 상태와 동일
+✅    되돌린 뒤 달력(020) 정상 동작
+→ 시험 DB 최종 상태: 021·022 적용, 시험용 응원 삭제
+
+━━ B. 023 races 접근 차단 검증 ━━
+시험 DB에 운영과 같은 구조·정책·권한의 races(가짜 17건) 생성
+✅ 차단 전: 공개 키로 races 읽기 가능(운영과 같음)
+023 적용 변화:
+  policies - {"tablename":"races","policyname":"anon delete races","cmd":"DELETE","roles":"{public}","qual":"true","with_check":null}
+  policies - {"tablename":"races","policyname":"anon insert races","cmd":"INSERT","roles":"{public}","qual":null,"with_check":"true"}
+  policies - {"tablename":"races","policyname":"anon read races","cmd":"SELECT","roles":"{public}","qual":"true","with_check":null}
+  policies - {"tablename":"races","policyname":"anon update races","cmd":"UPDATE","roles":"{public}","qual":"true","with_check":null}
+  tableGrants - {"table_name":"races","grantee":"anon","p":"DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"}
+  tableGrants - {"table_name":"races","grantee":"authenticated","p":"DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"}
+✅ anon: 읽기·넣기·수정·삭제 모두 거부 — 42501,42501,42501,42501
+✅ authenticated: 읽기·넣기·수정·삭제 모두 거부 — 42501,42501,42501,42501
+✅ 서버(service_role) 관리 접근 가능 (읽기·수정, 수정은 되돌림)
+✅ 데이터 17건·구조 그대로
+✅ 023 변화 = races 정책 4개 삭제 + 공개 역할 권한 회수만
+✅ RLS 켜짐 유지
+✅ 재실행 안전 (023 한 번 더 → 변화 없음)
+✅ 복구 SQL → 차단 전 상태와 동일
+→ 시험 DB 최종 상태: 023 적용(races 접근 차단)
+
+결과: 24/24 통과
+한국 시간 11-05 03:00(=UTC 11-04 18:00) 등록 직원 → 11-04 분모 변화 0 / 11-05 분모 변화 1 ✅ 한국 날짜 기준
+
+== 추가 확인 (11-11)
+운영 시작 상태(공개 키 읽기): calendar_headcount 없음(PGRST202) · calendar_month_summary는 020 응답(headcount_basis·날짜별 h 없음) · 응원 공개 읽기 열림(225건) · races 공개 읽기 열림(17건)
+ → 시험 DB 검증의 시작 상태(020·022 전·023 전)와 같음
+prod-check --after-023 races 넣기 시험: 필수 칸(name)을 빼고 보냄
+  023 적용 상태 → 42501(차단) · 023 복구 상태 → 23502(필수 칸 없음) · 두 경우 모두 races 17건 그대로(행 생성 없음)

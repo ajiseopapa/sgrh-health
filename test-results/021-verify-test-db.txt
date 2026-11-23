@@ -1,0 +1,35 @@
+== 1) 되돌리기 절차 실행 (020 재실행 → calendar_headcount 삭제)
+  020 재실행 뒤 달력 함수: 정상 (headcount 300, basis 없음, days 11일, 날짜별 h 없음)
+  calendar_headcount 삭제 뒤 달력 함수: 정상 (headcount 300, basis 없음, days 11일, 날짜별 h 없음)
+
+== 2) 021 적용 (020 상태 → 021)
+  달력 함수: 정상 (headcount 308, basis registered, days 11일, 날짜별 h 있음)
+  functions: 추가 2 / 삭제 1
+    + {"proname":"calendar_headcount","args":"p_day date","vol":"s","secdef":false,"cfg":["search_path=public"],"acl":"{postgres=X/postgres,anon=X/postgres,authentica
+    + {"proname":"calendar_month_summary","args":"p_month date","vol":"s","secdef":false,"cfg":["search_path=public"],"acl":"{postgres=X/postgres,anon=X/postgres,auth
+    - {"proname":"calendar_month_summary","args":"p_month date","vol":"s","secdef":false,"cfg":["search_path=public"],"acl":"{postgres=X/postgres,anon=X/postgres,auth
+  tables: 변화 없음
+  columns: 변화 없음
+  constraints: 변화 없음
+  indexes: 변화 없음
+  policies: 변화 없음
+  triggers: 변화 없음
+  tableGrants: 변화 없음
+  data: 변화 없음
+
+== 3) 021 한 번 더 실행 (여러 번 실행해도 같은지)
+  functions: 변화 없음
+  tables: 변화 없음
+  columns: 변화 없음
+  constraints: 변화 없음
+  indexes: 변화 없음
+  policies: 변화 없음
+  triggers: 변화 없음
+  tableGrants: 변화 없음
+  data: 변화 없음
+
+== 4) 권한
+   [{"r":"anon","hc":true,"ms":true},{"r":"authenticated","hc":true,"ms":true},{"r":"service_role","hc":true,"ms":true}]
+  보안 정의자(권한 상승) 함수: hit_rate_limit
+  calendar_headcount 본문 쓰기·구조변경 명령: 없음 (select만)
+  calendar_month_summary 본문 쓰기·구조변경 명령: 없음 (select만)

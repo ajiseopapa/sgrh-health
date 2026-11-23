@@ -5,3 +5,7 @@ node_modules
 dist
 build
 *.log*.tsbuildinfo
+
+# 시험 DB·백업 키 (커밋 금지)
+.env*.local
+.env.test

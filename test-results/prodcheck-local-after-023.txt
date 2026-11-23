@@ -1,0 +1,35 @@
+대상: http://localhost:3574
+── HTTP 점검 (데이터 변경 없음) ──
+✅ 첫 화면 열림 — status 200
+✅ 새 버전 배포됨 (/api/auth/me) — status 200
+✅ 로그인 안 한 상태로 표시
+✅ 로그인 없는 기록 작성 차단 — status 401
+✅ CSRF: 전용 헤더 없는 요청 차단 — status 403
+✅ CSRF: 다른 사이트 Origin 차단 — status 403
+✅ 로그인 없는 기록 삭제 차단 — status 404
+✅ 관리자 권한 없이 GET /api/admin/employees 차단 — status 401
+✅ 관리자 권한 없이 POST /api/admin/pins 차단 — status 401
+✅ 관리자 권한 없이 DELETE /api/admin/employees/00000000-0000-4000-8000-000000000000 차단 — status 401
+✅ 관리자 권한 없이 POST /api/admin/exercise-types 차단 — status 401
+✅ 관리자 권한 없이 POST /api/admin/announcements 차단 — status 401
+✅ 관리자 권한 없이 DELETE /api/admin/suggestions/00000000-0000-4000-8000-000000000000 차단 — status 401
+✅ 없는 직원 로그인 거부 — status 400
+
+── 공개 키 직접 접근 점검 (데이터 변경 없음) ──
+✅ 공개 키로 employee_pins 읽기 차단
+✅ 공개 키로 auth_sessions 읽기 차단
+✅ 공개 키로 audit_logs 읽기 차단
+✅ 공개 키로 rate_limits 읽기 차단
+✅ 공개 키로 employee_goals 읽기 차단
+✅ 화면용 읽기 정상: employees
+✅ 화면용 읽기 정상: exercise_logs
+✅ 화면용 읽기 정상: exercise_types
+✅ 공개 키로 응원 기기 식별값 읽기 차단 (022)
+✅ 응원 요약 API 동작 (숫자만, 기기 식별값 없음) — status 200
+✅ 공개 키로 races 읽기 차단 (023) — 42501
+✅ 공개 키로 races 넣기 차단 (023) — 오류 코드 42501
+✅ 공개 키로 exercise_logs 직접 작성 차단 — 오류 코드 42501
+✅ 공개 키로 log_reactions 직접 작성 차단 — 오류 코드 42501
+✅ 공개 키로 employee_goals 직접 작성 차단 — 오류 코드 42501
+
+결과: 29/29 통과

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { api } from '@/lib/api'
 
 export default function AdminPasswordModal({
   onSuccess,
@@ -20,37 +21,23 @@ export default function AdminPasswordModal({
     }
     setSubmitting(true)
     setError('')
-    try {
-      const res = await fetch('/api/verify-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-      const data = await res.json()
-      if (data.ok) {
-        sessionStorage.setItem('admin_unlocked', 'true')
-        onSuccess()
-      } else {
-        setError(data.message || '비밀번호가 올바르지 않아요.')
-      }
-    } catch {
-      setError('확인 중 오류가 발생했어요. 다시 시도해주세요.')
-    } finally {
-      setSubmitting(false)
+    // 비밀번호는 서버에서만 비교하고, 맞으면 서버가 관리자 세션 쿠키(8시간)를 발급합니다
+    const r = await api('/api/verify-admin', { method: 'POST', body: { password } })
+    setSubmitting(false)
+    if (r.ok) {
+      setPassword('')
+      onSuccess()
+    } else {
+      setError(r.message || '비밀번호가 올바르지 않아요.')
     }
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-6">
-      <div className="w-full max-w-xs space-y-4 rounded-3xl bg-white p-6 shadow-raised">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-xl">
-            🔒
-          </span>
-          <div>
-            <h3 className="text-base font-bold text-ink-900">관리자 확인</h3>
-            <p className="text-xs text-ink-400">비밀번호를 입력해주세요.</p>
-          </div>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/45 px-6">
+      <div className="w-full max-w-xs space-y-4 rounded-xl bg-paper p-6 shadow-raised">
+        <div>
+          <h3 className="text-[19px] font-extrabold tracking-[-0.02em] text-ink-900">관리자 확인</h3>
+          <p className="mt-1 text-[14px] text-ink-600">관리자 비밀번호를 입력해주세요.</p>
         </div>
 
         <input
@@ -63,7 +50,7 @@ export default function AdminPasswordModal({
           className="input-field"
         />
 
-        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-700">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <button onClick={onCancel} className="btn-secondary">

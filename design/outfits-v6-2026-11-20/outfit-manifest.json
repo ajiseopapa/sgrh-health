@@ -1,0 +1,147 @@
+{
+  "version": "outfits-v6",
+  "kind": "outfit-only update for umtuda-all-v5",
+  "base": "Reuse v5 base/ unchanged",
+  "unchanged": "v5 item/, extra/ and existing icons",
+  "retired_keys": [
+    "glasses",
+    "vest"
+  ],
+  "replacements": {
+    "glasses": "chef",
+    "vest": "worker"
+  },
+  "role_order": [
+    "workout",
+    "nurse",
+    "doctor",
+    "office",
+    "hoodie",
+    "scrub",
+    "chef",
+    "worker"
+  ],
+  "canvas": [
+    512,
+    768
+  ],
+  "item_override_slots": [
+    "top",
+    "bottom",
+    "shoes"
+  ],
+  "chef_default_hat": "show outfit-hat-chef only when no item hat is selected",
+  "roles": {
+    "nurse": {
+      "name": "간호복",
+      "male": {
+        "top": "outfit/outfit-top-nurse-m.png",
+        "bottom": "outfit/outfit-bottom-nurse-m.png",
+        "shoes": "outfit/outfit-shoes-nurse-m.png",
+        "character": "char/char-m-nurse.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-nurse-f.png",
+        "bottom": "outfit/outfit-bottom-nurse-f.png",
+        "shoes": "outfit/outfit-shoes-nurse-f.png",
+        "character": "char/char-f-nurse.png"
+      }
+    },
+    "doctor": {
+      "name": "의료진 가운",
+      "male": {
+        "top": "outfit/outfit-top-doctor-m.png",
+        "bottom": "outfit/outfit-bottom-doctor-m.png",
+        "shoes": "outfit/outfit-shoes-doctor-m.png",
+        "character": "char/char-m-doctor.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-doctor-f.png",
+        "bottom": "outfit/outfit-bottom-doctor-f.png",
+        "shoes": "outfit/outfit-shoes-doctor-f.png",
+        "character": "char/char-f-doctor.png"
+      }
+    },
+    "office": {
+      "name": "행정부 정장",
+      "male": {
+        "top": "outfit/outfit-top-office-m.png",
+        "bottom": "outfit/outfit-bottom-office-m.png",
+        "shoes": "outfit/outfit-shoes-office-m.png",
+        "character": "char/char-m-office.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-office-f.png",
+        "bottom": "outfit/outfit-bottom-office-f.png",
+        "shoes": "outfit/outfit-shoes-office-f.png",
+        "character": "char/char-f-office.png"
+      }
+    },
+    "hoodie": {
+      "name": "후드 집업",
+      "male": {
+        "top": "outfit/outfit-top-hoodie-m.png",
+        "bottom": "outfit/outfit-bottom-hoodie-m.png",
+        "shoes": "outfit/outfit-shoes-hoodie-m.png",
+        "character": "char/char-m-hoodie.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-hoodie-f.png",
+        "bottom": "outfit/outfit-bottom-hoodie-f.png",
+        "shoes": "outfit/outfit-shoes-hoodie-f.png",
+        "character": "char/char-f-hoodie.png"
+      }
+    },
+    "scrub": {
+      "name": "스크럽",
+      "male": {
+        "top": "outfit/outfit-top-scrub-m.png",
+        "bottom": "outfit/outfit-bottom-scrub-m.png",
+        "shoes": "outfit/outfit-shoes-scrub-m.png",
+        "character": "char/char-m-scrub.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-scrub-f.png",
+        "bottom": "outfit/outfit-bottom-scrub-f.png",
+        "shoes": "outfit/outfit-shoes-scrub-f.png",
+        "character": "char/char-f-scrub.png"
+      }
+    },
+    "chef": {
+      "name": "조리복",
+      "male": {
+        "top": "outfit/outfit-top-chef-m.png",
+        "bottom": "outfit/outfit-bottom-chef-m.png",
+        "shoes": "outfit/outfit-shoes-chef-m.png",
+        "character": "char/char-m-chef.png",
+        "default_hat": "outfit/outfit-hat-chef-m.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-chef-f.png",
+        "bottom": "outfit/outfit-bottom-chef-f.png",
+        "shoes": "outfit/outfit-shoes-chef-f.png",
+        "character": "char/char-f-chef.png",
+        "default_hat": "outfit/outfit-hat-chef-f.png"
+      }
+    },
+    "worker": {
+      "name": "작업복",
+      "male": {
+        "top": "outfit/outfit-top-worker-m.png",
+        "bottom": "outfit/outfit-bottom-worker-m.png",
+        "shoes": "outfit/outfit-shoes-worker-m.png",
+        "character": "char/char-m-worker.png"
+      },
+      "female": {
+        "top": "outfit/outfit-top-worker-f.png",
+        "bottom": "outfit/outfit-bottom-worker-f.png",
+        "shoes": "outfit/outfit-shoes-worker-f.png",
+        "character": "char/char-f-worker.png"
+      }
+    },
+    "workout": {
+      "use_v5_base": true,
+      "name": "운동복"
+    }
+  }
+}

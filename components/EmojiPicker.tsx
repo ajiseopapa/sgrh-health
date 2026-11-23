@@ -35,7 +35,7 @@ export default function EmojiPicker({
         <>
           {/* 바깥 클릭 시 닫기 */}
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-20 mt-1 grid w-64 grid-cols-8 gap-1 rounded-xl bg-white p-2 shadow-raised">
+          <div className="absolute left-0 top-full z-20 mt-1 grid w-64 grid-cols-8 gap-1 rounded-xl bg-paper p-2 shadow-raised">
             {EMOJIS.map((e) => (
               <button
                 key={e}

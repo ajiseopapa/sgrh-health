@@ -1,0 +1,617 @@
+{
+  "first_sheet_item_types": 47,
+  "item_pngs": 94,
+  "base_pngs": 12,
+  "outfit_sets": 8,
+  "outfit_characters": 16,
+  "outfit_layers": 50,
+  "extra_types": 5,
+  "extra_pngs": 10,
+  "icons": 52,
+  "editable_source_layers": {
+    "m": 83,
+    "f": 83
+  },
+  "base_reconstruction": {
+    "m": 0,
+    "f": 0
+  },
+  "item_bounds": {
+    "hairband-m": [
+      79,
+      170,
+      419,
+      249
+    ],
+    "baseballcap-m": [
+      45,
+      1,
+      462,
+      245
+    ],
+    "strawhat-m": [
+      22,
+      5,
+      490,
+      245
+    ],
+    "beanie-m": [
+      55,
+      2,
+      449,
+      242
+    ],
+    "buckethat-m": [
+      42,
+      18,
+      473,
+      250
+    ],
+    "catheadphones-m": [
+      73,
+      8,
+      448,
+      313
+    ],
+    "greenribbon-m": [
+      340,
+      118,
+      425,
+      198
+    ],
+    "creamribbon-m": [
+      340,
+      118,
+      425,
+      198
+    ],
+    "whiteflower-m": [
+      347,
+      125,
+      426,
+      203
+    ],
+    "pinkflower-m": [
+      347,
+      125,
+      426,
+      203
+    ],
+    "hairpins-m": [
+      297,
+      122,
+      395,
+      214
+    ],
+    "sproutclip-m": [
+      315,
+      131,
+      393,
+      187
+    ],
+    "glasses-m": [
+      138,
+      225,
+      374,
+      305
+    ],
+    "roundglasses-m": [
+      128,
+      211,
+      377,
+      310
+    ],
+    "sunglasses-m": [
+      138,
+      225,
+      374,
+      305
+    ],
+    "mask-m": [
+      113,
+      284,
+      395,
+      368
+    ],
+    "blush-m": [
+      123,
+      296,
+      361,
+      323
+    ],
+    "bandage-m": [
+      315,
+      298,
+      396,
+      352
+    ],
+    "tshirt-m": [
+      105,
+      366,
+      408,
+      569
+    ],
+    "whitezipup-m": [
+      97,
+      364,
+      421,
+      581
+    ],
+    "greenhoodie-m": [
+      97,
+      364,
+      421,
+      581
+    ],
+    "creamhoodie-m": [
+      97,
+      364,
+      420,
+      580
+    ],
+    "blackjacket-m": [
+      97,
+      364,
+      421,
+      581
+    ],
+    "whitewindbreaker-m": [
+      97,
+      364,
+      421,
+      581
+    ],
+    "vest-m": [
+      97,
+      364,
+      421,
+      581
+    ],
+    "stripedpants-m": [
+      139,
+      546,
+      367,
+      710
+    ],
+    "grayshorts-m": [
+      139,
+      547,
+      367,
+      705
+    ],
+    "blackshorts-m": [
+      139,
+      547,
+      367,
+      705
+    ],
+    "graypants-m": [
+      139,
+      546,
+      367,
+      710
+    ],
+    "shortshorts-m": [
+      139,
+      547,
+      362,
+      705
+    ],
+    "whitesneakers-m": [
+      132,
+      697,
+      382,
+      756
+    ],
+    "darksneakers-m": [
+      130,
+      688,
+      383,
+      758
+    ],
+    "limesneakers-m": [
+      132,
+      697,
+      382,
+      756
+    ],
+    "hightops-m": [
+      130,
+      667,
+      383,
+      758
+    ],
+    "blacksneakers-m": [
+      130,
+      688,
+      383,
+      758
+    ],
+    "greenbackpack-m": [
+      91,
+      380,
+      422,
+      559
+    ],
+    "crossbodybag-m": [
+      160,
+      385,
+      428,
+      610
+    ],
+    "drawstringbag-m": [
+      322,
+      484,
+      434,
+      623
+    ],
+    "waistbag-m": [
+      152,
+      531,
+      357,
+      609
+    ],
+    "towel-m": [
+      150,
+      387,
+      362,
+      556
+    ],
+    "waterbottle-m": [
+      351,
+      486,
+      417,
+      613
+    ],
+    "smartwatch-m": [
+      354,
+      521,
+      408,
+      591
+    ],
+    "wings-m": [
+      17,
+      342,
+      496,
+      544
+    ],
+    "crown-m": [
+      190,
+      5,
+      310,
+      98
+    ],
+    "sprout-m": [
+      182,
+      6,
+      324,
+      132
+    ],
+    "sparkles-m": [
+      31,
+      98,
+      462,
+      373
+    ],
+    "laurel-m": [
+      61,
+      77,
+      443,
+      252
+    ],
+    "hairband-f": [
+      61,
+      170,
+      401,
+      249
+    ],
+    "baseballcap-f": [
+      36,
+      1,
+      435,
+      236
+    ],
+    "strawhat-f": [
+      15,
+      5,
+      464,
+      239
+    ],
+    "beanie-f": [
+      37,
+      2,
+      431,
+      242
+    ],
+    "buckethat-f": [
+      24,
+      18,
+      455,
+      250
+    ],
+    "catheadphones-f": [
+      55,
+      8,
+      430,
+      313
+    ],
+    "greenribbon-f": [
+      322,
+      118,
+      407,
+      198
+    ],
+    "creamribbon-f": [
+      322,
+      118,
+      407,
+      198
+    ],
+    "whiteflower-f": [
+      329,
+      125,
+      408,
+      203
+    ],
+    "pinkflower-f": [
+      329,
+      125,
+      408,
+      203
+    ],
+    "hairpins-f": [
+      279,
+      122,
+      377,
+      214
+    ],
+    "sproutclip-f": [
+      297,
+      131,
+      375,
+      187
+    ],
+    "glasses-f": [
+      112,
+      219,
+      348,
+      301
+    ],
+    "roundglasses-f": [
+      102,
+      206,
+      351,
+      305
+    ],
+    "sunglasses-f": [
+      112,
+      219,
+      348,
+      301
+    ],
+    "mask-f": [
+      95,
+      284,
+      377,
+      368
+    ],
+    "blush-f": [
+      105,
+      296,
+      343,
+      323
+    ],
+    "bandage-f": [
+      297,
+      298,
+      378,
+      352
+    ],
+    "tshirt-f": [
+      92,
+      366,
+      376,
+      559
+    ],
+    "whitezipup-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "greenhoodie-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "creamhoodie-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "blackjacket-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "whitewindbreaker-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "vest-f": [
+      81,
+      361,
+      393,
+      579
+    ],
+    "stripedpants-f": [
+      121,
+      535,
+      348,
+      711
+    ],
+    "grayshorts-f": [
+      121,
+      536,
+      348,
+      707
+    ],
+    "blackshorts-f": [
+      121,
+      536,
+      348,
+      707
+    ],
+    "graypants-f": [
+      121,
+      535,
+      348,
+      711
+    ],
+    "shortshorts-f": [
+      121,
+      536,
+      343,
+      707
+    ],
+    "whitesneakers-f": [
+      114,
+      697,
+      364,
+      756
+    ],
+    "darksneakers-f": [
+      108,
+      688,
+      365,
+      758
+    ],
+    "limesneakers-f": [
+      114,
+      697,
+      364,
+      756
+    ],
+    "hightops-f": [
+      108,
+      667,
+      365,
+      758
+    ],
+    "blacksneakers-f": [
+      108,
+      688,
+      365,
+      758
+    ],
+    "greenbackpack-f": [
+      73,
+      380,
+      404,
+      559
+    ],
+    "crossbodybag-f": [
+      142,
+      385,
+      410,
+      610
+    ],
+    "drawstringbag-f": [
+      304,
+      484,
+      416,
+      623
+    ],
+    "waistbag-f": [
+      134,
+      531,
+      339,
+      609
+    ],
+    "towel-f": [
+      132,
+      387,
+      344,
+      556
+    ],
+    "waterbottle-f": [
+      326,
+      486,
+      392,
+      613
+    ],
+    "smartwatch-f": [
+      336,
+      521,
+      390,
+      591
+    ],
+    "wings-f": [
+      17,
+      342,
+      496,
+      544
+    ],
+    "crown-f": [
+      172,
+      5,
+      292,
+      98
+    ],
+    "sprout-f": [
+      164,
+      6,
+      306,
+      132
+    ],
+    "sparkles-f": [
+      13,
+      98,
+      444,
+      373
+    ],
+    "laurel-f": [
+      43,
+      77,
+      425,
+      252
+    ]
+  },
+  "shirt_coverage": {
+    "whitezipup-m": 0,
+    "greenhoodie-m": 0,
+    "creamhoodie-m": 0,
+    "blackjacket-m": 0,
+    "whitewindbreaker-m": 0,
+    "vest-m": 0,
+    "whitezipup-f": 0,
+    "greenhoodie-f": 0,
+    "creamhoodie-f": 0,
+    "blackjacket-f": 0,
+    "whitewindbreaker-f": 0,
+    "vest-f": 0
+  },
+  "all_rgba_512x768": true,
+  "outfit_shirt_coverage": {
+    "nurse-m": 0,
+    "doctor-m": 0,
+    "office-m": 0,
+    "hoodie-m": 0,
+    "scrub-m": 0,
+    "glasses-m": 0,
+    "vest-m": 0,
+    "nurse-f": 0,
+    "doctor-f": 0,
+    "office-f": 0,
+    "hoodie-f": 0,
+    "scrub-f": 0,
+    "glasses-f": 0,
+    "vest-f": 0
+  },
+  "combined_catalog_samples": 47
+}

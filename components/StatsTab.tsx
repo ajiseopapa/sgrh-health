@@ -7,36 +7,29 @@ import {
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ExerciseLog, calcPace, isRunningType, getPaceMode } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
+import { getEmployeeColor, TOKENS } from '@/lib/colors'
 import { getMonthRange, toDateKey, calcStreak } from '@/lib/dateUtils'
-import SectionTitle from './SectionTitle'
+import { Empty, Loading, Progress } from '@/lib/ui'
 
-const RANK_BADGE_CLASS = ['bg-accent-400 text-white', 'bg-ink-300 text-white', 'bg-ink-300 text-white']
-const RANK_BADGE_DEFAULT = 'bg-ink-100 text-ink-500'
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
-// 스택 바 차트에서 "맨 위 세그먼트"에만 둥근 상단을 그려주는 커스텀 shape.
-// recharts의 Bar radius prop은 세그먼트별로 다르게 줄 수 없어서 직접 그림.
-function StackedBarShape(props: {
-  x?: number; y?: number; width?: number; height?: number; fill?: string; isTop?: boolean
-}) {
-  const { x = 0, y = 0, width = 0, height = 0, fill, isTop } = props
-  if (height <= 0 || width <= 0) return null
-  if (!isTop) {
-    return <rect x={x} y={y} width={width} height={height} fill={fill} />
-  }
-  const r = Math.min(6, width / 2, height)
-  const d = `
-    M${x},${y + height}
-    L${x},${y + r}
-    Q${x},${y} ${x + r},${y}
-    L${x + width - r},${y}
-    Q${x + width},${y} ${x + width},${y + r}
-    L${x + width},${y + height}
-    Z
-  `
-  return <path d={d} fill={fill} />
+/** 순위 왕관(사물 아이콘) — 1위 황금, 2위 은, 3위 동 */
+const CROWN = {
+  1: { fill: '#F2C94C', shade: '#D4A72C', name: '금' },
+  2: { fill: '#BCC3C0', shade: '#8E9692', name: '은' },
+  3: { fill: '#D9935A', shade: '#B0713E', name: '동' },
+} as const
+function Crown({ rank }: { rank: 1 | 2 | 3 | number }) {
+  const c = CROWN[rank as 1 | 2 | 3]
+  return (
+    <svg width={20} height={16} viewBox="0 0 20 16" role="img" aria-label={`${rank}위 ${c.name}왕관`} className="shrink-0">
+      <path d="M2 5 L6 9 L10 2 L14 9 L18 5 L16.5 13 H3.5 Z" fill={c.fill} stroke="#202D29" strokeWidth={1.4} strokeLinejoin="round" />
+      <rect x={3.5} y={12} width={13} height={2.6} rx={0.6} fill={c.shade} stroke="#202D29" strokeWidth={1.2} />
+      <circle cx={10} cy={2.2} r={1.3} fill={c.fill} stroke="#202D29" strokeWidth={1} />
+    </svg>
+  )
 }
+
 const STATS_LOOKBACK_DAYS = 371 // 개인 신기록/마일스톤 계산을 위한 조회 범위 (53주)
 const SEOUL_BUSAN_KM = 325
 const MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000]
@@ -69,7 +62,7 @@ export default function StatsTab() {
       const [logRes, countRes] = await Promise.all([
         supabase
           .from('exercise_logs')
-          .select('*, employee:employees(*), exercise_type:exercise_types(*)')
+          .select('*, employee:employees(id, name, employee_number, color, created_at), exercise_type:exercise_types(*)')
           .gte('log_date', toDateKey(since)),
         supabase.from('exercise_logs').select('*', { count: 'exact', head: true }),
       ])
@@ -80,14 +73,8 @@ export default function StatsTab() {
     load()
   }, [])
 
-  if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />
-  if (logs.length === 0) {
-    return (
-      <div className="card text-center text-sm text-ink-400">
-        최근 운동 기록이 없어요.<br />홈 탭에서 기록을 남겨보세요!
-      </div>
-    )
-  }
+  if (loading) return <Loading lines={4} />
+  if (logs.length === 0) return <Empty title="최근 운동 기록이 없어요." desc="기록 탭에서 첫 운동을 남겨 보세요." />
 
   const now = new Date()
   const { start: thisMonthStart } = getMonthRange(now)
@@ -252,36 +239,20 @@ export default function StatsTab() {
   for (const l of last8wLogs) weekdayCount[new Date(l.log_date).getDay()]++
   const weekdayData = WEEKDAY_LABELS.map((label, i) => ({ label, count: weekdayCount[i] }))
   const busiestIdx = weekdayCount.indexOf(Math.max(...weekdayCount))
+  const weekdayMax = Math.max(...weekdayCount)
   const busiestLabel = WEEKDAY_LABELS[busiestIdx]
 
   // ══════════════════════════════════════════
-  // 기존: 종목별 × 사람별 스택 바 (최근 8주)
+  // 종목별 운동 횟수 (최근 8주) — 단색 막대, 가장 많은 종목만 라임 강조(요일별과 같은 방식)
   // ══════════════════════════════════════════
-  const typeMap = new Map<string, Record<string, number>>()
+  const typeCount = new Map<string, number>()
   for (const l of last8wLogs) {
     const typeName = l.exercise_type?.name ?? '기타'
-    const empName = l.employee?.name ?? '?'
-    if (!typeMap.has(typeName)) typeMap.set(typeName, {})
-    const row = typeMap.get(typeName)!
-    row[empName] = (row[empName] ?? 0) + 1
+    typeCount.set(typeName, (typeCount.get(typeName) ?? 0) + 1)
   }
-  const typeData = Array.from(typeMap.entries())
-    .map(([name, counts]) => ({ name, ...counts }))
-    .sort((a, b) => {
-      const sum = (o: Record<string, unknown>) =>
-        employees.reduce((s, e) => s + ((o[e.name] as number) ?? 0), 0)
-      return sum(b) - sum(a)
-    })
-
-  // 스택 바에서 종목(행)마다 실제로 값이 있는 "맨 위" 직원을 찾는다.
-  // employees 배열 순서 = 스택 쌓이는 순서(마지막이 맨 위)이므로 뒤에서부터 탐색.
-  function topEmployeeOf(row: Record<string, unknown>): string | null {
-    for (let i = employees.length - 1; i >= 0; i--) {
-      const name = employees[i].name
-      if (((row[name] as number) ?? 0) > 0) return name
-    }
-    return null
-  }
+  const typeData = Array.from(typeCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+  const typeMax = typeData.length ? typeData[0].count : 0
+  const topTypes = typeData.filter((t) => t.count === typeMax).map((t) => t.name)
 
   // ── 직원 랭킹 (스트릭 뱃지 포함) ──
   const rankMap = new Map<string, { name: string; count: number; color: string; streak: number }>()
@@ -300,194 +271,138 @@ export default function StatsTab() {
     return b.streak - a.streak
   })
 
-  // ── 커스텀 툴팁 ──
-  function CustomTooltip({ active, payload, label }: {
-    active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string
-  }) {
-    if (!active || !payload?.length) return null
-    const totalV = payload.reduce((s, p) => s + (p.value ?? 0), 0)
-    return (
-      <div className="rounded-xl border border-ink-100 bg-white p-3 shadow-raised text-xs min-w-[130px]">
-        <p className="mb-1.5 font-bold text-ink-800">{label}</p>
-        {payload.filter(p => p.value > 0).map(p => (
-          <div key={p.name} className="flex items-center justify-between gap-3 py-0.5">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.fill }} />
-              <span className="text-ink-600">{p.name}</span>
-            </div>
-            <span className="font-semibold text-ink-800">{p.value}회</span>
-          </div>
-        ))}
-        <div className="mt-1.5 border-t border-ink-100 pt-1.5 flex justify-between">
-          <span className="text-ink-400">합계</span>
-          <span className="font-bold text-ink-800">{totalV}회</span>
-        </div>
-      </div>
-    )
-  }
+  const H3 = ({ children }: { children: React.ReactNode }) => (
+    <h3 className="mb-3 text-[14px] font-bold text-ink-900">{children}</h3>
+  )
+  const AXIS = { fontSize: 12, fill: '#5E6A64' }
 
   return (
-    <div className="space-y-6">
-      {/* 이번 달 요약 */}
-      <section className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
-        <p className="text-xs font-medium text-brand-100">이번 달 팀 기록</p>
-        <div className="mt-1 flex items-end gap-2">
-          <span className="text-3xl font-bold">{thisCount}회</span>
-          {changePct !== null && (
-            <span className={`mb-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              changePct >= 0 ? 'bg-white/20' : 'bg-black/15'
-            }`}>
-              {changePct >= 0 ? '▲' : '▼'} 지난달 대비 {Math.abs(changePct)}%
-            </span>
-          )}
-        </div>
-        {totalDistanceYear > 0 && (
-          <p className="mt-2 text-[12px] text-brand-100">
-            최근 1년간 총 {totalDistanceYear.toFixed(1)}km 이동 — 서울↔부산(약 {SEOUL_BUSAN_KM}km)의{' '}
-            <span className="font-bold text-white">{busanPct.toFixed(0)}%</span>
-            {busanPct >= 100 && ' 🎉'}
-          </p>
-        )}
-      </section>
-
-      {/* 팀 마일스톤 게이지 */}
-      <section className="card">
-        <div className="flex items-center justify-between">
-          <SectionTitle>🚩 팀 마일스톤</SectionTitle>
-          <span className="text-xs font-semibold text-ink-400">{total}회 / {msNext}회</span>
-        </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-ink-100">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all duration-700"
-            style={{ width: `${msPct}%` }}
-          />
-        </div>
-        <p className="mt-2 text-xs text-ink-400">
-          다음 마일스톤까지 <span className="font-bold text-brand-600">{msNext - total}회</span> 남았어요!
+    <div className="[&>*]:mb-8 [&>*]:break-inside-avoid lg:columns-2 lg:gap-x-10">
+      {/* 이번 달 팀 기록 */}
+      <div>
+        <p className="text-[13px] font-semibold text-ink-500">이번 달 팀 전체</p>
+        <p className="num mt-1 text-[44px] leading-none text-ink-900">
+          {thisCount}<span className="ml-0.5 text-[16px] font-bold tracking-normal text-ink-500">회</span>
         </p>
-      </section>
+        <p className="mt-2 text-[14px] text-ink-600">
+          {changePct !== null && <>지난달보다 <span className="font-bold text-ink-900">{changePct >= 0 ? `${changePct}% 많아요` : `${Math.abs(changePct)}% 적어요`}</span>. </>}
+          {totalDistanceYear > 0 && <>최근 1년 이동 거리 {totalDistanceYear.toFixed(1)}km, 서울–부산({SEOUL_BUSAN_KM}km)의 <span className="font-bold text-ink-900">{busanPct.toFixed(0)}%</span>.</>}
+        </p>
+      </div>
+
+      {/* 팀 마일스톤 */}
+      <div>
+        <div className="mb-2 flex items-baseline justify-between">
+          <H3>팀 누적 목표</H3>
+          <span className="text-[13px] font-bold tabular-nums text-ink-700">{total.toLocaleString()} / {msNext.toLocaleString()}회</span>
+        </div>
+        <Progress value={total} max={msNext} label="팀 누적 목표 진행" tone="highlight" />
+        <p className="mt-2 text-[13px] text-ink-500">다음 목표까지 {msNext - total}회 남았어요.</p>
+      </div>
 
       {/* 이번 달 하이라이트 */}
       {highlights.length > 0 && (
-        <section>
-          <SectionTitle>이번 달 하이라이트</SectionTitle>
-          <div className="grid grid-cols-2 gap-3">
-            {highlights.map((h) => (
-              <div key={h.label} className="card flex items-center gap-3 p-3.5">
-                <span className="text-2xl">{h.icon}</span>
+        <div>
+          <H3>이번 달 하이라이트</H3>
+          <dl className="mt-2 grid grid-cols-2 gap-2">
+            {highlights.map((h, i) => (
+              <div key={h.label} className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-sheet p-3">
+                <span
+                  aria-hidden
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[22px] leading-none ${i === 0 ? 'bg-brand-300' : 'bg-ink-50'}`}
+                >
+                  {h.icon}
+                </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-ink-400">{h.label}</p>
-                  <p className="truncate text-sm font-bold text-ink-800">{h.name}</p>
-                  <p className="text-[11px] text-ink-400">{h.sub}</p>
+                  <dt className="text-[12px] font-semibold text-ink-500">{h.label}</dt>
+                  <dd className="truncate text-[16px] font-bold leading-tight text-ink-900">{h.name}</dd>
+                  <dd className="truncate text-[13px] tabular-nums text-ink-600">{h.sub}</dd>
                 </div>
               </div>
             ))}
-          </div>
-        </section>
+          </dl>
+        </div>
       )}
 
-      {/* 개인 신기록 알림 */}
+      {/* 개인 신기록 */}
       {prs.length > 0 && (
-        <section>
-          <SectionTitle>🎉 최근 신기록</SectionTitle>
-          <div className="space-y-2">
-            {prs.slice(0, 5).map(pr => (
-              <div key={pr.key} className="card flex items-center gap-3 p-3">
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base"
-                  style={{ backgroundColor: `${pr.empColor}22` }}
-                >
-                  {pr.typeIcon}
-                </span>
-                <p className="text-sm text-ink-700">
-                  <span className="font-bold" style={{ color: pr.empColor }}>{pr.empName}</span>
-                  {'님 '}{pr.text}
-                </p>
-              </div>
+        <div>
+          <H3>최근 신기록</H3>
+          <ul className="divide-y divide-line border-y border-line">
+            {prs.slice(0, 5).map((pr) => (
+              <li key={pr.key} className="py-3 text-[14px] text-ink-700">
+                <span className="mr-1" aria-hidden="true">{pr.typeIcon}</span>
+                <span className="font-bold text-ink-900">{pr.empName}</span>님 {pr.text}
+              </li>
             ))}
-          </div>
-        </section>
+          </ul>
+        </div>
       )}
 
       {/* 요일별 운동 패턴 */}
-      <section className="card">
-        <SectionTitle>요일별 운동 패턴 (최근 8주)</SectionTitle>
+      <div>
+        <H3>요일별 운동 (최근 8주)</H3>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={weekdayData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }} formatter={(v: number) => [`${v}회`, '기록']} />
-            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+            <XAxis dataKey="label" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} />
+            <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
+            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
               {weekdayData.map((d, i) => (
-                <Cell key={d.label} fill={i === busiestIdx ? '#0F8268' : '#CFEBE0'} />
+                // 최고값과 같은 요일은 모두 강조(동점 포함). 라임은 배경과 명암 차이가 작아 진한 테두리를 둠
+                weekdayMax > 0 && d.count === weekdayMax
+                  ? <Cell key={d.label} fill={TOKENS.highlight} stroke={TOKENS.ink900} strokeWidth={1.5} />
+                  : <Cell key={d.label} fill={TOKENS.ink200} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <p className="mt-2 text-xs text-ink-400">
-          우리 팀은 <span className="font-bold text-brand-600">{busiestLabel}요일</span>에 가장 활발하게 움직여요 💪
+        <p className="mt-2 text-[13px] text-ink-600">
+          가장 많이 운동한 요일은 <span className="font-bold text-ink-900">{busiestLabel}요일</span>이에요.
         </p>
-      </section>
+      </div>
 
-      {/* 종목별 × 사람별 스택 바 */}
-      <section className="card">
-        <SectionTitle>종목별 운동 횟수 (사람별, 최근 8주)</SectionTitle>
-        <ResponsiveContainer width="100%" height={220}>
+      {/* 종목별 운동 횟수 — 단색 막대 */}
+      <div>
+        <H3>종목별 운동 횟수 (최근 8주)</H3>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-            <Tooltip content={(props) => <CustomTooltip {...props as Parameters<typeof CustomTooltip>[0]} />} cursor={{ fill: '#F6F5F2' }} />
-            {employees.map((emp) => (
-              <Bar
-                key={emp.name}
-                dataKey={emp.name}
-                name={emp.name}
-                stackId="a"
-                fill={emp.color}
-                shape={(shapeProps: unknown) => {
-                  const p = shapeProps as { x: number; y: number; width: number; height: number; payload: Record<string, unknown> }
-                  const isTop = topEmployeeOf(p.payload) === emp.name
-                  return <StackedBarShape {...p} fill={emp.color} isTop={isTop} />
-                }}
-              />
-            ))}
+            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} interval={0} />
+            <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
+            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+              {typeData.map((t) =>
+                typeMax > 0 && t.count === typeMax
+                  ? <Cell key={t.name} fill={TOKENS.highlight} stroke={TOKENS.ink900} strokeWidth={1.5} />
+                  : <Cell key={t.name} fill={TOKENS.ink200} />,
+              )}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-          {employees.map(emp => (
-            <div key={emp.name} className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: emp.color }} />
-              <span className="text-xs text-ink-600">{emp.name}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+        {topTypes.length > 0 && (
+          <p className="mt-2 text-[13px] text-ink-600">
+            가장 많이 한 운동은 <span className="font-bold text-ink-900">{topTypes.join(', ')}</span>이에요.
+          </p>
+        )}
+      </div>
 
-      {/* 전체 랭킹 */}
-      <section>
-        <SectionTitle>전체 랭킹 (최근 8주)</SectionTitle>
-        <ul className="card divide-y divide-ink-100 p-0">
-          {ranking.map((e, i) => (
-            <li key={e.name} className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${RANK_BADGE_CLASS[i] ?? RANK_BADGE_DEFAULT}`}>
-                  {i + 1}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
-                  <span className="text-sm font-medium text-ink-800">{e.name}</span>
-                  {e.streak >= 2 && (
-                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
-                      🔥{e.streak}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <span className="text-xs font-medium text-ink-400">{e.count}회</span>
+      {/* 개인 순위 */}
+      <div>
+        <H3>개인 순위 (최근 8주 · 10위까지)</H3>
+        <ol className="divide-y divide-line border-y border-line">
+          {ranking.slice(0, 10).map((e, i) => (
+            <li key={e.name} className="flex items-center gap-4 py-3">
+              <span className={`num w-7 text-[20px] ${i === 0 ? 'text-brand-600' : 'text-ink-400'}`}>{i + 1}</span>
+              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                {i < 3 && <Crown rank={i + 1} />}
+                <span className="truncate text-[15px] font-bold text-ink-900">{e.name}</span>
+              </span>
+              {e.streak >= 2 && <span className="text-[13px] text-ink-500">{e.streak}일 연속</span>}
+              <span className="num w-14 text-right text-[17px] text-ink-900">{e.count}<span className="ml-0.5 text-[12px] font-bold text-ink-500">회</span></span>
             </li>
           ))}
-        </ul>
-      </section>
+        </ol>
+      </div>
     </div>
   )
 }

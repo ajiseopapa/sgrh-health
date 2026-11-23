@@ -1,32 +1,50 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-// 영문/숫자는 Plus Jakarta Sans, 한글은 자동으로 시스템 폰트로 폴백됩니다.
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-})
+// 글꼴: Pretendard (한글·영문·숫자 한 벌). 웹폰트 CSS만 불러오고 라이브러리는 추가하지 않음.
+const PRETENDARD = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css'
 
 export const metadata: Metadata = {
-  title: '직원 운동 관리',
-  description: '팀 운동 기록 및 랭킹 트래커',
+  metadataBase: new URL('https://sgrh-health.vercel.app'),
+  title: '움트다',
+  description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
+  applicationName: '움트다',
+  appleWebApp: { title: '움트다' },
+  // 카카오톡·세계로톡 등에 링크를 붙였을 때 보이는 미리보기 이미지
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: '움트다 · 세계로병원 직원 건강 프로젝트',
+    title: '움트다',
+    description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
+    locale: 'ko_KR',
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: '움트다 — 세계로병원 직원 건강 프로젝트' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '움트다',
+    description: '오늘의 움직임이 내일의 성장으로 — 세계로병원 직원 건강 프로젝트',
+    images: ['/og.jpg'],
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 확대 허용 (접근성: 글씨를 키워 보는 직원을 막지 않음)
+  themeColor: '#F6F4EE',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={jakarta.variable}>
-      <body className="bg-surface font-sans text-ink-900 antialiased">
-        {/* max-w-md로 모바일 폭에 고정, 데스크탑에서 봐도 깨지지 않게 가운데 정렬 */}
-        <div className="mx-auto min-h-screen max-w-md bg-surface">{children}</div>
+    <html lang="ko">
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={PRETENDARD} />
+      </head>
+      <body className="bg-paper font-sans text-ink-900 antialiased">
+        {/* 휴대폰 폭 기준. 태블릿은 가운데 한 줄, PC(1024px 이상)는 왼쪽 메뉴 + 넓은 본문 */}
+        <div className="mx-auto min-h-screen max-w-[480px] bg-paper lg:max-w-none">{children}</div>
       </body>
     </html>
   )

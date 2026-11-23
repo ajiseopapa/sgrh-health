@@ -1,10 +1,14 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+// 집계형 달력 — 직원별 색 점 대신 날짜별 참여 인원과 참여율 색 농도를 보여줍니다.
+// 직원 수가 늘어도 한 칸에 숫자 하나만 들어가므로 가독성이 유지됩니다.
+// (직원별 색상 정보 자체는 삭제하지 않았고, 피드·랭킹 등에서는 그대로 씁니다)
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ExerciseLog } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
-import { getCalendarCells, toDateKey } from '@/lib/dateUtils'
+import InfoTip from './InfoTip'
+import { getCalendarCells } from '@/lib/dateUtils'
+import DayDetail from './CalendarDayDetail'
+import { Icon } from '@/lib/ui'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -26,7 +30,7 @@ function getSeoulYMD() {
 
 type SeoulYMD = ReturnType<typeof getSeoulYMD>
 
-export default function MiniCalendar() {
+export default function MiniCalendar({ refreshKey = 0 }: { refreshKey?: number }) {
   // 오늘 날짜는 반드시 "사용자 기기에서, 마운트된 뒤에" 계산한다.
   // 렌더 중에 초기값으로 계산하면 빌드(프리렌더) 시점의 날짜가 HTML에 박혀서,
   // 배포 후 며칠 지난 뒤 앱을 열면 시작할 때 네모가 빌드한 날짜에 표시될 수 있다.
@@ -38,10 +42,8 @@ export default function MiniCalendar() {
       setToday(getSeoulYMD())
     }
     refreshToday()
-    // 탭이 다시 보이거나(백그라운드 복귀) 창이 포커스를 받을 때 즉시 재계산
     document.addEventListener('visibilitychange', refreshToday)
     window.addEventListener('focus', refreshToday)
-    // 오래 켜둔 경우를 대비해 1분마다도 재계산
     const interval = setInterval(refreshToday, 60_000)
     return () => {
       document.removeEventListener('visibilitychange', refreshToday)
@@ -54,139 +56,239 @@ export default function MiniCalendar() {
     return (
       <section>
         <div className="mb-2 h-7" />
-        <div className="card h-[300px] animate-pulse" />
+        <div className="card h-[340px] animate-pulse" />
       </section>
     )
   }
-  return <CalendarBody today={today} />
+  return <CalendarBody today={today} refreshKey={refreshKey} />
 }
 
-function CalendarBody({ today }: { today: SeoulYMD }) {
-  // 현재 보고 있는 연/월 — 마운트 시점의 오늘 기준으로 시작
+export interface DaySummary {
+  d: string // 'YYYY-MM-DD'
+  p: number // 참여 인원 (같은 직원 여러 번 = 1명)
+  n: number // 기록 수
+  s: number // 총 운동 시간(초)
+  h?: number | null // 그날까지 등록된 직원 수 = 그날 참여율 분모. 020 응답에는 없음 → 월 분모로 대신함
+}
+
+// 그날 참여율 분모: 날짜별 값(021)이 있으면 그것, 없으면 월 분모(020 호환)
+export function dayHeadcount(info: DaySummary | undefined, monthHeadcount: number | null): number | null {
+  return info && info.h !== undefined ? info.h : monthHeadcount
+}
+
+interface MonthSummary {
+  headcount: number | null // 참여율 분모. 없으면(0명·미확인) null → "인원 정보 없음", 색 농도 안 씀
+  headcount_basis?: HeadcountBasis // 분모 기준. 020(이전 버전) 응답에는 없음 → registered로 봄
+  days: DaySummary[]
+}
+
+// 분모 기준별 화면 문구. 인사팀 재직 인원 자료로 바뀌면 DB가 'hr'을 돌려주고 문구만 자동으로 바뀝니다.
+export type HeadcountBasis = 'registered' | 'hr'
+export const BASIS_LABEL: Record<HeadcountBasis, { rate: string; count: string }> = {
+  registered: { rate: '등록 직원 기준 참여율', count: '등록 직원' },
+  hr: { rate: '재직 인원 기준 참여율', count: '재직' },
+}
+
+// 참여율 → 색 단계 (0: 기록 없음, 1~4: 농도, -1: 재직 인원 정보 없음)
+export function levelOf(p: number, headcount: number | null): number {
+  if (!p) return 0
+  if (!headcount) return -1
+  const r = p / headcount
+  if (r < 0.25) return 1
+  if (r < 0.5) return 2
+  if (r < 0.75) return 3
+  return 4
+}
+
+const LEVEL_STYLE: Record<number, string> = {
+  0: 'text-ink-600',
+  [-1]: 'bg-ink-100 text-ink-800',
+  1: 'bg-brand-100 text-ink-900',
+  2: 'bg-brand-200 text-ink-900',
+  3: 'bg-brand-300 text-ink-900',
+  4: 'bg-ink-500 text-brand-300',
+}
+
+const LEGEND_SWATCH: Record<number, string> = {
+  1: 'bg-brand-100',
+  2: 'bg-brand-200',
+  3: 'bg-brand-300',
+  4: 'bg-ink-500',
+}
+
+const LEGEND = [
+  { level: 1, label: '~24%' },
+  { level: 2, label: '~49%' },
+  { level: 3, label: '~74%' },
+  { level: 4, label: '75%~' },
+]
+
+function pad(n: number) {
+  return String(n).padStart(2, '0')
+}
+
+function CalendarBody({ today, refreshKey }: { today: SeoulYMD; refreshKey: number }) {
   const [year, setYear] = useState(today.year)
   const [month, setMonth] = useState(today.month) // 0-indexed
-
-  const [logs, setLogs] = useState<ExerciseLog[]>([])
+  const [summary, setSummary] = useState<MonthSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [selected, setSelected] = useState<number | null>(null)
 
   const isCurrentMonth = year === today.year && month === today.month
 
-  // 월 이동
   function prevMonth() {
-    if (month === 0) { setYear(y => y - 1); setMonth(11) }
-    else setMonth(m => m - 1)
+    setSelected(null)
+    if (month === 0) { setYear((y) => y - 1); setMonth(11) }
+    else setMonth((m) => m - 1)
   }
   function nextMonth() {
-    if (month === 11) { setYear(y => y + 1); setMonth(0) }
-    else setMonth(m => m + 1)
+    setSelected(null)
+    if (month === 11) { setYear((y) => y + 1); setMonth(0) }
+    else setMonth((m) => m + 1)
   }
   function goToday() {
+    setSelected(null)
     setYear(today.year)
     setMonth(today.month)
   }
 
-  // 달이 바뀔 때마다 해당 달 로그 fetch
-  useEffect(() => {
-    async function fetchLogs() {
-      setLoading(true)
-      const start = new Date(year, month, 1)
-      const end = new Date(year, month + 1, 0)
-      const { data } = await supabase
-        .from('exercise_logs')
-        .select('*, employee:employees(*)')
-        .gte('log_date', toDateKey(start))
-        .lte('log_date', toDateKey(end))
-      setLogs((data as ExerciseLog[]) ?? [])
-      setLoading(false)
+  // 날짜별 집계만 서버(DB 함수)에서 받아옴 — 기록이 많아도 1,000건 제한에 걸리지 않음
+  const fetchSummary = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const { data, error } = await supabase.rpc('calendar_month_summary', { p_month: `${year}-${pad(month + 1)}-01` })
+    if (error) {
+      setError('달력 정보를 불러오지 못했어요.')
+      setSummary(null)
+    } else {
+      setSummary(data as MonthSummary)
     }
-    fetchLogs()
+    setLoading(false)
   }, [year, month])
 
-  const cells = getCalendarCells(year, month)
+  useEffect(() => { fetchSummary() }, [fetchSummary, refreshKey])
 
-  // 날짜(day) -> 직원ID -> 색상
-  const dotsByDay = useMemo(() => {
-    const map = new Map<number, Map<string, string>>()
-    for (const log of logs) {
-      const d = new Date(log.log_date)
-      const day = d.getDate()
-      const inner = map.get(day) ?? new Map<string, string>()
-      inner.set(log.employee_id, getEmployeeColor(log.employee))
-      map.set(day, inner)
-    }
+  const byDay = useMemo(() => {
+    const map = new Map<number, DaySummary>()
+    for (const d of summary?.days ?? []) map.set(Number(d.d.slice(8, 10)), d)
     return map
-  }, [logs])
+  }, [summary])
+
+  const cells = getCalendarCells(year, month)
+  const headcount = summary?.headcount ?? null
+  const basis = BASIS_LABEL[summary?.headcount_basis ?? 'registered']
+  const selectedDate = selected ? `${year}-${pad(month + 1)}-${pad(selected)}` : null
 
   return (
     <section>
-      {/* 헤더: < 연월 > + 오늘 버튼 */}
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      {/* 헤더: < 연월 > + 이번 달 */}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="-ml-2.5 flex items-center">
           <button
             onClick={prevMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            aria-label="이전 달"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50"
           >
-            ‹
+            <Icon name="chevron-left" size={20} />
           </button>
-          <span className="min-w-[72px] text-center text-sm font-bold text-ink-800">
+          <span className="min-w-[88px] text-center text-[15px] font-bold tabular-nums text-ink-900">
             {year}년 {month + 1}월
           </span>
           <button
             onClick={nextMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 transition active:bg-ink-100"
+            aria-label="다음 달"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-700 transition active:bg-ink-50"
           >
-            ›
+            <Icon name="chevron-right" size={20} />
           </button>
         </div>
 
         {!isCurrentMonth && (
           <button
             onClick={goToday}
-            className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition active:bg-brand-100"
+            className="pill-action text-ink-900 underline"
           >
             이번 달
           </button>
         )}
       </div>
 
-      <div className={`card grid grid-cols-7 gap-1 text-center transition-opacity ${loading ? 'opacity-40' : ''}`}>
-        {WEEKDAYS.map((w) => (
-          <div key={w} className="text-[11px] font-medium text-ink-300">
-            {w}
-          </div>
-        ))}
-        {cells.map((day, idx) => {
-          const dots = day ? dotsByDay.get(day) : undefined
-          const isToday = isCurrentMonth && day !== null && day === today.day
-          return (
-            <div
-              key={idx}
-              className={`flex h-12 flex-col items-center justify-start rounded-xl pt-1 ${
-                isToday ? 'bg-brand-50 ring-1 ring-inset ring-brand-300' : ''
-              }`}
-            >
-              {day && (
-                <span className={`text-[11px] ${isToday ? 'font-bold text-brand-700' : 'text-ink-500'}`}>
-                  {day}
-                </span>
-              )}
-              {dots && dots.size > 0 && (
-                <div className="mt-0.5 flex max-w-[28px] flex-wrap justify-center gap-0.5">
-                  {Array.from(dots.values())
-                    .slice(0, 4)
-                    .map((color, i) => (
-                      <span
-                        key={i}
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                </div>
-              )}
+      <div className={`transition-opacity ${loading ? 'opacity-40' : ''}`}>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="pb-1.5 text-[12px] font-semibold text-ink-500">
+              {w}
             </div>
-          )
-        })}
+          ))}
+          {cells.map((day, idx) => {
+            if (!day) return <div key={idx} className="h-[52px]" />
+            const info = byDay.get(day)
+            const level = levelOf(info?.p ?? 0, dayHeadcount(info, headcount))
+            const isToday = isCurrentMonth && day === today.day
+            const isSelected = selected === day
+            const isFuture =
+              year > today.year ||
+              (year === today.year && (month > today.month || (month === today.month && day > today.day)))
+            return (
+              <button
+                key={idx}
+                type="button"
+                disabled={isFuture}
+                onClick={() => setSelected(isSelected ? null : day)}
+                aria-label={`${month + 1}월 ${day}일${info ? `, ${info.p}명 참여` : ', 기록 없음'}`}
+                aria-pressed={isSelected}
+                className={`flex h-[52px] flex-col items-center justify-center rounded-md transition disabled:cursor-default disabled:opacity-35 ${
+                  LEVEL_STYLE[level]
+                } ${isSelected ? 'ring-2 ring-inset ring-ink-900' : isToday ? 'ring-[1.5px] ring-inset ring-ink-900/70' : ''}`}
+              >
+                <span className={`text-[14px] leading-none tabular-nums ${isToday ? 'font-extrabold' : 'font-semibold'}`}>{day}</span>
+                {info && info.p > 0 && (
+                  <span className="mt-1 text-[11px] font-bold leading-none tabular-nums">{info.p}명</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 범례 */}
+        <InfoTip label="달력 보는 법" className="mt-3">
+          <div className="space-y-1.5">
+          {headcount ? (
+            <>
+              <p className="text-[12px] font-semibold text-ink-700">
+                {basis.rate} <span className="font-normal text-ink-500">· {basis.count} {headcount}명({isCurrentMonth ? '오늘' : '말일'} 기준)</span>
+              </p>
+              <div className="flex items-center gap-3">
+                {LEGEND.map((l) => (
+                  <span key={l.level} className="flex items-center gap-1 text-[12px] tabular-nums text-ink-500">
+                    <span className={`h-3 w-3 rounded-sm ${LEGEND_SWATCH[l.level]}`} />
+                    {l.label}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-[12px] text-ink-500">
+              <span className="font-semibold text-ink-700">인원 정보 없음</span> · 숫자는 그날 운동한 인원이에요. 참여율 색은 표시하지 않아요.
+            </p>
+          )}
+          <p className="text-[12px] text-ink-500">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
+          </div>
+        </InfoTip>
+        {error && <p role="alert" className="mt-2 text-[14px] font-semibold text-red-700">{error}</p>}
       </div>
+
+      {selectedDate && (
+        <DayDetail
+          date={selectedDate}
+          summary={selected ? byDay.get(selected) : undefined}
+          headcount={dayHeadcount(selected ? byDay.get(selected) : undefined, headcount)}
+          rateLabel={basis.rate}
+          refreshKey={refreshKey}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </section>
   )
 }

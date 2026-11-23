@@ -1,259 +1,122 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+// 기록 — 운동 남기기 + 내 기록 (본인 기록만. 동료 기록은 피드에서)
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Employee, ExerciseLog, calcPace, formatDuration, getPaceMode } from '@/types/database'
-import { getEmployeeColor } from '@/lib/colors'
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import { ExerciseLog, ExerciseType, formatDuration } from '@/types/database'
+import { api } from '@/lib/api'
+import { useMe } from '@/lib/me'
+import { useDialog } from '@/lib/dialog'
+import { useEngagement } from '@/lib/engagement'
+import { Empty, Loading, NeedLogin, Notice, PageHead, Section, fmtMinutes } from '@/lib/ui'
+import ExerciseLogForm from './ExerciseLogForm'
+
+const PAGE = 20
 
 export default function RecordTab() {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<Employee | null>(null)
+  const { me, mustChangePin, requireMe } = useMe()
+  const dialog = useDialog()
+  const [types, setTypes] = useState<ExerciseType[]>([])
   const [logs, setLogs] = useState<ExerciseLog[]>([])
+  const [more, setMore] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [refresh, setRefresh] = useState(0)
+  const { data: eng } = useEngagement(refresh)
 
   useEffect(() => {
-    supabase.from('employees').select('*').order('name').then(({ data }) => setEmployees(data ?? []))
+    supabase.from('exercise_types').select('*').order('name').then(({ data }) => setTypes(data ?? []))
   }, [])
 
-  useEffect(() => {
-    if (!selected) { setLogs([]); return }
-    setLoading(true)
-    supabase
+  const loadLogs = useCallback(async (from = 0) => {
+    if (!me) { setLogs([]); return }
+    setLoading(true); setError('')
+    const { data, error: e } = await supabase
       .from('exercise_logs')
-      .select('*, employee:employees(*), exercise_type:exercise_types(*)')
-      .eq('employee_id', selected.id)
+      .select('*, exercise_type:exercise_types(*)')
+      .eq('employee_id', me.id)
       .order('log_date', { ascending: false })
-      .then(({ data }) => {
-        setLogs((data as ExerciseLog[]) ?? [])
-        setLoading(false)
-      })
-  }, [selected])
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE - 1)
+    setLoading(false)
+    if (e) { setError('내 기록을 불러오지 못했어요.'); return }
+    const rows = (data as ExerciseLog[]) ?? []
+    setLogs((prev) => (from === 0 ? rows : [...prev, ...rows]))
+    setMore(rows.length === PAGE)
+  }, [me])
 
-  const filtered = useMemo(() => {
-    if (!query || selected) return []
-    const q = query.toLowerCase()
-    return employees.filter(e =>
-      e.name.toLowerCase().includes(q) || e.employee_number?.toLowerCase().includes(q)
-    ).slice(0, 6)
-  }, [query, employees, selected])
+  useEffect(() => { loadLogs(0) }, [loadLogs, refresh])
 
-  // ── 집계 ──
-  const stats = useMemo(() => {
-    if (!logs.length) return null
-
-    // 종목별 횟수
-    const byType = new Map<string, { icon: string; count: number; totalSec: number; totalKm: number }>()
-    let totalSec = 0, totalKm = 0
-
-    for (const l of logs) {
-      const name  = l.exercise_type?.name ?? '기타'
-      const icon  = l.exercise_type?.icon ?? ''
-      const sec   = l.duration_seconds ?? (l.duration_minutes ? l.duration_minutes * 60 : 0)
-      const km    = Number(l.distance_km ?? 0)
-      const cur   = byType.get(name) ?? { icon, count: 0, totalSec: 0, totalKm: 0 }
-      cur.count++; cur.totalSec += sec; cur.totalKm += km
-      byType.set(name, cur)
-      totalSec += sec; totalKm += km
-    }
-
-    const byTypeArr = Array.from(byType.entries())
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.count - a.count)
-
-    // 월별 추이
-    const byMonth = new Map<string, number>()
-    for (const l of logs) {
-      const [y, m] = l.log_date.split('-')
-      const key = `${y}.${m}`
-      byMonth.set(key, (byMonth.get(key) ?? 0) + 1)
-    }
-    const monthData = Array.from(byMonth.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, count]) => ({ month, count }))
-
-    return { byTypeArr, monthData, totalCount: logs.length, totalSec, totalKm }
-  }, [logs])
-
-  const color = selected ? getEmployeeColor(selected) : '#1F9B7D'
+  async function remove(log: ExerciseLog) {
+    const ok = await dialog.confirm({
+      title: '이 기록을 삭제할까요?',
+      message: `${log.log_date} ${log.exercise_type?.name ?? '운동'} 기록이 지워지고, 목표·챌린지·배지도 다시 계산돼요.`,
+      confirmText: '삭제',
+      tone: 'danger',
+    })
+    if (!ok) return
+    const r = await api(`/api/logs/${log.id}`, { method: 'DELETE' })
+    if (!r.ok) { setError(r.message || '삭제하지 못했어요.'); return }
+    setRefresh((k) => k + 1)
+  }
 
   return (
-    <div className="space-y-4">
-      {/* 직원 검색 */}
-      <div className="relative">
-        <input
-          value={selected ? selected.name : query}
-          onChange={e => { setSelected(null); setQuery(e.target.value) }}
-          placeholder="이름 또는 사번으로 검색"
-          className="input-field"
-        />
-        {selected && (
-          <button
-            onClick={() => { setSelected(null); setQuery('') }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 text-sm"
-          >✕</button>
-        )}
-        {filtered.length > 0 && (
-          <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-auto rounded-xl bg-white py-1 shadow-raised">
-            {filtered.map(e => (
-              <li
-                key={e.id}
-                onClick={() => { setSelected(e); setQuery('') }}
-                className="cursor-pointer px-3 py-2.5 text-sm text-ink-800 hover:bg-brand-50 flex items-center gap-2"
-              >
-                <span
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shrink-0"
-                  style={{ backgroundColor: getEmployeeColor(e) }}
-                >
-                  {e.name[0]}
-                </span>
-                <span>{e.name}</span>
-                <span className="text-xs text-ink-300">#{e.employee_number}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+    <div>
+      <PageHead title="기록" />
+
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10">
+      <div className="pb-8">
+        <ExerciseLogForm exerciseTypes={types} onSuccess={() => setRefresh((k) => k + 1)} />
       </div>
 
-      {/* 검색 전 안내 */}
-      {!selected && (
-        <div className="card flex flex-col items-center gap-2 py-10 text-center">
-          <span className="text-3xl">🔍</span>
-          <p className="text-sm font-medium text-ink-600">직원을 검색하면</p>
-          <p className="text-xs text-ink-400">누적 운동 기록과 통계를 볼 수 있어요</p>
-        </div>
-      )}
-
-      {selected && loading && <div className="h-40 animate-pulse rounded-2xl bg-ink-100" />}
-
-      {selected && !loading && (
-        <>
-          {/* 직원 헤더 */}
-          <div className="card flex items-center gap-3">
-            <span
-              className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-bold text-white shrink-0"
-              style={{ backgroundColor: color }}
-            >
-              {selected.name[0]}
-            </span>
-            <div>
-              <p className="font-bold text-ink-900">{selected.name}</p>
-              <p className="text-xs text-ink-400">#{selected.employee_number}</p>
-            </div>
-            <div className="ml-auto text-right">
-              <p className="text-2xl font-bold" style={{ color }}>{stats?.totalCount ?? 0}</p>
-              <p className="text-xs text-ink-400">총 운동 횟수</p>
-            </div>
-          </div>
-
-          {!stats || logs.length === 0 ? (
-            <div className="card text-center text-sm text-ink-400 py-8">아직 운동 기록이 없어요.</div>
-          ) : (
-            <>
-              {/* 요약 카드 */}
-              <div className="grid grid-cols-2 gap-3">
-                {stats.totalSec > 0 && (
-                  <div className="card text-center py-4">
-                    <p className="text-2xl">⏱</p>
-                    <p className="mt-1 text-sm font-bold text-ink-800">{formatDuration(stats.totalSec)}</p>
-                    <p className="text-xs text-ink-400">총 운동 시간</p>
-                  </div>
-                )}
-                {stats.totalKm > 0 && (
-                  <div className="card text-center py-4">
-                    <p className="text-2xl">📍</p>
-                    <p className="mt-1 text-sm font-bold text-ink-800">{stats.totalKm.toFixed(2)} km</p>
-                    <p className="text-xs text-ink-400">총 거리</p>
-                  </div>
-                )}
-              </div>
-
-              {/* 종목별 횟수 바 차트 */}
-              <section className="card">
-                <p className="section-title">종목별 횟수</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart
-                    data={stats.byTypeArr.map(t => ({ name: `${t.icon} ${t.name}`, count: t.count }))}
-                    margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-                  >
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }}
-                      cursor={{ fill: '#F6F5F2' }}
-                      formatter={(v: number) => [`${v}회`, '횟수']}
-                    />
-                    <Bar dataKey="count" fill={color} radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </section>
-
-              {/* 종목별 상세 테이블 */}
-              <section>
-                <p className="section-title mb-2">종목별 상세</p>
-                <ul className="card divide-y divide-ink-100 p-0">
-                  {stats.byTypeArr.map(t => {
-                    const avgSec = t.totalSec ? Math.round(t.totalSec / t.count) : 0
-                    const pace = (t.totalSec && t.totalKm)
-                      ? calcPace(t.totalSec, t.totalKm, getPaceMode(t.name))
-                      : ''
-                    return (
-                      <li key={t.name} className="px-4 py-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-ink-800">
-                            {t.icon} {t.name}
-                          </span>
-                          <span className="text-sm font-bold" style={{ color }}>{t.count}회</span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {avgSec > 0 && (
-                            <span className="text-xs text-ink-400">
-                              평균 {formatDuration(avgSec)}
-                            </span>
-                          )}
-                          {t.totalKm > 0 && (
-                            <span className="text-xs text-ink-400">
-                              총 {t.totalKm.toFixed(2)} km
-                            </span>
-                          )}
-                          {pace && (
-                            <span className="text-xs font-medium text-accent-600">
-                              ⚡ 평균 페이스 {pace}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </section>
-
-              {/* 월별 추이 */}
-              {stats.monthData.length > 1 && (
-                <section className="card">
-                  <p className="section-title">월별 운동 횟수</p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <BarChart data={stats.monthData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#8F8B7D' }} axisLine={{ stroke: '#EAE8E2' }} tickLine={false} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8F8B7D' }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ borderRadius: 12, border: '1px solid #EAE8E2', fontSize: 12 }}
-                        cursor={{ fill: '#F6F5F2' }}
-                        formatter={(v: number) => [`${v}회`, '횟수']}
-                      />
-                      <Bar dataKey="count" fill={color} radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </section>
-              )}
-
-            </>
-          )}
-        </>
-      )}
+      <Section title="내 기록" className="lg:border-t-0 lg:pt-0">
+        {!me || mustChangePin ? (
+          <NeedLogin text="본인 확인을 하면 내가 남긴 기록만 모아서 볼 수 있어요." onLogin={() => requireMe()} />
+        ) : (
+          <>
+            {eng && (
+              <dl className="mb-5 grid grid-cols-3 gap-4">
+                <div><dt className="text-[13px] text-ink-500">전체</dt><dd className="num mt-1 text-[24px] leading-none">{eng.total.sessions}<span className="ml-0.5 text-[13px] font-bold text-ink-500">회</span></dd></div>
+                <div><dt className="text-[13px] text-ink-500">인정 시간</dt><dd className="mt-1 text-[16px] font-extrabold leading-6 tabular-nums">{fmtMinutes(eng.total.minutes)}</dd></div>
+                <div><dt className="text-[13px] text-ink-500">최장 연속</dt><dd className="num mt-1 text-[24px] leading-none">{eng.streak.longest}<span className="ml-0.5 text-[13px] font-bold text-ink-500">일</span></dd></div>
+              </dl>
+            )}
+            {error && <div className="mb-3"><Notice tone="error">{error}</Notice></div>}
+            {logs.length === 0 && !loading ? (
+              <Empty title="아직 남긴 기록이 없어요." desc="위에서 첫 운동을 기록해 보세요." />
+            ) : (
+              <ul className="divide-y divide-line border-y border-line">
+                {logs.map((l) => {
+                  const sec = l.duration_seconds ?? (l.duration_minutes ? l.duration_minutes * 60 : 0)
+                  return (
+                    <li key={l.id} className="flex items-start gap-3 py-3.5">
+                      <span className="w-[52px] shrink-0 pt-0.5 text-[13px] font-semibold tabular-nums text-ink-500">
+                        {l.log_date.slice(5).replace('-', '.')}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-bold text-ink-900">
+                          <span aria-hidden="true" className="mr-1">{l.exercise_type?.icon}</span>{l.exercise_type?.name ?? '운동'}
+                        </p>
+                        <p className="mt-0.5 text-[14px] tabular-nums text-ink-600">
+                          {sec ? formatDuration(sec) : '시간 기록 없음'}
+                          {l.distance_km ? ` · ${Number(l.distance_km).toFixed(2)}km` : ''}
+                        </p>
+                        {l.memo && <p className="mt-1 text-[14px] text-ink-500">{l.memo}</p>}
+                      </div>
+                      <button type="button" onClick={() => remove(l)} className="pill-action -mr-2.5 text-ink-500">삭제</button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            {loading && <Loading lines={2} />}
+            {more && !loading && (
+              <button type="button" onClick={() => loadLogs(logs.length)} className="btn-secondary mt-4 w-full">더 보기</button>
+            )}
+          </>
+        )}
+      </Section>
+      </div>
     </div>
   )
 }
