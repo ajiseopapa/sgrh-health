@@ -14,7 +14,7 @@ export const GET = handle(async () => {
   const db = serverDb()
   const [{ data: emps }, { data: pins }, { data: open }] = await Promise.all([
     db.from('employees').select('*').order('name'),
-    db.from('employee_pins').select('employee_id, is_temp, locked_until'),
+    db.from('employee_pins').select('employee_id, is_temp, locked_until, updated_at'),
     readAllRows<{ employee_id: string; department_id: string; start_date: string; departments: { name: string } | { name: string }[] | null }>(
       () => db.from('employee_departments').select('employee_id, department_id, start_date, departments(name)').is('end_date', null), ['employee_id']
     ).then((data) => ({ data })),
@@ -29,6 +29,8 @@ export const GET = handle(async () => {
     return {
       ...e,
       pin_status: !p ? 'none' : locked ? 'locked' : p.is_temp ? 'temp' : 'set',
+      // PIN을 마지막으로 정한 시각(직원이 직접 정함·바꿈 또는 관리자 발급). 로그인 실패·잠금으로는 바뀌지 않음(11-23 TK)
+      pin_set_at: p?.updated_at ?? null,
       department: d ? { id: d.department_id, name: deptName, since: d.start_date } : null,
     }
   })

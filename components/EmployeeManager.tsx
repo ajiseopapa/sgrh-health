@@ -10,6 +10,7 @@ import BulkEmployeeAdd from './BulkEmployeeAdd'
 type PinStatus = 'none' | 'temp' | 'set' | 'locked'
 type AdminEmployee = Employee & {
   pin_status: PinStatus
+  pin_set_at?: string | null
   left_at?: string | null
   department: { id: string; name: string | null; since: string } | null
 }
@@ -21,6 +22,10 @@ const PIN_BADGE: Record<PinStatus, { label: string; cls: string }> = {
   set: { label: 'PIN 등록', cls: 'text-ink-500' },
   locked: { label: '잠김', cls: 'text-red-700' },
 }
+// PIN 정한 시각(11-23 TK): 새 직원이 처음 PIN을 정하는 방식이라 남이 먼저 정했는지 관리자가 확인할 수 있게 보여 줌
+const pinTime = (iso: string) =>
+  new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
+const PIN_NEW_MS = 3 * 24 * 60 * 60 * 1000 // 3일 안에 정한 PIN은 '새로 정함'으로 눈에 띄게
 const seoulToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 import { PALETTE, getEmployeeColor } from '@/lib/colors'
 
@@ -208,7 +213,7 @@ export default function EmployeeManager() {
 
       <div className="card space-y-2">
         <p className="text-[15px] font-bold text-ink-900">본인 확인 PIN</p>
-        <p className="text-[13px] text-ink-600">PIN이 없는 직원은 처음 들어올 때 직접 PIN을 정해요. 임시 PIN 발급은 PIN을 잊은 직원처럼 필요할 때만 쓰면 돼요.</p>
+        <p className="text-[13px] text-ink-600">PIN이 없는 직원은 처음 들어올 때 직접 PIN을 정해요. 임시 PIN 발급은 PIN을 잊은 직원처럼 필요할 때만 쓰면 돼요.<br />3일 안에 PIN을 정한 직원에게는 <span className="font-bold text-ink-900">새로 정함</span> 표시가 붙어요. 본인이 정한 게 맞는지 확인하고, 아니면 PIN 초기화를 눌러 주세요.</p>
         <p className="text-[13px] text-ink-600">
           PIN 없음 {missingCount}명 · 임시 PIN {list.filter((e) => e.pin_status === 'temp').length}명 ·
           등록 {list.filter((e) => e.pin_status === 'set').length}명
@@ -309,6 +314,11 @@ export default function EmployeeManager() {
                       <span className={`text-[15px] font-bold ${emp.left_at ? 'text-ink-500 line-through' : 'text-ink-900'}`}>{emp.name}</span>
                       <span className="text-[13px] tabular-nums text-ink-500">#{emp.employee_number}</span>
                       <span className={`text-[13px] font-semibold ${PIN_BADGE[emp.pin_status].cls}`}>· {PIN_BADGE[emp.pin_status].label}</span>
+                      {emp.pin_set_at && emp.pin_status !== 'none' && (
+                        Date.now() - new Date(emp.pin_set_at).getTime() < PIN_NEW_MS
+                          ? <span className="rounded-full bg-brand-300 px-2 py-0.5 text-[12px] font-bold text-ink-900" title="본인이 정한 게 맞는지 확인해 주세요">새로 정함 {pinTime(emp.pin_set_at)}</span>
+                          : <span className="text-[12px] tabular-nums text-ink-500">{pinTime(emp.pin_set_at)}</span>
+                      )}
                     </div>
                     <p className="text-[13px] text-ink-600">
                       {emp.department ? `${emp.department.name} (${emp.department.since}부터)` : '부서 없음'}
