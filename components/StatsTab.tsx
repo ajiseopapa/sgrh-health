@@ -365,12 +365,13 @@ export default function StatsTab() {
       {/* 종목별 운동 횟수 — 단색 막대 */}
       <div>
         <H3>종목별 운동 횟수 (최근 8주)</H3>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={typeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="name" tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} interval={0} />
-            <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
+        {/* 가로 막대(11-26 TK: 종목 이름이 아래에서 겹쳐 깨짐) — 이름은 왼쪽에 한 줄씩, 종목 수만큼 높이가 늘어남 */}
+        <ResponsiveContainer width="100%" height={Math.max(120, typeData.length * 30 + 24)}>
+          <BarChart data={typeData} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 0 }} barCategoryGap={6}>
+            <XAxis type="number" allowDecimals={false} tick={AXIS} axisLine={{ stroke: '#C9CCC5' }} tickLine={false} />
+            <YAxis type="category" dataKey="name" tick={AXIS} axisLine={false} tickLine={false} interval={0} width={76} />
             <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #C9CCC5', background: '#FCFBF7', fontSize: 13 }} formatter={(v: number) => [`${v}회`, '기록']} cursor={{ fill: '#EEECE5' }} />
-            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+            <Bar dataKey="count" radius={[0, 3, 3, 0]}>
               {typeData.map((t) =>
                 typeMax > 0 && t.count === typeMax
                   ? <Cell key={t.name} fill={TOKENS.highlight} stroke={TOKENS.ink900} strokeWidth={1.5} />
