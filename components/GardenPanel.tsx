@@ -7,6 +7,7 @@ import InfoTip from './InfoTip'
 import WardrobeSection from './WardrobeSection'
 import { EMOJI_KEY, ProfileEditor } from './Profile'
 import MyGarden from './MyGarden'
+import Guestbook from './Guestbook'
 import TreeArt from './TreeArt'
 export { TreeArt } // 예전 import 경로 유지(HomeTab 등)
 import { useCallback, useEffect, useState } from 'react'
@@ -67,6 +68,7 @@ export default function GardenPanel({ view = 'garden' }: { view?: 'garden' | 'pr
   return (
     <div>
       <MyGarden game={game} onChange={setGame} />
+      {me && <div className="lg:max-w-[680px]"><Guestbook ownerId={me.id} ownerName={me.name} mine /></div>}
       <div className="lg:max-w-[680px]"><SunSection game={game} /></div>
       {SHOW_DEPT_GARDEN && <GardenSection garden={garden} />}
     </div>

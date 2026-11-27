@@ -5,11 +5,13 @@
 // 저장은 /api/me/game/profile 하나로: character · message · nameEmoji · showInFeed
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { useMe } from '@/lib/me'
 import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, Equipped, NAME_EMOJIS, Placed } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
 import SproutIcon from './SproutIcon'
 import GardenCanvas from './GardenCanvas'
 import CharacterFigure from './CharacterFigure'
+import Guestbook from './Guestbook'
 
 const MESSAGE_MAX = 40
 
@@ -220,8 +222,9 @@ function PeerGarden({ name, garden, character, outfit, equipped }: { name: strin
   )
 }
 
-/** 동료 프로필 창 — 피드에서 이름·이모지를 눌렀을 때. 캐릭터·정원(본인이 보이기를 켠 경우)과 한마디 */
+/** 동료 프로필 창 — 피드에서 이름·이모지를 눌렀을 때. 캐릭터·한마디·정원과 방명록 */
 export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | null; name: string; onClose: () => void }) {
+  const { me } = useMe()
   const [peer, setPeer] = useState<Peer | null>(null)
   const [err, setErr] = useState('')
   useEffect(() => {
@@ -244,6 +247,7 @@ export function PeerSheet({ employeeId, name, onClose }: { employeeId: string | 
             {peer.message || '아직 한마디가 없어요.'}
           </p>
           {peer.garden && <PeerGarden name={name} garden={peer.garden} character={peer.character} outfit={peer.outfit} equipped={peer.equipped} />}
+          <Guestbook ownerId={employeeId} ownerName={name} mine={me?.id === employeeId} />
         </div>
       )}
     </Sheet>
