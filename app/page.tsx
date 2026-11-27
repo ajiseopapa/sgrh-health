@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { api } from '@/lib/api'
 import HomeTab from '@/components/HomeTab'
 import FeedTab from '@/components/FeedTab'
 import RecordTab from '@/components/RecordTab'
@@ -50,6 +51,16 @@ function AppShell() {
   const [refreshKey, setRefreshKey] = useState(0)
   const hasUnreadAnnouncements = useHasUnreadAnnouncements()
   const hasNewSuggestions = useHasNewSuggestions(isAdmin)
+  const guestbookUnread = useGuestbookUnread(me && !mustChangePin ? me.id : null, tab)
+
+  // 알림을 눌러 들어오면(?tab=garden) 그 탭으로. 주소의 표시는 지움
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('tab')
+    if (q && TABS.some((t) => t.key === q)) {
+      setTab(q as TabKey)
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [])
 
   function handleSettingsClick() {
     if (isAdmin) {
@@ -130,8 +141,12 @@ function AppShell() {
                 on ? 'text-ink-900 lg:bg-brand-300' : 'text-ink-400 lg:hover:bg-ink-50'
               }`}>
               <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors lg:h-auto lg:w-auto lg:bg-transparent ${on ? 'bg-brand-300' : ''}`}>
-                <Icon name={t.icon} size={22} />
+                <span className="relative inline-flex">
+                  <Icon name={t.icon} size={22} />
+                  {t.key === 'garden' && guestbookUnread > 0 && <span className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-brand-300 ring-2 ring-ink-900" aria-hidden="true" />}
+                </span>
               </span>
+              {t.key === 'garden' && guestbookUnread > 0 && <span className="sr-only">(방명록 새 글 {guestbookUnread}개)</span>}
               <span aria-hidden="true">{t.label}</span>
             </button>
           )
@@ -179,4 +194,22 @@ function AppShell() {
     </div>
     </>
   )
+}
+
+/** 내 정원 방명록 새 글 수 — 탭을 옮길 때·앱으로 돌아올 때 다시 묻고, 정원에서 읽으면(guestbook-seen) 0 */
+const GUESTBOOK_SEEN_EVENT = 'guestbook-seen' // components/Guestbook.tsx 가 보냄
+function useGuestbookUnread(employeeId: string | null, tab: TabKey): number {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (!employeeId) { setN(0); return }
+    let alive = true
+    const load = () => api<{ unread: number }>('/api/me/guestbook').then((r) => { if (alive && r.ok) setN(r.data.unread ?? 0) })
+    load()
+    const onSeen = () => setN(0)
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    window.addEventListener(GUESTBOOK_SEEN_EVENT, onSeen)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { alive = false; window.removeEventListener(GUESTBOOK_SEEN_EVENT, onSeen); document.removeEventListener('visibilitychange', onVisible) }
+  }, [employeeId, tab])
+  return n
 }
