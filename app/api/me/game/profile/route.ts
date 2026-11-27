@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDb } from '@/lib/server/db'
-import { isCharacterKey, isNameEmoji, isOutfitKey } from '@/lib/game'
+import { characterOf, isCharacterKey, isNameEmoji, isOutfitKey } from '@/lib/game'
 import { checkCsrf, fail, handle, limitWrites, ok, readJson, requireEmployee } from '@/lib/server/guard'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +25,12 @@ export const PUT = handle(async (req: NextRequest) => {
   }
   if (body && 'character' in body) {
     if (!isCharacterKey(body.character)) return fail(400, '캐릭터를 골라주세요.')
+    // 햇빛으로 사는 캐릭터(단발녀)는 산 직원만
+    const c = characterOf(body.character)
+    if (c.shopKey) {
+      const { data: own } = await serverDb().from('game_purchases').select('item_key').eq('employee_id', auth.employeeId).eq('item_key', c.shopKey).maybeSingle()
+      if (!own) return fail(403, `${c.name} 캐릭터는 햇빛 ${c.price}개로 먼저 사 주세요.`, { code: 'not_owned' })
+    }
     row.character = body.character
   }
   if (body && 'outfit' in body) {
@@ -46,6 +52,7 @@ export const PUT = handle(async (req: NextRequest) => {
     if ('status_message' in row && (error.code === 'PGRST204' || error.code === '42703')) return fail(503, '한마디 저장은 준비 중이에요.')
     if ('outfit' in row && (error.code === 'PGRST204' || error.code === '42703')) return fail(503, '의상 저장은 준비 중이에요.') // 035 전 DB
     if ('character' in row && (error.code === 'PGRST204' || error.code === '42703')) return fail(503, '캐릭터 저장은 준비 중이에요.')
+    if ('character' in row && error.code === '23514') return fail(503, '이 캐릭터는 준비 중이에요.') // 039 전 DB(m·f만 허용)
     throw new Error('PROFILE_SAVE_FAILED')
   }
   return ok({ showInFeed: row.show_in_feed, nameEmoji: row.name_emoji, character: row.character, outfit: row.outfit, message: row.status_message })

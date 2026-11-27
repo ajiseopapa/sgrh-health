@@ -5,7 +5,7 @@
 // 가격·잔액·가진 아이템 확인과 "옷 한 벌만" 규칙은 모두 서버가 합니다. 이 화면은 보여 주고 요청만 보냅니다.
 import { useCallback, useState } from 'react'
 import { api } from '@/lib/api'
-import { WARDROBE_OPEN, CLOTHES, Equipped, Item, ITEMS, SHOP_KEYS, Slot, wornClothes } from '@/lib/game'
+import { WARDROBE_OPEN, CLOTHES, CLOTHES_CHARS, characterOf, Equipped, Item, ITEMS, SHOP_KEYS, Slot, wornClothes } from '@/lib/game'
 import { Notice } from '@/lib/ui'
 import CharacterFigure from './CharacterFigure'
 import InfoTip from './InfoTip'
@@ -118,7 +118,10 @@ export default function WardrobeSection<G extends WardrobeGame>({ game, onChange
       <div className="mt-4 lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:items-start lg:gap-x-10">
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-brand-50 py-4 lg:sticky lg:top-20">
           <CharacterFigure charKey={game.characterKey} outfit={null} equipped={equipped} width={128} label="지금 내 캐릭터" />
-          <p className="text-[12px] font-bold text-ink-700">{worn ? worn.name : '운동복'}</p>
+          <p className="text-[12px] font-bold text-ink-700">{worn && CLOTHES_CHARS.has(characterOf(game.characterKey).key) ? worn.name : '운동복'}</p>
+          {!CLOTHES_CHARS.has(characterOf(game.characterKey).key) && (
+            <p className="px-4 text-center text-[12px] leading-relaxed text-ink-600">{characterOf(game.characterKey).name} 캐릭터는 아직 운동복 그림만 있어요. 유니폼은 그림이 나오면 입을 수 있어요.</p>
+          )}
         </div>
 
         <div className="mt-4 space-y-4 lg:mt-0">

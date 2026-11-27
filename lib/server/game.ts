@@ -6,7 +6,7 @@ import {
   addDays, dailyCredits, kstToday, loadLogs, readAllRows, weekStart,
 } from './engagement'
 import {
-  CLOTHES, isClothes, UNIFORM_KEYS, SHOP_KEYS, clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
+  CHARACTERS, characterByShopKey, CLOTHES, isClothes, UNIFORM_KEYS, SHOP_KEYS, clampSpot, computeRewards, decorByKey, decorFor, GARDEN_SIZE, GARDEN_SPOTS, Placed, GARDEN_DAYS_PER_PERSON, gameGoalForWeek, GoalChange, isCharacterKey, isNameEmoji, isOutfitKey, ITEMS, itemByKey, Reward, Equipped, Slot, SLOTS, treeStage,
 } from '../game'
 
 export async function launchDate(db: SupabaseClient): Promise<string> {
@@ -62,7 +62,7 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
 
   const ledger = [
     ...e.rewards.map((r: Reward) => ({ type: 'earn' as const, key: r.key, date: r.date, label: r.label, points: r.points })),
-    ...purchases.map((p) => ({ type: 'spend' as const, key: `buy:${p.item_key}`, date: kstToday(new Date(p.purchased_at)), label: `${itemByKey(p.item_key)?.name ?? decorByKey(p.item_key)?.name ?? p.item_key} 구매`, points: -p.price })),
+    ...purchases.map((p) => ({ type: 'spend' as const, key: `buy:${p.item_key}`, date: kstToday(new Date(p.purchased_at)), label: `${itemByKey(p.item_key)?.name ?? decorByKey(p.item_key)?.name ?? characterByShopKey(p.item_key)?.name ?? p.item_key} 구매`, points: -p.price })),
   ].sort((a, b) => (a.date === b.date ? (a.type === b.type ? a.key.localeCompare(b.key) : a.type === 'earn' ? -1 : 1) : a.date < b.date ? 1 : -1))
 
   const equipped = equippedFrom(equip)
@@ -86,13 +86,15 @@ export async function myGame(db: SupabaseClient, employeeId: string, today = kst
     showInFeed: prof?.show_in_feed ?? false,
     nameEmoji: (prof?.name_emoji as string | null) ?? null,
     characterKey: isCharacterKey(prof?.character) ? prof.character : null, // null = 아직 안 고름(기본 캐릭터)
+    ownedCharacters: CHARACTERS.filter((c) => !c.shopKey || purchases.some((p) => p.item_key === c.shopKey)).map((c) => c.key), // 고를 수 있는 캐릭터(산 것 포함)
     outfitKey: isOutfitKey(prof?.outfit) ? prof.outfit : null, // null = 기본 의상(운동복). 035 전 DB 에서는 항상 null
     message: typeof prof?.status_message === 'string' ? prof.status_message : null, // 프로필 한마디(032 전 DB면 null)
   }
 }
 
 export async function purchaseItem(db: SupabaseClient, employeeId: string, itemKey: string) {
-  const item = (SHOP_KEYS.has(itemKey) ? itemByKey(itemKey) : null) ?? decorByKey(itemKey) // 지금 파는 옷(11-20 TK) 또는 정원 장식
+  const ch = characterByShopKey(itemKey) // 햇빛으로 사는 캐릭터(단발녀, 11-27 TK)
+  const item = (SHOP_KEYS.has(itemKey) ? itemByKey(itemKey) : null) ?? decorByKey(itemKey) ?? (ch ? { key: ch.shopKey as string, price: ch.price } : null) // 지금 파는 옷(11-20 TK)·정원 장식·캐릭터
   if (!item) return { status: 'unknown_item' as const }
   const { earned } = await earnedFor(db, employeeId)
   const { data, error } = await db.rpc('game_purchase', { p_employee: employeeId, p_item: item.key, p_price: item.price, p_earned: earned })

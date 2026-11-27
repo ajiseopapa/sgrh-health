@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 import { useMe } from '@/lib/me'
 import { CHARACTERS, CharacterKey, characterOf, characterSrc, DEFAULT_CHARACTER, Equipped, NAME_EMOJIS, Placed } from '@/lib/game'
 import { Loading, Notice } from '@/lib/ui'
+import { useDialog } from '@/lib/dialog'
 import SproutIcon from './SproutIcon'
 import GardenCanvas from './GardenCanvas'
 import CharacterFigure from './CharacterFigure'
@@ -62,7 +63,7 @@ export function Sheet({ title, titleId, onClose, locked = false, children }: { t
   )
 }
 
-interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | null; outfitKey: string | null; equipped: Equipped; showInFeed: boolean; message: string | null }
+interface MyProfile { nameEmoji: string | null; characterKey: CharacterKey | null; outfitKey: string | null; equipped: Equipped; showInFeed: boolean; message: string | null; ownedCharacters: string[]; balance: number }
 
 /** 내 프로필 창 — 캐릭터 고르기 · 한마디 · 프로필 이모지 · 동료에게 캐릭터 보이기
  *  setup: 처음 접속해 캐릭터를 아직 안 고른 직원(11-18 TK). 캐릭터를 골라야 닫을 수 있고, 나머지는 나중에 바꿔도 됨 */
@@ -87,12 +88,14 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
   const [busy, setBusy] = useState(false)
   // at: 안내를 어느 칸 아래에 보여 줄지(의상·캐릭터를 누르고 생긴 오류가 창 맨 아래에 떠서 '안 눌린다'고 느껴졌음, 11-19 TK)
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string; at?: 'look' } | null>(null)
+  const dialog = useDialog()
 
   useEffect(() => {
     setMsg(null)
-    api<Partial<MyProfile> & { character?: { equipped?: Equipped } }>('/api/me/game').then((r) => {
+    api<Partial<MyProfile> & { character?: { equipped?: Equipped }; sunlight?: { balance?: number } }>('/api/me/game').then((r) => {
       if (!r.ok) { setMsg({ tone: 'error', text: r.message || '불러오지 못했어요.' }); return }
-      const d = { nameEmoji: r.data.nameEmoji ?? null, characterKey: r.data.characterKey ?? null, outfitKey: r.data.outfitKey ?? null, equipped: r.data.character?.equipped ?? {}, showInFeed: r.data.showInFeed ?? false, message: r.data.message ?? null }
+      const d = { nameEmoji: r.data.nameEmoji ?? null, characterKey: r.data.characterKey ?? null, outfitKey: r.data.outfitKey ?? null, equipped: r.data.character?.equipped ?? {}, showInFeed: r.data.showInFeed ?? false, message: r.data.message ?? null,
+        ownedCharacters: r.data.ownedCharacters ?? CHARACTERS.filter((c) => !c.shopKey).map((c) => c.key), balance: r.data.sunlight?.balance ?? 0 }
       setP(d); setDraft(d.message ?? '')
     })
   }, [])
@@ -100,6 +103,10 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
   /** 한 칸만 저장. 성공하면 화면 값을 바꿉니다 */
   async function save(body: Record<string, unknown>, apply: (cur: MyProfile) => MyProfile, done?: string) {
     if (busy || !p) return
+    return saveOn(p, body, apply, done)
+  }
+  async function saveOn(cur0: MyProfile, body: Record<string, unknown>, apply: (cur: MyProfile) => MyProfile, done?: string) {
+    const p = cur0
     setBusy(true); setMsg(null)
     const r = await api('/api/me/game/profile', { method: 'PUT', body })
     setBusy(false)
@@ -108,6 +115,20 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
     const next = apply(p)
     setP(next); onEmoji(next.nameEmoji); onSaved?.()
     if (done) setMsg({ tone: 'success', text: done, at })
+  }
+
+  /** 햇빛으로 사는 캐릭터(단발녀): 확인 → 구매 → 바로 그 캐릭터로 */
+  async function buyCharacter(c: (typeof CHARACTERS)[number]) {
+    if (busy || !p || !c.shopKey) return
+    if (p.balance < c.price) { setMsg({ tone: 'error', text: `${c.name} 캐릭터는 햇빛 ${c.price}개가 필요해요. 지금 ${p.balance}개예요.`, at: 'look' }); return }
+    if (!(await dialog.confirm({ title: `${c.name} 캐릭터를 살까요?`, message: `햇빛 ${c.price}개를 써요. 지금 ${p.balance}개예요.`, confirmText: `햇빛 ${c.price}개로 사기` }))) return
+    setBusy(true); setMsg(null)
+    const r = await api('/api/me/game/purchase', { method: 'POST', body: { item: c.shopKey } })
+    setBusy(false)
+    if (!r.ok && (r.data as { code?: string }).code !== 'already_owned') { setMsg({ tone: 'error', text: r.message || '사지 못했어요.', at: 'look' }); return }
+    const owned = { ...p, ownedCharacters: [...p.ownedCharacters, c.key], balance: r.ok ? p.balance - c.price : p.balance }
+    setP(owned)
+    await saveOn(owned, { character: c.key }, (cur) => ({ ...cur, characterKey: c.key }), `${c.name} 캐릭터가 됐어요.`)
   }
 
   const cell = (on: boolean) =>
@@ -135,15 +156,18 @@ export function ProfileEditor({ name, onEmoji, setup = false, inline = false, on
 
           <div>
             <p className={label}>캐릭터</p>
-            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="캐릭터 고르기">
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="캐릭터 고르기">
               {CHARACTERS.map((c) => {
                 const on = (setup ? p.characterKey : p.characterKey ?? DEFAULT_CHARACTER) === c.key // 처음에는 아무것도 안 골라진 상태
+                const locked = !p.ownedCharacters.includes(c.key) // 햇빛으로 사는 캐릭터를 아직 안 삼
                 return (
                   <button key={c.key} type="button" role="radio" aria-checked={on} disabled={busy}
-                    onClick={() => { if (c.key !== p.characterKey) save({ character: c.key }, (cur) => ({ ...cur, characterKey: c.key })) }}
-                    className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl border-2 px-2 py-2 disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`}>
-                    <PixelCharacter charKey={c.key} outfit={p.outfitKey} scale={0.5} />
+                    aria-label={locked ? `${c.name}, 햇빛 ${c.price}개로 사기` : c.name}
+                    onClick={() => { if (locked) buyCharacter(c); else if (c.key !== p.characterKey) save({ character: c.key }, (cur) => ({ ...cur, characterKey: c.key })) }}
+                    className={`flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border-2 px-1 py-2 disabled:opacity-50 ${on ? 'border-ink-900 bg-brand-300' : 'border-line bg-sheet'}`}>
+                    <span className={locked ? 'opacity-60' : ''}><PixelCharacter charKey={c.key} outfit={p.outfitKey} scale={0.5} /></span>
                     <span className="text-[14px] font-bold text-ink-900">{c.name}</span>
+                    {locked && <span className="text-[12px] font-semibold text-ink-500">☀️ 햇빛 {c.price}</span>}
                   </button>
                 )
               })}

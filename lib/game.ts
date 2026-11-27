@@ -172,7 +172,7 @@ export function clothesLayers(c: Item, key: string | null | undefined): string[]
  */
 export function characterLayers(key: string | null | undefined, _outfit: string | null | undefined, equipped: Equipped | null | undefined): string[] {
   const g = characterOf(key).key
-  const c = wornClothes(equipped)
+  const c = CLOTHES_CHARS.has(g) ? wornClothes(equipped) : null // 옷 그림이 없는 캐릭터(단발녀)는 운동복
   // 11-20 TK: 꾸미기(모자·안경·소품 등)는 중단 — 이미 입은 기록이 있어도 그리지 않음. 옷을 입었으면 그 옷 그림, 아니면 운동복
   return c ? clothesLayers(c, g) : [characterSrc(g, DEFAULT_OUTFIT)]
 }
@@ -187,10 +187,20 @@ export const SHOW_DEPT_GARDEN = false
 
 /** 픽셀 캐릭터 2종(본인이 고름, 성별·인사정보와 연결하지 않음). 고르지 않으면 DEFAULT_CHARACTER */
 // 그림: 디자이너 확정본(11-19 TK). 256×384 투명 PNG — 도트 격자가 아닌 큰 그림이라 화면에서 부드럽게 줄여 그림(pixelated 아님)
+//  · 단발녀(b, 11-27 TK): 햇빛 50으로 사는 캐릭터(구매 키 char_bob, game_purchases). 그림은 운동복 한 장뿐이라
+//    유니폼·옷을 입어도 운동복으로 보임(CLOTHES_CHARS 에 없음) — 디자이너 그림이 오면 CLOTHES_CHARS 에 'b' 추가
+//    그림 만들기: scripts/cut-char-bob.py. DB 제약은 039(m·f·b)
 export const CHARACTERS = [
-  { key: 'm', name: '남성형', src: '/game/v22/characters/char-m.png' },
-  { key: 'f', name: '여성형', src: '/game/v22/characters/char-f.png' },
+  { key: 'm', name: '남성형', src: '/game/v22/characters/char-m.png', price: 0, shopKey: null },
+  { key: 'f', name: '여성형', src: '/game/v22/characters/char-f.png', price: 0, shopKey: null },
+  { key: 'b', name: '단발녀', src: '/game/v22/characters/char-b.png', price: 50, shopKey: 'char_bob' },
 ] as const
+/** 유니폼·옷 그림이 있는 캐릭터. 없는 캐릭터는 늘 운동복 그림 */
+export const CLOTHES_CHARS = new Set<string>(['m', 'f'])
+/** 햇빛으로 사는 캐릭터의 구매 키 → 캐릭터 */
+export function characterByShopKey(key: string) {
+  return CHARACTERS.find((c) => c.shopKey === key) ?? null
+}
 export type CharacterKey = (typeof CHARACTERS)[number]['key']
 export const DEFAULT_CHARACTER: CharacterKey = 'm'
 export function isCharacterKey(v: unknown): v is CharacterKey {
@@ -216,7 +226,8 @@ export function isOutfitKey(v: unknown): v is OutfitKey {
 }
 /** 캐릭터(m·f) + 의상 → 그림 주소. 모르는 값이면 기본 캐릭터·기본 의상 */
 export function characterSrc(key: string | null | undefined, outfit?: string | null) {
-  return `/game/v22/characters/char-${characterOf(key).key}-${isOutfitKey(outfit) ? outfit : DEFAULT_OUTFIT}.png`
+  const c = characterOf(key).key
+  return `/game/v22/characters/char-${c}-${CLOTHES_CHARS.has(c) && isOutfitKey(outfit) ? outfit : DEFAULT_OUTFIT}.png`
 }
 export function characterOf(key: string | null | undefined) {
   return CHARACTERS.find((c) => c.key === key) ?? CHARACTERS.find((c) => c.key === DEFAULT_CHARACTER)!
